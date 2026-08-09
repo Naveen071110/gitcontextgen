@@ -21,7 +21,7 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://gitcontextgen.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://repopulse-ai.singhnaveen360.workers.dev"),
   title: "GitContextGen | High-Fidelity AI Context Engine for Cursor, Claude & Replit",
   description:
     "Stop fighting your AI co-pilot. Automatically audit any repository, resolve complex logic, and deliver a zero-hallucination 'Floor Plan' directly to Cursor, Claude, or Replit. Built for Agencies, Solopreneurs, and No-Code Builders.",

@@ -26,7 +26,7 @@ export async function GET() {
       keysBound: {
         supabase: supabaseBound,
         resend: resendBound,
-        deepseek: deepseekBound,
+        aiEngine: deepseekBound,
       },
     },
     { status: 200 }

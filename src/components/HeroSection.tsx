@@ -116,7 +116,7 @@ export default function HeroSection() {
       const res = await analyzeRepositoryAction(urlToFetch, userToken);
       
       if (res.success && res.data) {
-        setLoadingStep('3/3 DeepSeek AI Synthesizing Truth...');
+        setLoadingStep('3/3 High-Fidelity AI Synthesizing Truth...');
         setResult(res.data);
         const score = calculateReadinessScore(
           res.data.fileTreeSummary,

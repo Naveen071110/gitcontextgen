@@ -23,7 +23,7 @@ const sampleOutputs: Record<FormatKey, string> = {
 
 ## Project Identity
 CVGenie is a microSaaS AI-powered resume and cover letter generator.
-It uses DeepSeek API to produce ATS-optimized resumes from uploaded
+It uses AI Engine to produce ATS-optimized resumes from uploaded
 PDFs and pasted job descriptions. React 18 + Express + FastAPI hybrid.
 
 ## Verified Execution Commands
@@ -48,7 +48,7 @@ client/
 │   ├── content/blog/       # Static blog posts data (zero DB cost)
 │   └── lib/                # Utility functions and API client
 server/
-├── routes.ts               # DeepSeek API calls, /api/generate endpoint
+├── routes.ts               # AI Engine calls, /api/generate endpoint
 ├── documentGenerator.ts    # PDF/DOCX/TXT conversion with watermarks
 ├── documentParser.ts       # Resume text extraction (PDF/DOCX/TXT)
 └── database/
@@ -58,7 +58,7 @@ server/
 ## Protected Files — DO NOT MODIFY
 | File | Purpose |
 |:-----|:--------|
-| server/routes.ts | DeepSeek API integration, ATS formatting, generation endpoint |
+| server/routes.ts | AI Engine integration, ATS formatting, generation endpoint |
 | server/documentGenerator.ts | PDF/DOCX/TXT output with free-tier watermarks |
 | server/documentParser.ts | Resume parsing via pdfplumber (Python) |
 
@@ -90,7 +90,7 @@ FastAPI hybrid backend.
 - Frontend: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui
 - Backend: Node.js, Express.js, FastAPI (Python for PDF processing)
 - Auth: Clerk (OAuth, session management, usage tracking)
-- AI: DeepSeek API for resume optimization and cover letter generation
+- AI: AI Engine for resume optimization and cover letter generation
 - State: TanStack React Query, React Hook Form + Zod
 - Routing: Wouter (lightweight client-side router)
 - Database: Drizzle ORM + Neon PostgreSQL (with in-memory cache layer)
@@ -123,7 +123,7 @@ FastAPI hybrid backend.
 ## File Processing Flow
 1. User uploads PDF → Multer middleware handles multipart/form-data
 2. pdfplumber (Python/FastAPI) extracts text from PDF
-3. DeepSeek API optimizes content for ATS compatibility
+3. AI Engine optimizes content for ATS compatibility
 4. documentGenerator.ts converts to PDF/DOCX/TXT with watermarks
 
 ## Performance Patterns
@@ -154,7 +154,7 @@ Required env: DEEPSEEK_API_KEY, CLERK_SECRET_KEY,
 - Frontend: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui (Radix)
 - Backend: Node.js + Express.js (primary API), FastAPI/Python (PDF parsing)
 - Auth: Clerk (OAuth, sessions, usage limits)
-- AI: DeepSeek API (resume optimization, cover letter generation, ATS formatting)
+- AI: AI Engine (resume optimization, cover letter generation, ATS formatting)
 - DB: Drizzle ORM + Neon PostgreSQL, in-memory TTL cache layer
 - State: TanStack React Query, React Hook Form + Zod validation
 - Routing: Wouter (client-side), Express Router (server-side)
@@ -167,7 +167,7 @@ Required env: DEEPSEEK_API_KEY, CLERK_SECRET_KEY,
   Resume History, Blog listing and post pages.
 - \`client/src/hooks/\`: Custom hooks — useIntersectionLoader for lazy loading.
 - \`client/src/content/blog/\`: Static blog post data (zero DB cost).
-- \`server/routes.ts\`: DeepSeek API calls, /api/generate endpoint,
+- \`server/routes.ts\`: AI Engine calls, /api/generate endpoint,
   resume optimization and ATS formatting logic.
 - \`server/documentGenerator.ts\`: Converts AI text to downloadable
   PDF/DOCX/TXT files with free-tier watermarks.
@@ -213,7 +213,7 @@ extraction, inline editing before download, multi-format export
   file in the server/ directory.
 
 ## Pointers
-- Generation flow: Upload → documentParser → DeepSeek API → documentGenerator → Download
+- Generation flow: Upload → documentParser → AI Engine → documentGenerator → Download
 - Auth flow: Clerk React → Clerk Express middleware → usage limit check → proceed
 - Cache invalidation: Subscription cache cleared on webhook + manual update;
   Resume cache cleared on insert/delete operations.

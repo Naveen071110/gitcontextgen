@@ -9,14 +9,14 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-SSR-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com/)
-[![DeepSeek AI](https://img.shields.io/badge/AI_Engine-DeepSeek_R1/Chat-4F46E5?style=for-the-badge)](https://www.deepseek.com/)
+[![AI Engine](https://img.shields.io/badge/AI_Engine-High--Fidelity_LLM-4F46E5?style=for-the-badge)]()
 [![Cloudflare Workers](https://img.shields.io/badge/Deploy-Cloudflare_Workers-F38020?style=for-the-badge&logo=cloudflare)](https://workers.cloudflare.com/)
 
 ---
 
 ## 🌟 About GitContextGen
 
-**GitContextGen** ([gitcontextgen.com](https://gitcontextgen.com)) is an open-standard developer platform built for **Solopreneurs, Agencies, and No-Code Builders**. 
+**GitContextGen** ([repopulse-ai.singhnaveen360.workers.dev](https://repopulse-ai.singhnaveen360.workers.dev/)) is an open-standard developer platform built for **Solopreneurs, Agencies, and No-Code Builders**. 
 
 When developers ask AI coding assistants (like Claude 3.5 Sonnet, Cursor, or Copilot) to build features without a structured context specification file, AI models hallucinate non-existent modules, invent fake file paths, and break build pipelines.
 
@@ -48,7 +48,7 @@ GitContextGen solves this by parsing repository file trees, `package.json` scrip
 - **Styling & System Design**: Vanilla Tailwind CSS v4, Lucide React Icons, Framer Motion
 - **Authentication**: Supabase SSR (`@supabase/ssr`) with 1-Click GitHub OAuth
 - **Database & Data Layer**: Supabase PostgreSQL with RLS policies
-- **AI Intelligence Engine**: DeepSeek API (`deepseek-chat`) via OpenAI-compatible edge client
+- **AI Intelligence Engine**: High-Fidelity Multi-Agent LLM Engine
 - **Deployment & Edge Runtime**: Cloudflare Workers via OpenNext (`@opennextjs/cloudflare`)
 
 ---
@@ -79,14 +79,11 @@ Create a `.env.local` file in the root directory:
 
 ```env
 # Application URLs
-NEXT_PUBLIC_APP_URL=https://gitcontextgen.com
+NEXT_PUBLIC_APP_URL=https://repopulse-ai.singhnaveen360.workers.dev
 
 # Supabase Authentication & Database
 NEXT_PUBLIC_SUPABASE_URL=https://your-supabase-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-
-# DeepSeek AI Engine Key
-DEEPSEEK_API_KEY=your-deepseek-api-key
 
 # GitHub API & Webhooks
 GITHUB_TOKEN=your-github-personal-access-token
@@ -135,7 +132,7 @@ gitcontextgen/
 │   │   ├── robots.ts           # Dynamic robots.txt
 │   │   └── sitemap.ts          # Dynamic sitemap.xml
 │   ├── components/             # Reusable UI components & section blocks
-│   ├── lib/                    # DeepSeek AI engine, GitHub parser, actions & Supabase clients
+│   ├── lib/                    # AI context engine, GitHub parser, actions & Supabase clients
 │   └── proxy.ts                # Next.js 16 session proxy (middleware)
 ├── package.json
 └── tsconfig.json
@@ -147,7 +144,7 @@ gitcontextgen/
 
 Add these topics to your GitHub repository under **About -> Settings**:
 
-`nextjs`, `typescript`, `ai-context-engine`, `agents-md`, `claude-md`, `cursorrules`, `copilot-instructions`, `deepseek-api`, `supabase`, `cloudflare-workers`, `developer-tools`, `solopreneur-tools`
+`nextjs`, `typescript`, `ai-context-engine`, `agents-md`, `claude-md`, `cursorrules`, `copilot-instructions`, `supabase`, `cloudflare-workers`, `developer-tools`, `solopreneur-tools`
 
 ---
 

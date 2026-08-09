@@ -18,7 +18,7 @@
 
 **GitContextGen** ([repopulse-ai.singhnaveen360.workers.dev](https://repopulse-ai.singhnaveen360.workers.dev/)) is an open-standard developer platform built for **Solopreneurs, Agencies, and No-Code Builders**. 
 
-When developers ask AI coding assistants (like Claude 3.7 Sonnet, Cursor, or Copilot) to build features without a structured context specification file, AI models hallucinate non-existent modules, invent fake file paths, and break build pipelines.
+When developers ask AI coding assistants (like Claude 5 Sonnet, Cursor, or Copilot) to build features without a structured context specification file, AI models hallucinate non-existent modules, invent fake file paths, and break build pipelines.
 
 GitContextGen solves this by parsing repository file trees, `package.json` scripts, Makefile targets, and framework entry points to synthesize a **zero-drift "Floor Plan" specification** for AI agents.
 
@@ -29,7 +29,7 @@ GitContextGen solves this by parsing repository file trees, `package.json` scrip
 - ⚡ **PLG Live Sandbox**: Zero-setup instant public GitHub repository analysis without requiring an account.
 - 🎯 **Universal Specification Exporter**: Export native specification files in one click:
   - `AGENTS.md` (Open Cross-Agent Standard)
-  - `CLAUDE.md` (Claude 3.7 Sonnet & Claude Code CLI)
+  - `CLAUDE.md` (Claude 5 Sonnet & Claude Code CLI)
   - `.cursorrules` (Cursor IDE System Prompt)
   - `.github/copilot-instructions.md` (GitHub Copilot)
   - `replit.md` (Replit Agent Workspace)

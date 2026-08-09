@@ -1,0 +1,49 @@
+name: Keep Supabase Alive & Active
+
+on:
+  schedule:
+    # Runs every 3 days at 00:00 UTC to prevent Supabase 7-day inactivity pause
+    - cron: '0 0 */3 * *'
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: # Allows 1-click manual trigger from GitHub Actions tab
+
+jobs:
+  ping-supabase-database:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Direct Supabase Database Table Query (Resets 7-Day Inactivity Timer)
+        run: |
+          SUPABASE_URL="${{ secrets.SUPABASE_URL }}"
+          if [ -z "$SUPABASE_URL" ]; then
+            SUPABASE_URL="https://tuyatstcjgnragcwushu.supabase.co"
+          fi
+
+          ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+          if [ -z "$ANON_KEY" ]; then
+            ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1eWF0c3RjamducmFnY3d1c2h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMDkwMzQsImV4cCI6MjEwMDg4NTAzNH0.eU6eqCvo0oB30KHHO1b3q_M71qnFRTy07iIz_xiktC0"
+          fi
+
+          echo "Pinging Supabase Database REST API at $SUPABASE_URL..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$SUPABASE_URL/rest/v1/projects?select=id&limit=1" \
+            -H "apikey: $ANON_KEY" \
+            -H "Authorization: Bearer $ANON_KEY")
+          
+          echo "Supabase REST API Status: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 206 ]; then
+            echo "✓ Database query executed successfully! Supabase project activity timer reset."
+          else
+            echo "⚠️ Warning: Database ping returned HTTP $HTTP_STATUS"
+          fi
+
+      - name: 2. Ping Live Application Keep-Alive API Endpoint
+        run: |
+          DOMAIN_URL="${{ secrets.APP_DOMAIN_URL }}"
+          if [ -z "$DOMAIN_URL" ]; then
+            DOMAIN_URL="https://repopulse-ai.singhnaveen360.workers.dev"
+          fi
+
+          echo "Pinging $DOMAIN_URL/api/keepalive..."
+          curl -s "$DOMAIN_URL/api/keepalive" || true
+          echo ""
+          curl -s "https://gitcontextgen.com/api/keepalive" || true

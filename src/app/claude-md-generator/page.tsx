@@ -5,19 +5,19 @@ import Footer from '@/components/Footer';
 import { ShieldCheck, FileCode2, ArrowRight } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'CLAUDE.md Generator | Instant Codebase Context for Claude 3.5 & Claude Code',
+  title: 'CLAUDE.md Generator | Instant Codebase Context for Claude 3.7 & Claude Code',
   description: 'Generate formatted CLAUDE.md files from any GitHub repository so Claude Code & Sonnet write perfect code with zero hallucinations.',
   keywords: [
     'CLAUDE.md generator',
     'Claude code rules',
     'Claude codebase context',
     'github to CLAUDE.md',
-    'Claude 3.5 Sonnet prompt context',
+    'Claude 3.7 Sonnet prompt context',
     'context engineering for Claude',
     'Claude project memory configuration',
   ],
   openGraph: {
-    title: 'CLAUDE.md Generator | Instant Codebase Context for Claude 3.5 & Claude Code',
+    title: 'CLAUDE.md Generator | Instant Codebase Context for Claude 3.7 & Claude Code',
     description: 'Generate formatted CLAUDE.md files from any GitHub repository so Claude Code & Sonnet write perfect code with zero hallucinations.',
     url: 'https://gitcontextgen.com/claude-md-generator',
     siteName: 'GitContextGen',
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'CLAUDE.md Generator | Instant Codebase Context for Claude 3.5 & Claude Code',
+    title: 'CLAUDE.md Generator | Instant Codebase Context for Claude 3.7 & Claude Code',
     description: 'Generate formatted CLAUDE.md files from any GitHub repository instantly.',
     images: ['https://gitcontextgen.com/og-image.png'],
   },
@@ -46,7 +46,7 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'TechArticle',
   headline: 'CLAUDE.md Context Specification Generator for Claude AI & Claude Code',
-  description: 'Automated tool to create repository-level CLAUDE.md context files for Anthropic Claude 3.5 Sonnet and Claude Code agent.',
+  description: 'Automated tool to create repository-level CLAUDE.md context files for Anthropic Claude 3.7 Sonnet and Claude Code agent.',
   url: 'https://gitcontextgen.com/claude-md-generator',
   inLanguage: 'en-US',
   author: {

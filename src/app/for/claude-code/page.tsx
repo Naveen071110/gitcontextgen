@@ -6,16 +6,16 @@ import { ShieldCheck, ArrowRight } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'GitContextGen for Claude Code | Repository Context Engine',
-  description: 'Instantly make any GitHub repository ready for Claude Code & Claude 3.5 Sonnet.',
+  description: 'Instantly make any GitHub repository ready for Claude Code & Claude 3.7 Sonnet.',
   keywords: [
     'GitContextGen for Claude Code',
     'Claude Code repository context',
     'CLAUDE.md setup for Claude Code',
-    'Claude 3.5 Sonnet prompt engineering',
+    'Claude 3.7 Sonnet prompt engineering',
   ],
   openGraph: {
     title: 'GitContextGen for Claude Code | Repository Context Engine',
-    description: 'Instantly make any GitHub repository ready for Claude Code & Claude 3.5 Sonnet.',
+    description: 'Instantly make any GitHub repository ready for Claude Code & Claude 3.7 Sonnet.',
     url: 'https://gitcontextgen.com/for/claude-code',
     siteName: 'GitContextGen',
     type: 'website',

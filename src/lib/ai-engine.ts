@@ -574,7 +574,7 @@ ${manifestContent ? `### Package Manifest Summary\n\`\`\`json\n${manifestContent
 
 ## 5. Multi-Agent AI Prompting Guidelines (${format.toUpperCase()})
 
-- **Target AI Agent**: Claude 5 (Sonnet / Opus 5 / Fable) / Claude Code / Cursor / Copilot / Replit / Windsurf.
+- **Target AI Agent**: Sonnet 5 / Opus 5 / Fable / Claude Code / Cursor / Copilot / Replit / Windsurf.
 - **Context Injection Rule**: Always review this \`${fileName}\` specification before starting any feature implementation or bug fix in \`${repoName}\`.
 - **Context Drift Sync**: Submit changes to this context specification via GitHub Pull Request when new build scripts or major route handlers are added.
 

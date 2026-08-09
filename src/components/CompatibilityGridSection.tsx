@@ -4,7 +4,7 @@ import Link from 'next/link';
 export default function CompatibilityGridSection() {
   const agents = [
     {
-      name: 'Claude 5 (Sonnet, Opus 5 & Fable)',
+      name: 'Claude Code (Sonnet 5, Opus 5 & Fable)',
       format: 'CLAUDE.md',
       description: 'Generates structured specs with overview, commands, and code guidelines.',
       link: '/claude-md-generator',

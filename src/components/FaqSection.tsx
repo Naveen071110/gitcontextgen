@@ -58,7 +58,7 @@ export default function FaqSection() {
     {
       question: 'Which AI coding tools and frameworks are supported?',
       answer:
-        'GitContextGen supports Next.js, React, Node.js, Python, Go, Rust, and more. It exports native specifications for Claude 5 Sonnet & Opus 5 / Claude Code (CLAUDE.md), GitHub Copilot (.github/copilot-instructions.md), Cursor (.cursorrules), Replit (replit.md), Windsurf (windsurf.json), and AGENTS.md.',
+        'GitContextGen supports Next.js, React, Node.js, Python, Go, Rust, and more. It exports native specifications for Sonnet 5 & Opus 5 / Claude Code (CLAUDE.md), GitHub Copilot (.github/copilot-instructions.md), Cursor (.cursorrules), Replit (replit.md), Windsurf (windsurf.json), and AGENTS.md.',
       icon: <Lock className="w-5 h-5 text-amber-400 shrink-0" />,
     },
   ];

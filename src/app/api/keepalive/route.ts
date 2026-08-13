@@ -1,33 +1,41 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 
 export const runtime = 'edge';
 
 export async function GET() {
   const startTime = Date.now();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://tuyatstcjgnragcwushu.supabase.co';
-  const isSupabaseConfigured = Boolean(
-    supabaseUrl && !supabaseUrl.includes('placeholder')
-  );
+  const anonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1eWF0c3RjamducmFnY3d1c2h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMDkwMzQsImV4cCI6MjEwMDg4NTAzNH0.eU6eqCvo0oB30KHHO1b3q_M71qnFRTy07iIz_xiktC0';
 
-  let querySuccess = false;
-  let dbMessage = 'Supabase environment variable not configured or placeholder.';
+  let authSettingsOk = false;
+  let storageBucketsOk = false;
+  let message = 'Ping executed.';
 
-  if (isSupabaseConfigured) {
-    try {
-      const supabase = await createClient();
-      // Execute a lightweight HEAD query to refresh Supabase project activity timer
-      const { error } = await supabase.from('projects').select('id', { count: 'exact', head: true });
-      
-      if (!error) {
-        querySuccess = true;
-        dbMessage = 'Supabase heartbeat query executed successfully. Inactivity timer reset.';
-      } else {
-        dbMessage = `Supabase ping returned notice: ${error.message}`;
-      }
-    } catch (err: any) {
-      dbMessage = `Keep-alive query failed: ${err?.message || 'Unknown error'}`;
+  try {
+    // 1. Query Auth Settings API (HTTP 200)
+    const authRes = await fetch(`${supabaseUrl}/auth/v1/settings`, {
+      headers: { apikey: anonKey },
+    });
+    authSettingsOk = authRes.status === 200;
+
+    // 2. Query Storage Buckets API (HTTP 200)
+    const storageRes = await fetch(`${supabaseUrl}/storage/v1/bucket`, {
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+      },
+    });
+    storageBucketsOk = storageRes.status === 200;
+
+    if (authSettingsOk && storageBucketsOk) {
+      message = 'Supabase Auth & Storage API keep-alive ping successful. Inactivity timer reset.';
+    } else {
+      message = `Keep-alive notice: Auth HTTP ${authRes.status}, Storage HTTP ${storageRes.status}`;
     }
+  } catch (err: any) {
+    message = `Keep-alive error: ${err?.message || 'Unknown error'}`;
   }
 
   const durationMs = Date.now() - startTime;
@@ -39,9 +47,11 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       durationMs,
       supabase: {
-        configured: isSupabaseConfigured,
-        active: querySuccess,
-        message: dbMessage,
+        url: supabaseUrl,
+        active: authSettingsOk && storageBucketsOk,
+        authSettingsOk,
+        storageBucketsOk,
+        message,
       },
     },
     { status: 200 }

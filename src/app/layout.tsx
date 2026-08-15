@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://repopulse-ai.singhnaveen360.workers.dev"),
   title: "GitContextGen | High-Fidelity AI Context Engine for Cursor, Claude & Replit",
   description:
-    "Stop fighting your AI co-pilot. Automatically audit any repository, resolve complex logic, and deliver a zero-hallucination 'Floor Plan' directly to Cursor, Claude, or Replit. Built for Agencies, Solopreneurs, and No-Code Builders.",
+    "Stop fighting your AI co-pilot. Automatically audit any GitHub repository, detect CVE vulnerabilities via OSV.dev, export Kroki architecture diagrams, and generate zero-hallucination context files directly for Sonnet 5, Cursor, Claude Code, and Replit.",
   keywords: [
     "GitContextGen",
     "AI context engine",
@@ -32,6 +32,10 @@ export const metadata: Metadata = {
     "CLAUDE.md generator",
     ".cursorrules generator",
     "copilot instructions generator",
+    "OSV.dev vulnerability audit",
+    "Kroki architecture diagrams",
+    "QuickChart radar scorecard",
+    "SPDX license guardrails",
     "replit AI floor plan",
     "no-code developer AI tools",
     "solopreneur AI workflow",

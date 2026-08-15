@@ -1,21 +1,30 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Copy, Check, Code, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Copy, Check, Code, RefreshCw, AlertTriangle, Download, ExternalLink } from 'lucide-react';
+import { generateKrokiDiagramUrls } from '@/lib/integrations/kroki';
 
 interface MermaidDiagramProps {
   chart: string;
   className?: string;
   onReanalyze?: () => void;
+  krokiUrls?: {
+    svgUrl: string;
+    pngUrl: string;
+    embedMarkdown: string;
+  };
 }
 
-export default function MermaidDiagram({ chart, className = '', onReanalyze }: MermaidDiagramProps) {
+export default function MermaidDiagram({ chart, className = '', onReanalyze, krokiUrls: externalKrokiUrls }: MermaidDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [svgContent, setSvgContent] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedKroki, setCopiedKroki] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
   const [isRendering, setIsRendering] = useState(true);
+
+  const activeKrokiUrls = externalKrokiUrls || (chart ? generateKrokiDiagramUrls(chart) : undefined);
 
   useEffect(() => {
     let isMounted = true;
@@ -74,20 +83,50 @@ export default function MermaidDiagram({ chart, className = '', onReanalyze }: M
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleCopyKrokiEmbed = () => {
+    if (activeKrokiUrls?.embedMarkdown) {
+      navigator.clipboard.writeText(activeKrokiUrls.embedMarkdown);
+      setCopiedKroki(true);
+      setTimeout(() => setCopiedKroki(false), 2000);
+    }
+  };
+
   return (
     <div className={`rounded-2xl border border-white/10 bg-neutral-950 overflow-hidden flex flex-col ${className}`}>
 
-      {/* Control Header Bar - Clean flexbox with horizontal scroll */}
-      <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 bg-black border-b border-white/10">
+      {/* Control Header Bar */}
+      <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 bg-black border-b border-white/10 flex-wrap gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
           <span className="text-xs font-mono text-white font-semibold tracking-wide whitespace-nowrap">
-            MERMAID.JS ARCHITECTURE
+            ARCHITECTURE TOPOLOGY (KROKI + MERMAID)
           </span>
         </div>
 
         {/* Action Button Group */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+          {activeKrokiUrls?.svgUrl && (
+            <a
+              href={activeKrokiUrls.svgUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 shrink-0 px-3 py-1.5 text-xs font-mono rounded-lg border border-cyan-500/30 bg-cyan-950/40 hover:bg-cyan-900/40 text-cyan-300 transition-all whitespace-nowrap"
+            >
+              <Download className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+              Export SVG
+            </a>
+          )}
+
+          {activeKrokiUrls?.embedMarkdown && (
+            <button
+              onClick={handleCopyKrokiEmbed}
+              className="inline-flex items-center gap-1.5 shrink-0 px-3 py-1.5 text-xs font-mono rounded-lg border border-white/10 bg-neutral-900 hover:bg-neutral-800 text-white/80 transition-all whitespace-nowrap"
+            >
+              {copiedKroki ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <ExternalLink className="w-3.5 h-3.5 text-indigo-400 shrink-0" />}
+              {copiedKroki ? 'Copied Embed!' : 'Copy Embed Link'}
+            </button>
+          )}
+
           {onReanalyze && (
             <button
               onClick={onReanalyze}

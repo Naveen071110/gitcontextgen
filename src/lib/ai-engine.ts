@@ -32,7 +32,9 @@ export interface MasterCoordinatorOutput {
 export function calculateReadinessScore(
   fileTreeSummary: string,
   manifestContent?: string,
-  readmeContent?: string
+  readmeContent?: string,
+  vulnerabilityCount: number = 0,
+  licenseSpdx?: string | null
 ): ReadinessScoreResult {
   const tree = fileTreeSummary.toLowerCase();
   const manifest = (manifestContent || '').toLowerCase();
@@ -76,14 +78,18 @@ export function calculateReadinessScore(
     archEvidence = 'src/app; src/components; src/lib';
   }
 
-  let safetyScore = 85;
+  let safetyScore = 90;
   let safetyDetail = 'Default ignore boundaries active.';
   let safetyEvidence = '.gitignore';
 
-  if (tree.includes('.gitignore') || tree.includes('.env.example')) {
+  if (vulnerabilityCount > 0) {
+    safetyScore = Math.max(65, 95 - vulnerabilityCount * 5);
+    safetyDetail = `${vulnerabilityCount} package vulnerability warning(s) flagged via OSV.dev.`;
+    safetyEvidence = 'OSV.dev CVE Database';
+  } else if (tree.includes('.gitignore') || tree.includes('.env.example')) {
     safetyScore = 98;
-    safetyDetail = 'Secret filtering & environment boundaries protected.';
-    safetyEvidence = '.gitignore; .env.example';
+    safetyDetail = '0 CVEs detected (OSV.dev Clean); secret filtering & environment boundaries protected.';
+    safetyEvidence = '.gitignore; .env.example; OSV.dev';
   }
 
   let multiAgentScore = 95;
@@ -323,19 +329,30 @@ CRITICAL RULES:
 
 export async function generateReleaseNotes(
   repoName: string,
-  commits: Array<{ message: string; author?: string; sha?: string }>,
-  tone: ReleaseTone = 'technical'
+  versionOrCommits: string | Array<{ message: string; author?: string; sha?: string }>,
+  summaryOrTone: string | ReleaseTone = 'Routine updates',
+  explicitTone?: ReleaseTone
 ): Promise<string> {
-  const commitsText = commits
-    .slice(0, 15)
-    .map(c => `- ${c.message} (by ${c.author || 'Contributor'})`)
-    .join('\n');
+  const tone: ReleaseTone = explicitTone || (summaryOrTone === 'marketing' || summaryOrTone === 'technical' ? summaryOrTone : 'technical');
+  const summaryText = typeof summaryOrTone === 'string' && summaryOrTone !== 'marketing' && summaryOrTone !== 'technical'
+    ? summaryOrTone
+    : '';
 
-  const systemPrompt = `You are a release notes generator using DeepSeek API. The user has selected the ${tone.toUpperCase()} tone. Translate the following git commits accordingly into engaging, developer-friendly markdown release notes.`;
+  let commitsText = '';
+  if (Array.isArray(versionOrCommits)) {
+    commitsText = versionOrCommits
+      .slice(0, 15)
+      .map(c => `- ${c.message} (by ${c.author || 'Contributor'})`)
+      .join('\n');
+  } else {
+    commitsText = summaryText || `Release version ${versionOrCommits}: Ongoing feature additions, performance optimizations, and dependency upgrades.`;
+  }
+
+  const systemPrompt = `You are a release notes generator using DeepSeek API. The user has selected the ${tone.toUpperCase()} tone. Translate the following git updates into engaging, developer-friendly markdown release notes.`;
 
   const userPrompt = `Repository Name: "${repoName}"
 
-Commits:
+Updates:
 ${commitsText}
 
 Format output into markdown sections:
@@ -367,14 +384,12 @@ Format output into markdown sections:
   return `## 🚀 Release Highlights for ${repoName} (${tone.toUpperCase()} Tone)
 
 ### 🌟 New Features & Enhancements
-${commits.map(c => `- **${c.message}**: Enhanced code readability and execution speed.`).slice(0, 3).join('\n')}
+- Enhanced performance and execution speed across core components.
+- Automated context synchronization and architecture mapping.
 
 ### 🛠️ Maintenance & Refactoring
-- Updated dependencies to modern 2026 standards.
-- Improved error handling and loading skeletons in core UI views.
-
-### 👥 Contributors
-${Array.from(new Set(commits.map(c => c.author || 'Developer'))).map(a => `- @${a}`).join('\n')}`;
+- Updated dependencies to modern standards.
+- Improved error handling and loading skeletons in core UI views.`;
 }
 
 /**

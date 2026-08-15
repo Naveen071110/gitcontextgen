@@ -1,4 +1,4 @@
-import { ShieldCheck, Lock, EyeOff, FileText, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Lock, EyeOff, FileText, CheckCircle2, AlertTriangle, Scale } from 'lucide-react';
 
 export default function SecurityTrustSection() {
   const securityPillars = [
@@ -14,11 +14,21 @@ export default function SecurityTrustSection() {
     },
     {
       icon: <ShieldCheck className="w-5 h-5 text-indigo-400" />,
-      title: 'Secret & .env Filtering',
-      description: 'Automatic scanning strips API keys, credentials, .env files, and protected paths before generating context instructions.',
+      title: 'Secret & .env Sanitization',
+      description: 'Automatic regex scanning strips API keys, credentials, .env tokens, and protected paths before generating context instructions.',
     },
     {
-      icon: <FileText className="w-5 h-5 text-amber-400" />,
+      icon: <AlertTriangle className="w-5 h-5 text-amber-400" />,
+      title: 'Google OSV.dev CVE Boundary Audits',
+      description: 'Every parsed package is audited in real-time against Google’s open vulnerability database (OSV.dev) to establish hard safety boundaries.',
+    },
+    {
+      icon: <Scale className="w-5 h-5 text-purple-400" />,
+      title: 'SPDX License Compliance Guardrails',
+      description: 'Automatically detects open-source licenses (MIT, Apache-2.0, GPL-3.0, AGPL) and enforces strict copyright & distribution guardrails.',
+    },
+    {
+      icon: <FileText className="w-5 h-5 text-teal-400" />,
       title: 'Git-Native Review & Control',
       description: 'GitContextGen is read-only by default. Proposed context updates are submitted via Pull Requests for your team to review.',
     },
@@ -40,25 +50,25 @@ export default function SecurityTrustSection() {
             <span className="font-serif italic font-normal text-white/80">Private & Secure.</span>
           </h2>
           <p className="text-white/60 text-base sm:text-lg leading-relaxed text-center">
-            Built from the ground up for strict privacy, read-only repository analysis, and zero lock-in.
+            Built from the ground up for strict privacy, read-only repository analysis, Google OSV.dev vulnerability detection, and zero lock-in.
           </p>
         </div>
 
         {/* Security Cards Grid */}
-        <div className="w-full max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+        <div className="w-full max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
           {securityPillars.map((item, idx) => (
             <div
               key={idx}
-              className="p-8 rounded-2xl bg-white/[0.02] space-y-4 shadow-2xl relative overflow-hidden group hover:bg-white/[0.04] transition-all duration-300"
+              className="p-7 rounded-2xl bg-white/[0.02] space-y-4 shadow-2xl relative overflow-hidden group hover:bg-white/[0.04] transition-all duration-300 border border-white/5 hover:border-white/15"
             >
               <div className="flex items-center gap-3">
                 <div className="p-3 rounded-xl bg-white/5 border border-white/10">
                   {item.icon}
                 </div>
-                <h3 className="text-lg font-bold text-white font-mono">{item.title}</h3>
+                <h3 className="text-base font-bold text-white font-mono">{item.title}</h3>
               </div>
 
-              <p className="text-xs sm:text-sm text-white/70 font-sans leading-relaxed">
+              <p className="text-xs text-white/70 font-sans leading-relaxed">
                 {item.description}
               </p>
 

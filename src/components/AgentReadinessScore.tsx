@@ -1,20 +1,38 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, CheckCircle2, FileCode2, Terminal, Layers, ExternalLink, Sparkles } from 'lucide-react';
+import {
+  ShieldCheck,
+  CheckCircle2,
+  FileCode2,
+  Terminal,
+  Layers,
+  ExternalLink,
+  Radar,
+  Lock,
+  Scale,
+  Download,
+  AlertTriangle,
+} from 'lucide-react';
 import { ReadinessScoreResult } from '@/lib/ai-engine';
 
 interface Props {
   score: ReadinessScoreResult;
   repoName: string;
+  radarChartUrl?: string;
+  licenseSpdx?: string;
+  vulnerabilityCount?: number;
 }
 
-export default function AgentReadinessScore({ score, repoName }: Props) {
-  const getScoreColor = (val: number) => {
-    if (val >= 90) return 'text-emerald-400 border-emerald-500/40 bg-emerald-950/40';
-    if (val >= 75) return 'text-cyan-400 border-cyan-500/40 bg-cyan-950/40';
-    return 'text-amber-400 border-amber-500/40 bg-amber-950/40';
-  };
+export default function AgentReadinessScore({
+  score,
+  repoName,
+  radarChartUrl,
+  licenseSpdx,
+  vulnerabilityCount = 0,
+}: Props) {
+  const [showRadar, setShowRadar] = useState(false);
 
   const getBarColor = (val: number) => {
     if (val >= 90) return 'from-emerald-500 to-teal-400 shadow-emerald-500/20';
@@ -56,7 +74,7 @@ export default function AgentReadinessScore({ score, repoName }: Props) {
     {
       title: 'Boundary & Secret Safety',
       icon: ShieldCheck,
-      iconColor: 'text-amber-400',
+      iconColor: vulnerabilityCount > 0 ? 'text-amber-400' : 'text-emerald-400',
       score: score.boundarySafety.score,
       detail: score.boundarySafety.detail,
       evidence: score.boundarySafety.evidence,
@@ -93,6 +111,30 @@ export default function AgentReadinessScore({ score, repoName }: Props) {
               <span className={`text-[10px] font-mono font-extrabold px-2.5 py-0.5 rounded-full border ${overallBadge.color}`}>
                 {overallBadge.label}
               </span>
+
+              {/* License Badge */}
+              {licenseSpdx && (
+                <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full border border-indigo-500/30 bg-indigo-950/40 text-indigo-300 flex items-center gap-1">
+                  <Scale className="w-3 h-3" /> {licenseSpdx}
+                </span>
+              )}
+
+              {/* OSV Vulnerability Badge */}
+              <span className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded-full border flex items-center gap-1 ${
+                vulnerabilityCount > 0
+                  ? 'border-amber-500/40 bg-amber-950/40 text-amber-300'
+                  : 'border-emerald-500/30 bg-emerald-950/40 text-emerald-300'
+              }`}>
+                {vulnerabilityCount > 0 ? (
+                  <>
+                    <AlertTriangle className="w-3 h-3 text-amber-400" /> {vulnerabilityCount} Vulnerabilities Flagged
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3 h-3 text-emerald-400" /> 0 CVEs (OSV.dev Clean)
+                  </>
+                )}
+              </span>
             </div>
             <p className="text-xs text-white/60 font-mono mt-1">
               Evidence-Backed Audit Spec: <span className="text-white font-bold">{repoName}</span>
@@ -100,8 +142,18 @@ export default function AgentReadinessScore({ score, repoName }: Props) {
           </div>
         </div>
 
-        {/* Overall Circular Score Ring */}
-        <div className="flex items-center gap-4 shrink-0">
+        {/* Controls & Overall Circular Score Ring */}
+        <div className="flex items-center gap-4 shrink-0 flex-wrap sm:flex-nowrap">
+          {radarChartUrl && (
+            <button
+              onClick={() => setShowRadar(!showRadar)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/15 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-mono transition shadow-sm"
+            >
+              <Radar className="w-3.5 h-3.5 text-cyan-400" />
+              {showRadar ? 'Hide Radar' : 'Radar Scorecard'}
+            </button>
+          )}
+
           <div className="relative w-16 h-16 flex items-center justify-center">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
               <path
@@ -127,13 +179,41 @@ export default function AgentReadinessScore({ score, repoName }: Props) {
               {score.overallScore}%
             </span>
           </div>
-
-          <div className="hidden sm:flex flex-col font-mono text-left">
-            <span className="text-xs font-bold text-white">Overall Fitness</span>
-            <span className="text-[11px] text-white/50">Verified AI Readiness</span>
-          </div>
         </div>
       </div>
+
+      {/* QuickChart Radar Scorecard Drawer */}
+      {showRadar && radarChartUrl && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          className="p-5 rounded-2xl bg-black border border-cyan-500/30 flex flex-col items-center justify-center text-center space-y-4 shadow-xl"
+        >
+          <div className="flex items-center justify-between w-full px-2">
+            <span className="text-xs font-mono font-bold text-cyan-400 flex items-center gap-1.5">
+              <Radar className="w-4 h-4" /> QuickChart 5-Dimension Radar Scorecard
+            </span>
+            <a
+              href={radarChartUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-[11px] font-mono text-white/70 hover:text-white flex items-center gap-1"
+            >
+              <Download className="w-3 h-3" /> Download Full-Res Image
+            </a>
+          </div>
+
+          <div className="w-full max-w-md bg-neutral-950 p-3 rounded-xl border border-white/10">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={radarChartUrl}
+              alt={`${repoName} Agent Readiness Radar Chart`}
+              className="w-full h-auto rounded-lg mx-auto"
+            />
+          </div>
+        </motion.div>
+      )}
 
       {/* Breakdown Grid with Animated Meters */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 relative z-10">
@@ -153,7 +233,7 @@ export default function AgentReadinessScore({ score, repoName }: Props) {
                 <span className="text-white font-extrabold text-sm">{m.score}%</span>
               </div>
 
-              {/* Progress Bar Meter (Task 2) */}
+              {/* Progress Bar Meter */}
               <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden relative">
                 <motion.div
                   initial={{ width: 0 }}

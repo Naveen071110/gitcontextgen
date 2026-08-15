@@ -1,10 +1,15 @@
 'use server';
 
 import { parseGitHubUrl, fetchGitHubRepoDetails } from './github';
-import { generateClaudeContext, generateMermaidArchitecture, generateReleaseNotes } from './ai-engine';
+import { generateClaudeContext, generateMermaidArchitecture, generateReleaseNotes, calculateReadinessScore } from './ai-engine';
 import { RepositoryAnalysisResult } from './types';
 import { MockStore } from './mockStore';
 import { sendBroadcastEmail } from './resend';
+import { auditPackageVulnerabilities } from './integrations/osv';
+import { generateKrokiDiagramUrls } from './integrations/kroki';
+import { auditEcosystemFrameworks } from './integrations/registries';
+import { generateReadinessRadarChartUrl } from './integrations/quickchart';
+import { getLicenseGuardrail } from './integrations/licenses';
 
 // Global in-memory cache for analyzed repositories (24-hour TTL with max size limit)
 const analysisCache = new Map<string, { data: RepositoryAnalysisResult; timestamp: number }>();
@@ -19,7 +24,10 @@ function setInCache(key: string, value: { data: RepositoryAnalysisResult; timest
   analysisCache.set(key, value);
 }
 
-export async function analyzeRepositoryAction(repoUrl: string, userToken?: string): Promise<{ success: boolean; data?: RepositoryAnalysisResult; cached?: boolean; error?: string }> {
+export async function analyzeRepositoryAction(
+  repoUrl: string,
+  userToken?: string
+): Promise<{ success: boolean; data?: RepositoryAnalysisResult; cached?: boolean; error?: string }> {
   try {
     if (!repoUrl || typeof repoUrl !== 'string') {
       return { success: false, error: 'Please enter a valid GitHub repository URL.' };
@@ -38,11 +46,11 @@ export async function analyzeRepositoryAction(repoUrl: string, userToken?: strin
       return { success: true, data: existingCache.data, cached: true };
     }
 
-    // 1. Fetch Repository File Tree & Details
+    // 1. Fetch Repository File Tree, SPDX License & Manifest Details
     const repoInfo = await fetchGitHubRepoDetails(parsed.owner, parsed.repo, userToken);
 
-    // 2. Concurrently run DeepSeek API for Context & Architecture Diagram
-    const [contextMarkdown, mermaidArchitecture] = await Promise.all([
+    // 2. Concurrently execute AI Context Synthesis, Mermaid Architecture, and OSV Vulnerability Audit
+    const [contextMarkdown, mermaidArchitecture, vulnSummary, frameworkInsights] = await Promise.all([
       generateClaudeContext(
         `${repoInfo.owner}/${repoInfo.repo}`,
         repoInfo.fileTreeSummary,
@@ -55,8 +63,36 @@ export async function analyzeRepositoryAction(repoUrl: string, userToken?: strin
         repoInfo.readmeContent,
         repoInfo.manifestContent
       ),
+      auditPackageVulnerabilities(repoInfo.parsedDependencies, repoInfo.ecosystem),
+      auditEcosystemFrameworks(repoInfo.parsedDependencies, repoInfo.ecosystem),
     ]);
 
+    // 3. Compute Kroki serverless diagram links
+    const krokiUrls = generateKrokiDiagramUrls(mermaidArchitecture, repoInfo.repo);
+
+    // 4. Calculate evidence-backed readiness scores incorporating OSV & SPDX data
+    const readinessResult = calculateReadinessScore(
+      repoInfo.fileTreeSummary,
+      repoInfo.manifestContent,
+      repoInfo.readmeContent,
+      vulnSummary.totalVulnerabilities,
+      repoInfo.licenseSpdx
+    );
+
+    // 5. Generate QuickChart Radar Chart visual scorecard
+    const radarChartUrl = generateReadinessRadarChartUrl(
+      {
+        overallScore: readinessResult.overallScore,
+        setupScore: readinessResult.setupClarity.score,
+        testScore: readinessResult.testClarity.score,
+        archScore: readinessResult.architectureClarity.score,
+        safetyScore: readinessResult.boundarySafety.score,
+        multiAgentScore: readinessResult.multiAgentCoverage.score,
+      },
+      repoInfo.repo
+    );
+
+    // 6. Assemble complete repository analysis payload
     const result: RepositoryAnalysisResult = {
       repoUrl: `https://github.com/${repoInfo.owner}/${repoInfo.repo}`,
       owner: repoInfo.owner,
@@ -67,9 +103,14 @@ export async function analyzeRepositoryAction(repoUrl: string, userToken?: strin
       contextMarkdown,
       mermaidArchitecture,
       analyzedAt: new Date().toISOString(),
+      licenseSpdx: repoInfo.licenseSpdx || undefined,
+      radarChartUrl,
+      krokiDiagramUrls: krokiUrls,
+      vulnerabilityCount: vulnSummary.totalVulnerabilities,
+      criticalVulnerabilityCount: vulnSummary.criticalCount,
     };
 
-    // Store in global cache with eviction handling
+    // Store in global cache
     setInCache(cacheKey, { data: result, timestamp: Date.now() });
 
     return { success: true, data: result, cached: false };
@@ -101,98 +142,100 @@ export async function saveProjectAction(payload: {
         repo_url: payload.repoUrl,
         slug,
         branding_color: payload.brandingColor || '#6366f1',
+        audience_tone: 'technical',
       },
       payload.contextMarkdown,
       payload.mermaidArchitecture
     );
 
-    return {
-      success: true,
-      projectId: project.id,
-      slug: project.slug,
-    };
+    return { success: true, projectId: project.id, slug: project.slug };
   } catch (err: any) {
     console.error('Error saving project:', err);
     return { success: false, error: err?.message || 'Failed to save project.' };
   }
 }
 
-export async function subscribeEmailAction(
+export async function deleteProjectAction(projectId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    MockStore.deleteProject(projectId);
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error deleting project:', err);
+    return { success: false, error: err?.message || 'Failed to delete project.' };
+  }
+}
+
+export async function publishReleaseAction(payload: {
+  projectId: string;
+  versionTag: string;
+  commitSummary?: string;
+  diffSummary?: string;
+  audienceTone?: 'technical' | 'marketing';
+}): Promise<{ success: boolean; releaseId?: string; error?: string }> {
+  try {
+    const project = MockStore.getProjectById(payload.projectId);
+    if (!project) {
+      return { success: false, error: 'Project not found.' };
+    }
+
+    const generatedNotes = await generateReleaseNotes(
+      project.repo_url,
+      payload.versionTag,
+      payload.diffSummary || payload.commitSummary || 'Routine features, bug fixes, and performance updates.',
+      payload.audienceTone || project.audience_tone || 'technical'
+    );
+
+    const release = MockStore.addRelease(
+      payload.projectId,
+      payload.versionTag,
+      payload.commitSummary || 'Routine updates',
+      generatedNotes
+    );
+
+    // Notify all project subscribers asynchronously
+    const subscribers = MockStore.getSubscribers(payload.projectId);
+    if (subscribers.length > 0) {
+      const parsed = parseGitHubUrl(project.repo_url);
+      const repoName = parsed ? `${parsed.owner}/${parsed.repo}` : 'Repository';
+
+      for (const sub of subscribers) {
+        sendBroadcastEmail({
+          to: [sub.email],
+          subject: `🚀 [${repoName}] Release ${payload.versionTag} Published`,
+          html: `<div style="font-family: sans-serif; background: #0a0a0a; color: #fff; padding: 24px; border-radius: 12px;">
+            <h2 style="color: #06b6d4;">${repoName} ${payload.versionTag}</h2>
+            <div style="background: #171717; padding: 16px; border-radius: 8px; font-family: monospace; white-space: pre-wrap;">
+              ${generatedNotes}
+            </div>
+            <p style="margin-top: 16px;"><a href="https://repopulse-ai.singhnaveen360.workers.dev/p/${project.slug}" style="color: #6366f1;">View Showcase Changelog →</a></p>
+          </div>`,
+        }).catch(e => console.error(`Failed to send email to ${sub.email}:`, e));
+      }
+    }
+
+    return { success: true, releaseId: release.id };
+  } catch (err: any) {
+    console.error('Error publishing release:', err);
+    return { success: false, error: err?.message || 'Failed to publish release notes.' };
+  }
+}
+
+export async function addSubscriberAction(
   projectId: string,
   email: string
-): Promise<{ success: boolean; message?: string; error?: string }> {
+): Promise<{ success: boolean; error?: string }> {
   try {
     if (!email || !email.includes('@')) {
       return { success: false, error: 'Please enter a valid email address.' };
     }
 
     MockStore.addSubscriber(projectId, email);
-    return { success: true, message: 'Successfully subscribed to release notifications!' };
+    return { success: true };
   } catch (err: any) {
+    console.error('Error adding subscriber:', err);
     return { success: false, error: err?.message || 'Failed to subscribe.' };
   }
 }
 
-export async function triggerManualReleaseAction(
-  projectId: string,
-  versionTag: string,
-  commitSummary: string
-): Promise<{ success: boolean; releaseId?: string; emailsSent?: number; error?: string }> {
-  try {
-    const project = MockStore.getProjectById(projectId);
-    if (!project) {
-      return { success: false, error: 'Project not found.' };
-    }
-
-    const commits = [
-      { message: commitSummary || 'Performance improvements and bug fixes', author: 'RepoPulse Bot' }
-    ];
-
-    // Generate release notes via DeepSeek API
-    const repoName = project.repo_url.replace('https://github.com/', '');
-    const generatedNotes = await generateReleaseNotes(repoName, commits);
-
-    // Save to Release history
-    const release = MockStore.addRelease(projectId, versionTag, commitSummary, generatedNotes);
-
-    // Fetch subscribers & send broadcast email via Resend
-    const subscribers = MockStore.getSubscribers(projectId);
-    const emails = subscribers.map(s => s.email);
-
-    if (emails.length > 0) {
-      await sendBroadcastEmail({
-        to: emails,
-        subject: `[${repoName}] Release ${versionTag} is live!`,
-        html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #0f172a; color: #f8fafc; padding: 24px; border-radius: 12px;">
-            <h1 style="color: #6366f1; margin-top: 0;">🚀 Release Update: ${versionTag}</h1>
-            <p style="color: #94a3b8;">Repository: <strong>${repoName}</strong></p>
-            <hr style="border-color: #334155;" />
-            <div style="line-height: 1.6; font-size: 15px;">
-              ${generatedNotes.replace(/\n/g, '<br/>')}
-            </div>
-            <hr style="border-color: #334155; margin-top: 24px;" />
-            <p style="font-size: 12px; color: #64748b;">You are receiving this email because you subscribed to updates for ${repoName}.</p>
-          </div>
-        `,
-      });
-    }
-
-    return {
-      success: true,
-      releaseId: release.id,
-      emailsSent: emails.length,
-    };
-  } catch (err: any) {
-    return { success: false, error: err?.message || 'Failed to trigger release.' };
-  }
-}
-
-export async function deleteProjectAction(id: string): Promise<{ success: boolean; error?: string }> {
-  try {
-    MockStore.deleteProject(id);
-    return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err?.message || 'Failed to delete project.' };
-  }
-}
+// Alias for public changelog page
+export const subscribeEmailAction = addSubscriberAction;

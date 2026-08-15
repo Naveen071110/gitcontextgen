@@ -52,6 +52,15 @@ export interface RepositoryAnalysisResult {
   contextMarkdown: string;
   mermaidArchitecture: string;
   analyzedAt: string;
+  licenseSpdx?: string;
+  radarChartUrl?: string;
+  krokiDiagramUrls?: {
+    svgUrl: string;
+    pngUrl: string;
+    embedMarkdown: string;
+  };
+  vulnerabilityCount?: number;
+  criticalVulnerabilityCount?: number;
 }
 
 export interface SandboxState {

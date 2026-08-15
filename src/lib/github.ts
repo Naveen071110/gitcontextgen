@@ -51,7 +51,27 @@ export function sanitizeSecrets(text: string): string {
     .replace(/(?:api_key|secret_key|auth_token|access_token|password)\s*[:=]\s*["'][^"']+["']/gi, '$1: "[REDACTED_SECRET]"');
 }
 
-export async function fetchGitHubRepoDetails(owner: string, repo: string, userToken?: string) {
+export interface FetchRepoDetailsResult {
+  owner: string;
+  repo: string;
+  defaultBranch: string;
+  description: string;
+  language: string;
+  stars: number;
+  fileTreeSummary: string;
+  readmeContent: string;
+  manifestContent: string;
+  totalFiles: number;
+  licenseSpdx: string | null;
+  parsedDependencies: Record<string, string>;
+  ecosystem: 'npm' | 'PyPI' | 'crates.io' | 'Go';
+}
+
+export async function fetchGitHubRepoDetails(
+  owner: string,
+  repo: string,
+  userToken?: string
+): Promise<FetchRepoDetailsResult> {
   const headers: Record<string, string> = {
     'User-Agent': 'RepoPulse-AI-App',
     'Accept': 'application/vnd.github.v3+json',
@@ -80,6 +100,9 @@ export async function fetchGitHubRepoDetails(owner: string, repo: string, userTo
 
   const repoData = await repoRes.json();
   const defaultBranch = repoData.default_branch || 'main';
+  const licenseSpdx: string | null = repoData.license?.spdx_id && repoData.license?.spdx_id !== 'NOASSERTION'
+    ? repoData.license.spdx_id
+    : null;
 
   // 2. Fetch Recursive Git Tree
   const treeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${defaultBranch}?recursive=1`;
@@ -126,8 +149,11 @@ export async function fetchGitHubRepoDetails(owner: string, repo: string, userTo
     // README fetch optional
   }
 
-  // 4. Fetch package.json or dependency config if present
+  // 4. Fetch manifest (package.json, requirements.txt, Cargo.toml)
   let manifestContent = '';
+  let parsedDependencies: Record<string, string> = {};
+  let ecosystem: 'npm' | 'PyPI' | 'crates.io' | 'Go' = 'npm';
+
   try {
     const pkgRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/package.json`, {
       headers: { ...headers, 'Accept': 'application/vnd.github.v3.raw' },
@@ -135,12 +161,22 @@ export async function fetchGitHubRepoDetails(owner: string, repo: string, userTo
     });
     if (pkgRes.ok) {
       manifestContent = await pkgRes.text();
+      try {
+        const pkgJson = JSON.parse(manifestContent);
+        parsedDependencies = {
+          ...(pkgJson.dependencies || {}),
+          ...(pkgJson.devDependencies || {}),
+        };
+        ecosystem = 'npm';
+      } catch (jsonErr) {
+        // Ignore JSON parse error
+      }
     }
   } catch (e) {
-    // Package.json fetch optional
+    // Optional
   }
 
-  // Apply secret sanitization to all fetched contents before returning
+  // Apply secret sanitization
   const sanitizedReadme = sanitizeSecrets(readmeContent);
   const sanitizedManifest = sanitizeSecrets(manifestContent);
 
@@ -154,6 +190,9 @@ export async function fetchGitHubRepoDetails(owner: string, repo: string, userTo
     fileTreeSummary: treeSummaryLines.join('\n'),
     readmeContent: sanitizedReadme.slice(0, 3000),
     manifestContent: sanitizedManifest.slice(0, 2000),
-    totalFiles: filteredTree.length
+    totalFiles: filteredTree.length,
+    licenseSpdx,
+    parsedDependencies,
+    ecosystem,
   };
 }

@@ -541,7 +541,13 @@ export default function HeroSection() {
             {activeTab === 'truth' && (
               <div className="space-y-8">
                 {readinessScore && (
-                  <AgentReadinessScore score={readinessScore} repoName={`${result.owner}/${result.repo}`} />
+                  <AgentReadinessScore
+                    score={readinessScore}
+                    repoName={`${result.owner}/${result.repo}`}
+                    radarChartUrl={result.radarChartUrl}
+                    licenseSpdx={result.licenseSpdx}
+                    vulnerabilityCount={result.vulnerabilityCount}
+                  />
                 )}
 
                 {/* Task 3: Visual Standout Container for 3-Line Architectural Truth Stream */}
@@ -645,6 +651,7 @@ export default function HeroSection() {
                 <MermaidDiagram
                   chart={result.mermaidArchitecture}
                   onReanalyze={() => handleAnalyze(undefined, result.repoUrl)}
+                  krokiUrls={result.krokiDiagramUrls}
                 />
               </div>
             )}

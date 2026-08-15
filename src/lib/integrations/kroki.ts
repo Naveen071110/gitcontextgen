@@ -15,7 +15,10 @@ export interface KrokiDiagramUrls {
  */
 function encodeDiagram(source: string): string {
   if (typeof window !== 'undefined') {
-    return btoa(unescape(encodeURIComponent(source)));
+    return btoa(unescape(encodeURIComponent(source)))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
   }
   return Buffer.from(source, 'utf-8').toString('base64url');
 }

@@ -88,8 +88,10 @@ export default function HeroSection() {
           setResult(parsedCache.data);
           const score = calculateReadinessScore(
             parsedCache.data.fileTreeSummary,
+            undefined,
             parsedCache.data.readmeContent,
-            parsedCache.data.readmeContent
+            parsedCache.data.vulnerabilityCount ?? 0,
+            parsedCache.data.licenseSpdx
           );
           setReadinessScore(score);
           setFormattedContent(parsedCache.data.contextMarkdown);
@@ -120,8 +122,10 @@ export default function HeroSection() {
         setResult(res.data);
         const score = calculateReadinessScore(
           res.data.fileTreeSummary,
+          undefined,
           res.data.readmeContent,
-          res.data.readmeContent
+          res.data.vulnerabilityCount ?? 0,
+          res.data.licenseSpdx
         );
         setReadinessScore(score);
         setFormattedContent(res.data.contextMarkdown);
@@ -693,10 +697,10 @@ export default function HeroSection() {
 
             {/* Tab 5: Save to Agency Workspace & Auto-Sync */}
             {activeTab === 'sync' && (
-              <div className="p-8 rounded-2xl bg-black border border-white/10 space-y-6 text-left">
-                <div className="flex items-center justify-between">
+              <div className="p-6 sm:p-8 rounded-2xl bg-black border border-white/10 space-y-6 text-left">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-xl bg-cyan-950/80 text-cyan-400 border border-cyan-500/30">
+                    <div className="p-3 rounded-xl bg-cyan-950/80 text-cyan-400 border border-cyan-500/30 shrink-0">
                       <Radio className="w-5 h-5" />
                     </div>
                     <div>
@@ -707,7 +711,7 @@ export default function HeroSection() {
 
                   <button
                     onClick={handleSaveToWorkspace}
-                    className="px-6 py-3 rounded-xl bg-white text-black font-mono text-xs font-bold hover:opacity-90 transition flex items-center gap-2 shadow-lg"
+                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white text-black font-mono text-xs font-bold hover:opacity-90 transition flex items-center justify-center gap-2 shadow-lg shrink-0"
                   >
                     <FolderGit2 className="w-4 h-4" /> Save Workspace
                   </button>

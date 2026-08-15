@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldCheck,
   CheckCircle2,
@@ -147,14 +147,20 @@ export default function AgentReadinessScore({
           {radarChartUrl && (
             <button
               onClick={() => setShowRadar(!showRadar)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/15 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-mono transition shadow-sm"
+              aria-expanded={showRadar}
+              aria-label="Toggle QuickChart 5-Dimension Radar Scorecard"
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono font-bold transition shadow-sm ${
+                showRadar
+                  ? 'bg-cyan-500 text-black border-cyan-400'
+                  : 'bg-white/5 text-white/80 border-white/10 hover:bg-white/10 hover:text-white'
+              }`}
             >
-              <Radar className="w-3.5 h-3.5 text-cyan-400" />
-              {showRadar ? 'Hide Radar' : 'Radar Scorecard'}
+              <Radar className="w-3.5 h-3.5" />
+              <span>{showRadar ? 'Hide Radar' : 'Radar Scorecard'}</span>
             </button>
           )}
 
-          <div className="relative w-16 h-16 flex items-center justify-center">
+          <div className="relative w-16 h-16 flex items-center justify-center shrink-0" role="img" aria-label={`Overall score ${score.overallScore}%`}>
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
               <path
                 className="text-white/10"
@@ -175,45 +181,48 @@ export default function AgentReadinessScore({
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               />
             </svg>
-            <span className="absolute font-mono font-extrabold text-sm sm:text-base text-white">
+            <span className="absolute font-mono font-extrabold text-sm text-white">
               {score.overallScore}%
             </span>
           </div>
         </div>
       </div>
 
-      {/* QuickChart Radar Scorecard Drawer */}
-      {showRadar && radarChartUrl && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          className="p-5 rounded-2xl bg-black border border-cyan-500/30 flex flex-col items-center justify-center text-center space-y-4 shadow-xl"
-        >
-          <div className="flex items-center justify-between w-full px-2">
-            <span className="text-xs font-mono font-bold text-cyan-400 flex items-center gap-1.5">
-              <Radar className="w-4 h-4" /> QuickChart 5-Dimension Radar Scorecard
-            </span>
-            <a
-              href={radarChartUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-[11px] font-mono text-white/70 hover:text-white flex items-center gap-1"
-            >
-              <Download className="w-3 h-3" /> Download Full-Res Image
-            </a>
-          </div>
+      {/* QuickChart Radar Scorecard Drawer with AnimatePresence */}
+      <AnimatePresence>
+        {showRadar && radarChartUrl && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className="p-5 rounded-2xl bg-black border border-cyan-500/30 flex flex-col items-center justify-center text-center space-y-4 shadow-xl overflow-hidden"
+          >
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full px-2 gap-2">
+              <span className="text-xs font-mono font-bold text-cyan-400 flex items-center gap-1.5">
+                <Radar className="w-4 h-4" /> QuickChart 5-Dimension Radar Scorecard
+              </span>
+              <a
+                href={radarChartUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] font-mono text-white/70 hover:text-white flex items-center gap-1 shrink-0"
+              >
+                <Download className="w-3 h-3" /> Download Full-Res Image
+              </a>
+            </div>
 
-          <div className="w-full max-w-md bg-neutral-950 p-3 rounded-xl border border-white/10">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={radarChartUrl}
-              alt={`${repoName} Agent Readiness Radar Chart`}
-              className="w-full h-auto rounded-lg mx-auto"
-            />
-          </div>
-        </motion.div>
-      )}
+            <div className="w-full max-w-md bg-neutral-950 p-3 rounded-xl border border-white/10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={radarChartUrl}
+                alt={`${repoName} Agent Readiness Radar Chart`}
+                className="w-full h-auto rounded-lg mx-auto"
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Breakdown Grid with Animated Meters */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 relative z-10">
@@ -234,7 +243,14 @@ export default function AgentReadinessScore({
               </div>
 
               {/* Progress Bar Meter */}
-              <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden relative">
+              <div
+                className="w-full h-2 rounded-full bg-white/10 overflow-hidden relative"
+                role="progressbar"
+                aria-valuenow={m.score}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={m.title}
+              >
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${m.score}%` }}

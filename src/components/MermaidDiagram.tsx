@@ -33,7 +33,10 @@ export default function MermaidDiagram({ chart, className = '', onReanalyze, kro
       setIsRendering(true);
       setError(null);
 
-      if (!chart || typeof window === 'undefined') return;
+      if (!chart || typeof window === 'undefined') {
+        if (isMounted) setIsRendering(false);
+        return;
+      }
 
       try {
         const mermaid = (await import('mermaid')).default;
@@ -78,16 +81,24 @@ export default function MermaidDiagram({ chart, className = '', onReanalyze, kro
   }, [chart]);
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(chart);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(chart).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }).catch(err => {
+        console.warn('Clipboard write error:', err);
+      });
+    }
   };
 
   const handleCopyKrokiEmbed = () => {
-    if (activeKrokiUrls?.embedMarkdown) {
-      navigator.clipboard.writeText(activeKrokiUrls.embedMarkdown);
-      setCopiedKroki(true);
-      setTimeout(() => setCopiedKroki(false), 2000);
+    if (activeKrokiUrls?.embedMarkdown && typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(activeKrokiUrls.embedMarkdown).then(() => {
+        setCopiedKroki(true);
+        setTimeout(() => setCopiedKroki(false), 2000);
+      }).catch(err => {
+        console.warn('Clipboard write error:', err);
+      });
     }
   };
 
@@ -98,18 +109,19 @@ export default function MermaidDiagram({ chart, className = '', onReanalyze, kro
       <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 bg-black border-b border-white/10 flex-wrap gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-          <span className="text-xs font-mono text-white font-semibold tracking-wide whitespace-nowrap">
+          <span className="text-xs font-mono text-white font-semibold tracking-wide truncate">
             ARCHITECTURE TOPOLOGY (KROKI + MERMAID)
           </span>
         </div>
 
         {/* Action Button Group */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar max-w-full">
           {activeKrokiUrls?.svgUrl && (
             <a
               href={activeKrokiUrls.svgUrl}
               target="_blank"
               rel="noreferrer"
+              aria-label="Export Mermaid diagram as SVG via Kroki"
               className="inline-flex items-center gap-1.5 shrink-0 px-3 py-1.5 text-xs font-mono rounded-lg border border-cyan-500/30 bg-cyan-950/40 hover:bg-cyan-900/40 text-cyan-300 transition-all whitespace-nowrap"
             >
               <Download className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
@@ -120,6 +132,7 @@ export default function MermaidDiagram({ chart, className = '', onReanalyze, kro
           {activeKrokiUrls?.embedMarkdown && (
             <button
               onClick={handleCopyKrokiEmbed}
+              aria-label="Copy Kroki markdown embed snippet"
               className="inline-flex items-center gap-1.5 shrink-0 px-3 py-1.5 text-xs font-mono rounded-lg border border-white/10 bg-neutral-900 hover:bg-neutral-800 text-white/80 transition-all whitespace-nowrap"
             >
               {copiedKroki ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <ExternalLink className="w-3.5 h-3.5 text-indigo-400 shrink-0" />}
@@ -130,6 +143,7 @@ export default function MermaidDiagram({ chart, className = '', onReanalyze, kro
           {onReanalyze && (
             <button
               onClick={onReanalyze}
+              aria-label="Re-analyze repository architecture"
               className="inline-flex items-center gap-1.5 shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg border border-white/10 bg-neutral-900 hover:bg-neutral-800 text-white/80 transition-all whitespace-nowrap"
             >
               <RefreshCw className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
@@ -139,6 +153,8 @@ export default function MermaidDiagram({ chart, className = '', onReanalyze, kro
 
           <button
             onClick={() => setShowRaw(!showRaw)}
+            aria-pressed={showRaw}
+            aria-label={showRaw ? 'Switch to visual view' : 'Switch to raw syntax'}
             className="inline-flex items-center gap-1.5 shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg border border-white/10 bg-neutral-900 hover:bg-neutral-800 text-white/80 transition-all whitespace-nowrap"
           >
             <Code className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
@@ -147,6 +163,7 @@ export default function MermaidDiagram({ chart, className = '', onReanalyze, kro
 
           <button
             onClick={handleCopyCode}
+            aria-label="Copy Mermaid diagram code"
             className="inline-flex items-center gap-1.5 shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-white text-black hover:opacity-90 transition-all whitespace-nowrap shadow-sm"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}

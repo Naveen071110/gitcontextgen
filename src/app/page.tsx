@@ -2,6 +2,7 @@ import HeroSection from '@/components/HeroSection';
 import ProblemAgitationSection from '@/components/ProblemAgitationSection';
 import NonCoderAnalogySection from '@/components/NonCoderAnalogySection';
 import ComparisonTableSection from '@/components/ComparisonTableSection';
+import McpParadigmSection from '@/components/McpParadigmSection';
 import KnowledgeModelSection from '@/components/KnowledgeModelSection';
 import WorkflowSimulationSection from '@/components/WorkflowSimulationSection';
 import OutputPreviewSection from '@/components/OutputPreviewSection';
@@ -10,6 +11,7 @@ import FeatureGrid from '@/components/FeatureGrid';
 import WhoItsForSection from '@/components/WhoItsForSection';
 import ContextDriftSection from '@/components/ContextDriftSection';
 import CompatibilityGridSection from '@/components/CompatibilityGridSection';
+import McpEcosystemBridgeSection from '@/components/McpEcosystemBridgeSection';
 import QuickSetupSection from '@/components/QuickSetupSection';
 import SecurityTrustSection from '@/components/SecurityTrustSection';
 import PricingSection from '@/components/PricingSection';
@@ -31,43 +33,49 @@ export default function LandingPage() {
       {/* 4. How It Compares (Feature comparison vs manual, ChatGPT, generic tools) */}
       <ComparisonTableSection />
 
-      {/* 5. Knowledge Model Breakdown (Deep Repository Intelligence) */}
+      {/* 5. MCP Paradigm Shift Section (Dynamic Pull vs Static Context Bloat) */}
+      <McpParadigmSection />
+
+      {/* 6. Knowledge Model Breakdown (Deep Repository Intelligence) */}
       <KnowledgeModelSection />
 
-      {/* 6. Workflow Simulation (Client Component: Preset Simulator) */}
+      {/* 7. Workflow Simulation (Client Component: Preset Simulator) */}
       <WorkflowSimulationSection />
 
-      {/* 7. Output Preview (Interactive sample output viewer for CLAUDE.md, .cursorrules, replit.md) */}
+      {/* 8. Output Preview (Interactive sample output viewer for CLAUDE.md, .cursorrules, replit.md) */}
       <OutputPreviewSection />
 
-      {/* 8. Plain-English Output Visualizer (Interactive callout breakdown for non-coders) */}
+      {/* 9. Plain-English Output Visualizer (Interactive callout breakdown for non-coders) */}
       <NonCoderOutputVisualizer />
 
-      {/* 9. Core Features / How It Works */}
+      {/* 10. Core Features / How It Works */}
       <FeatureGrid />
 
-      {/* 8. Who It's For (Persona cards: Agencies, Solo Devs, Non-Coders) */}
+      {/* 11. Who It's For (Persona cards: Agencies, Solo Devs, Non-Coders) */}
       <WhoItsForSection />
 
-      {/* 9. Context Drift & Synchronization */}
+      {/* 12. Context Drift & Synchronization */}
       <ContextDriftSection />
 
-      {/* 10. Multi-Agent Compatibility Grid */}
+      {/* 13. Multi-Agent Compatibility Grid */}
       <CompatibilityGridSection />
 
-      {/* 11. Quick Setup Section */}
+      {/* 14. Universal MCP Ecosystem Bridge (Cross-IDE & Agent Integration) */}
+      <McpEcosystemBridgeSection />
+
+      {/* 15. Quick Setup Section */}
       <QuickSetupSection />
 
-      {/* 12. Security, Privacy & Data Governance */}
+      {/* 16. Security, Privacy & Data Governance */}
       <SecurityTrustSection />
 
-      {/* 13. Pricing Section */}
+      {/* 17. Pricing Section */}
       <PricingSection />
 
-      {/* 14. FAQ Section */}
+      {/* 18. FAQ Section */}
       <FaqSection />
 
-      {/* 15. Pure Black Centered Footer */}
+      {/* 19. Pure Black Centered Footer */}
       <Footer />
     </main>
   );

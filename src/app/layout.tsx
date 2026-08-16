@@ -27,6 +27,10 @@ export const metadata: Metadata = {
     "Stop fighting your AI co-pilot. Automatically audit any GitHub repository, detect CVE vulnerabilities via OSV.dev, export Kroki architecture diagrams, and generate zero-hallucination context files directly for Sonnet 5, Cursor, Claude Code, and Replit.",
   keywords: [
     "GitContextGen",
+    "GitContextGen MCP Server",
+    "Model Context Protocol",
+    "Claude Code MCP",
+    "Cursor MCP server",
     "AI context engine",
     "AGENTS.md generator",
     "CLAUDE.md generator",

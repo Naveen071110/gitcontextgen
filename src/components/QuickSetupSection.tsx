@@ -37,14 +37,14 @@ export default function QuickSetupSection() {
             </div>
 
             <div className="p-6 sm:p-8 font-mono text-xs sm:text-sm space-y-4 leading-relaxed">
-              <p className="text-white/40">// Step 1: Paste any public GitHub repo URL</p>
+              <p className="text-white/40">// Option A: Connect directly via MCP Server (Claude Code, Cursor, Windsurf)</p>
               <p className="text-white">
-                <span className="text-cyan-400 font-bold">$</span> gitcontextgen analyze https://github.com/owner/repo
+                <span className="text-cyan-400 font-bold">$</span> npx -y gitcontextgen-mcp
               </p>
 
-              <p className="text-white/40 pt-3">// Step 2: Copy CLAUDE.md, .cursorrules, or replit.md file</p>
+              <p className="text-white/40 pt-2">// Option B: Web UI & Instant Markdown Exporter</p>
               <p className="text-emerald-400 font-bold">
-                ✓ Generated CLAUDE.md & .cursorrules context spec
+                ✓ 1-Click AGENTS.md, CLAUDE.md, .cursorrules & Kroki Architecture Maps
               </p>
             </div>
           </div>
@@ -53,10 +53,13 @@ export default function QuickSetupSection() {
         {/* Feature Checkmarks */}
         <div className="w-full flex flex-wrap items-center justify-center gap-8 text-xs sm:text-sm font-mono text-white/80 mb-12 text-center">
           <span className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> Native MCP Server Protocol (`stdio`)
+          </span>
+          <span className="flex items-center gap-2.5">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Zero Lock-in (Plain Markdown Files)
           </span>
           <span className="flex items-center gap-2.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Works with Claude, Cursor, Replit & Bolt
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Works with Claude Code, Cursor & Windsurf
           </span>
           <span className="flex items-center gap-2.5">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> 100% In-Memory Code Security

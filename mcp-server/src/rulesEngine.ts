@@ -1,0 +1,171 @@
+import { CodebaseAnalysis } from './localScanner.js';
+
+export type RuleFormat = 'claude' | 'cursor' | 'copilot' | 'windsurf' | 'universal' | 'agents';
+
+/**
+ * Generates structured context rules tailored to specific AI formats
+ */
+export function generateRules(analysis: CodebaseAnalysis, format: RuleFormat): { filename: string; content: string } {
+  const normalizedFormat = format === 'agents' ? 'universal' : format;
+  const name = analysis.name;
+  const scripts = analysis.manifest.scripts || {};
+  const deps = analysis.manifest.dependencies || [];
+  const ecosystem = analysis.manifest.ecosystem;
+
+  // Determine key commands
+  const devCmd = scripts['dev'] ? `npm run dev` : scripts['start'] ? `npm start` : 'npm run dev';
+  const buildCmd = scripts['build'] ? `npm run build` : 'npm run build';
+  const testCmd = scripts['test'] ? `npm run test` : scripts['lint'] ? `npm run lint` : 'npm test';
+
+  // Identify framework
+  const isNext = deps.includes('next');
+  const isReact = deps.includes('react');
+  const isTailwind = deps.includes('tailwindcss') || deps.includes('@tailwindcss/postcss');
+  const isSupabase = deps.includes('@supabase/supabase-js') || deps.includes('@supabase/ssr');
+  const isFastAPI = analysis.fileTreeSummary.includes('.py') && deps.some(d => d.toLowerCase().includes('fastapi'));
+
+  switch (normalizedFormat) {
+    case 'claude': {
+      const content = `# CLAUDE.md - ${name} Development Guide
+
+## Project Overview
+- **Project**: ${name}
+- **Ecosystem**: ${ecosystem}
+- **Key Dependencies**: ${deps.slice(0, 10).join(', ') || 'Standard library'}
+- **Entry Points**: ${analysis.entryPoints.join(', ') || 'Auto-detected by framework'}
+
+---
+
+## ⚡ Primary Execution Commands
+\`\`\`bash
+# Development server
+${devCmd}
+
+# Production build & verification
+${buildCmd}
+
+# Automated testing suite
+${testCmd}
+\`\`\`
+
+---
+
+## 🏗️ Architecture & Boundaries
+${isNext ? '- **Next.js App Router**: Use React Server Components by default. Keep `"use client"` restricted to interactive leaf components.' : ''}
+${isReact ? '- **Modern React**: Use native hooks and modular functional components.' : ''}
+${isTailwind ? '- **Tailwind CSS**: Use theme utility classes and avoid ad-hoc inline styles.' : ''}
+${isSupabase ? '- **Supabase Client**: Separate server-side auth/data operations from browser clients.' : ''}
+- **Secret Protection**: NEVER log or commit API keys, credentials, or \`.env\` file contents.
+
+---
+
+## 📐 Code Style & Conventions
+- Maintain strict TypeScript type annotations and eliminate \`any\` types.
+- Preserve existing comments and docstrings across modified source files.
+- Return early on error states with informative logging.
+`;
+      return { filename: 'CLAUDE.md', content: content.trim() };
+    }
+
+    case 'cursor': {
+      const content = `# .cursorrules - ${name} AI Guidelines
+
+You are an expert developer working on ${name}. Adhere strictly to these project constraints:
+
+## 1. Tech Stack & Commands
+- Ecosystem: ${ecosystem}
+- Build: \`${buildCmd}\`
+- Dev: \`${devCmd}\`
+- Test: \`${testCmd}\`
+
+## 2. Strict Architectural Rules
+${isNext ? '- [Next.js App Router] Always write Server Components by default. Mark interactive UI with "use client" at top of file.' : ''}
+${isTailwind ? '- [Tailwind CSS] Use clean semantic class ordering. Avoid inline styles where Tailwind classes exist.' : ''}
+- [Immutability] Do not modify unrelated files or rename existing exported functions without explicit instruction.
+- [Security] Exclude API tokens, passwords, and private environment variables from prompt outputs.
+
+## 3. Directory Layout
+${analysis.directories.slice(0, 10).map(d => `- \`/${d}\``).join('\n')}
+`;
+      return { filename: '.cursorrules', content: content.trim() };
+    }
+
+    case 'copilot': {
+      const content = `# GitHub Copilot Instructions - ${name}
+
+## Workspace Context
+- Repository: ${name}
+- Runtime: ${ecosystem}
+
+## Development Workflow
+1. Run \`${devCmd}\` to start local dev environment.
+2. Run \`${buildCmd}\` to validate TypeScript compilation and page routing.
+3. Run \`${testCmd}\` to execute unit tests.
+
+## Coding Standards
+- Follow idiomatic TypeScript patterns with explicit interfaces.
+- Avoid introducing circular dependencies.
+- Isolate database and external API integrations within dedicated service layers.
+`;
+      return { filename: '.github/copilot-instructions.md', content: content.trim() };
+    }
+
+    case 'windsurf': {
+      const config = {
+        name,
+        rules: [
+          `Primary dev command: ${devCmd}`,
+          `Build command: ${buildCmd}`,
+          `Testing command: ${testCmd}`,
+          isNext ? 'Framework: Next.js App Router (Turbopack)' : `Ecosystem: ${ecosystem}`,
+          'Never expose secret keys or .env variables in code blocks',
+        ],
+        entryPoints: analysis.entryPoints,
+        directories: analysis.directories,
+      };
+      return { filename: 'windsurf.json', content: JSON.stringify(config, null, 2) };
+    }
+
+    case 'universal':
+    default: {
+      const content = `# AGENTS.md - Universal AI Context Specification
+<!-- Generated by GitContextGen MCP Server -->
+
+## 1. Project Identification
+- **Name**: ${name}
+- **Ecosystem**: ${ecosystem}
+- **License**: ${analysis.licenseSpdx || 'Standard Project License'}
+- **Files Indexed**: ${analysis.filesIndexed}
+
+---
+
+## 2. Verified Execution Commands
+\`\`\`bash
+# Dev
+${devCmd}
+
+# Build
+${buildCmd}
+
+# Test
+${testCmd}
+\`\`\`
+
+---
+
+## 3. Tech Stack & Dependencies
+${deps.slice(0, 15).map(d => `- \`${d}\``).join('\n')}
+
+---
+
+## 4. Architectural Boundaries & Safety
+${isNext ? '- **Next.js 16 (App Router)**: Enforce RSC patterns. Do not use legacy Pages router methods.' : ''}
+${isReact ? '- **React 19 Hooks**: Prefer native React 19 primitives.' : ''}
+${isTailwind ? '- **Tailwind CSS**: Modern CSS tokens and utility classes.' : ''}
+- **Secret Isolation**: Protect \`.env\`, credentials, and private tokens from prompt exposure.
+- **Documentation Integrity**: Retain docstrings and existing architectural comments.
+`;
+      return { filename: 'AGENTS.md', content: content.trim() };
+    }
+  }
+}

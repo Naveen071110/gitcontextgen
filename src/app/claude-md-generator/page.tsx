@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     images: ['https://gitcontextgen.com/og-image.png'],
   },
   alternates: {
-    canonical: 'https://gitcontextgen.com/claude-md-generator',
+    canonical: '/claude-md-generator',
   },
 };
 
@@ -109,7 +109,7 @@ Next.js App Router project with TypeScript and Tailwind CSS.
         </div>
 
         <Link
-          href="/"
+          href="/?format=claude"
           className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl bg-white text-black font-bold text-sm hover:opacity-90 transition-opacity shadow-2xl"
         >
           Generate CLAUDE.md Now <ArrowRight className="w-4 h-4" />

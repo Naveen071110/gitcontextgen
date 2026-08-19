@@ -149,27 +149,67 @@ export async function fetchGitHubRepoDetails(
     // README fetch optional
   }
 
-  // 4. Fetch manifest (package.json, requirements.txt, Cargo.toml)
+  // 4. Fetch manifest (package.json, requirements.txt, Cargo.toml, go.mod)
   let manifestContent = '';
   let parsedDependencies: Record<string, string> = {};
   let ecosystem: 'npm' | 'PyPI' | 'crates.io' | 'Go' = 'npm';
 
   try {
-    const pkgRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/package.json`, {
-      headers: { ...headers, 'Accept': 'application/vnd.github.v3.raw' },
-      next: { revalidate: 3600 }
-    });
-    if (pkgRes.ok) {
-      manifestContent = await pkgRes.text();
-      try {
-        const pkgJson = JSON.parse(manifestContent);
-        parsedDependencies = {
-          ...(pkgJson.dependencies || {}),
-          ...(pkgJson.devDependencies || {}),
-        };
-        ecosystem = 'npm';
-      } catch (jsonErr) {
-        // Ignore JSON parse error
+    const hasPkgJson = filteredTree.some(item => item.path === 'package.json');
+    const hasReqs = filteredTree.some(item => item.path === 'requirements.txt' || item.path === 'pyproject.toml');
+    const hasCargo = filteredTree.some(item => item.path === 'Cargo.toml');
+    const hasGoMod = filteredTree.some(item => item.path === 'go.mod');
+
+    if (hasPkgJson) {
+      const pkgRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/package.json`, {
+        headers: { ...headers, 'Accept': 'application/vnd.github.v3.raw' },
+        next: { revalidate: 3600 }
+      });
+      if (pkgRes.ok) {
+        manifestContent = await pkgRes.text();
+        try {
+          const pkgJson = JSON.parse(manifestContent);
+          parsedDependencies = {
+            ...(pkgJson.dependencies || {}),
+            ...(pkgJson.devDependencies || {}),
+          };
+          ecosystem = 'npm';
+        } catch (jsonErr) {}
+      }
+    } else if (hasReqs) {
+      ecosystem = 'PyPI';
+      const reqRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/requirements.txt`, {
+        headers: { ...headers, 'Accept': 'application/vnd.github.v3.raw' },
+        next: { revalidate: 3600 }
+      });
+      if (reqRes.ok) {
+        manifestContent = await reqRes.text();
+        const lines = manifestContent.split('\n');
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed && !trimmed.startsWith('#')) {
+            const depName = trimmed.split(/[=<>~]/)[0].trim();
+            if (depName) parsedDependencies[depName] = '*';
+          }
+        }
+      }
+    } else if (hasCargo) {
+      ecosystem = 'crates.io';
+      const cargoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/Cargo.toml`, {
+        headers: { ...headers, 'Accept': 'application/vnd.github.v3.raw' },
+        next: { revalidate: 3600 }
+      });
+      if (cargoRes.ok) {
+        manifestContent = await cargoRes.text();
+      }
+    } else if (hasGoMod) {
+      ecosystem = 'Go';
+      const goRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/go.mod`, {
+        headers: { ...headers, 'Accept': 'application/vnd.github.v3.raw' },
+        next: { revalidate: 3600 }
+      });
+      if (goRes.ok) {
+        manifestContent = await goRes.text();
       }
     }
   } catch (e) {

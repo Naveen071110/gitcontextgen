@@ -36,8 +36,8 @@ export default function Footer() {
           <Link href="/copilot-instructions-generator" className="hover:text-white transition-colors cursor-pointer">
             Copilot Instructions
           </Link>
-          <Link href="/p/repopulse-ai-demo" className="hover:text-white transition-colors cursor-pointer">
-            Demo Changelog
+          <Link href="/claude-md-generator" className="hover:text-white transition-colors cursor-pointer">
+            CLAUDE.md Specs
           </Link>
         </div>
 
@@ -47,7 +47,7 @@ export default function Footer() {
           <div className="flex items-center justify-center gap-6">
             <Link href="/agents-md-generator" className="hover:text-white transition-colors cursor-pointer">Documentation</Link>
             <Link href="/#pricing" className="hover:text-white transition-colors cursor-pointer">Pricing & Terms</Link>
-            <Link href="/p/repopulse-ai-demo" className="hover:text-white transition-colors cursor-pointer">Public Specs</Link>
+            <Link href="/claude-md-generator" className="hover:text-white transition-colors cursor-pointer">Public Specs</Link>
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 /**
  * Extracts recent git commit history and generates audience-aware changelog markdown
  */
@@ -6,10 +6,14 @@ export function generateChangelog(targetPath, fromCommit, tone = 'developer') {
     let commitLogs = '';
     let commitList = [];
     try {
-        const gitCmd = fromCommit
-            ? `git log ${fromCommit}..HEAD --oneline -n 25`
-            : `git log -n 15 --oneline`;
-        commitLogs = execSync(gitCmd, { cwd: targetPath, encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+        const args = fromCommit
+            ? ['log', `${fromCommit}..HEAD`, '--oneline', '-n', '25']
+            : ['log', '-n', '15', '--oneline'];
+        commitLogs = execFileSync('git', args, {
+            cwd: targetPath,
+            encoding: 'utf-8',
+            stdio: ['ignore', 'pipe', 'ignore'],
+        }).trim();
         if (commitLogs) {
             commitList = commitLogs.split('\n').filter(Boolean);
         }
@@ -25,7 +29,7 @@ export function generateChangelog(targetPath, fromCommit, tone = 'developer') {
         ];
     }
     if (tone === 'marketing') {
-        const highlights = commitList.slice(0, 5).map(c => {
+        const highlights = commitList.slice(0, 5).map((c) => {
             const clean = c.replace(/^[a-f0-9]+\s+/i, '').replace(/^(feat|fix|refactor|chore|docs)(\(.*?\))?:\s*/i, '');
             return `✨ **${clean.charAt(0).toUpperCase() + clean.slice(1)}**`;
         });

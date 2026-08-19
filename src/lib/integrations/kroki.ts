@@ -1,3 +1,5 @@
+import zlib from 'zlib';
+
 /**
  * Kroki Diagram Rendering Integration
  * Converts Mermaid.js diagrams into direct SVG/PNG images via Kroki API
@@ -11,16 +13,15 @@ export interface KrokiDiagramUrls {
 }
 
 /**
- * Encodes text payload into base64 URL-safe format for Kroki REST API
+ * Encodes text payload into zlib deflated base64 URL-safe format for Kroki REST API
  */
 function encodeDiagram(source: string): string {
-  if (typeof window !== 'undefined') {
-    return btoa(unescape(encodeURIComponent(source)))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
+  try {
+    const deflated = zlib.deflateSync(Buffer.from(source, 'utf-8'));
+    return deflated.toString('base64url');
+  } catch {
+    return Buffer.from(source, 'utf-8').toString('base64url');
   }
-  return Buffer.from(source, 'utf-8').toString('base64url');
 }
 
 /**

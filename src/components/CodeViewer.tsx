@@ -13,13 +13,18 @@ export default function CodeViewer({ content, filename = 'CLAUDE.md', className 
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(content || '')
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        })
+        .catch((err) => console.warn('Clipboard copy error:', err));
+    }
   };
 
   const handleDownload = () => {
-    const blob = new Blob([content], { type: 'text/markdown' });
+    const blob = new Blob([content || ''], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -30,7 +35,7 @@ export default function CodeViewer({ content, filename = 'CLAUDE.md', className 
     URL.revokeObjectURL(url);
   };
 
-  const lines = content.split('\n');
+  const lines = (content || '').split('\n');
 
   return (
     <div className={`rounded-2xl border border-white/10 bg-neutral-950 overflow-hidden flex flex-col ${className}`}>

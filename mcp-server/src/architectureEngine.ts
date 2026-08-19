@@ -1,3 +1,4 @@
+import zlib from 'zlib';
 import { CodebaseAnalysis } from './localScanner.js';
 
 export interface ArchitectureResult {
@@ -11,7 +12,12 @@ export interface ArchitectureResult {
 }
 
 function encodeDiagram(source: string): string {
-  return Buffer.from(source, 'utf-8').toString('base64url');
+  try {
+    const deflated = zlib.deflateSync(Buffer.from(source, 'utf-8'));
+    return deflated.toString('base64url');
+  } catch {
+    return Buffer.from(source, 'utf-8').toString('base64url');
+  }
 }
 
 /**
@@ -26,7 +32,7 @@ export function generateArchitecture(analysis: CodebaseAnalysis, style: string =
   const hasComponents = tree.includes('components/');
   const hasLib = tree.includes('lib/') || tree.includes('utils/');
   const hasApi = tree.includes('api/') || tree.includes('routes/');
-  const hasSupabase = analysis.manifest.dependencies.some(d => d.includes('supabase'));
+  const hasSupabase = analysis.manifest.dependencies.some((d) => d.includes('supabase'));
   const hasDatabase = hasSupabase || tree.includes('prisma') || tree.includes('drizzle') || tree.includes('db/');
 
   let diagram = `graph TD
@@ -40,10 +46,14 @@ export function generateArchitecture(analysis: CodebaseAnalysis, style: string =
     ${hasLib ? `LibUtils["Utilities & Data Services (/lib)"]` : `Helpers["Helper Functions"]`}
   end
 
-  ${hasDatabase ? `
+  ${
+    hasDatabase
+      ? `
   subgraph Persistence ["Data & Storage Layer"]
     ${hasSupabase ? `DB[("Supabase PostgreSQL")]` : `DB[("Database & Storage")]`}
-  end` : ''}
+  end`
+      : ''
+  }
 
   ${hasComponents && hasApp ? `AppRouter --> Components` : ''}
   ${hasApp && hasApi ? `AppRouter --> ApiRoutes` : ''}

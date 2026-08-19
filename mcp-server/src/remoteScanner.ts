@@ -1,7 +1,7 @@
 import { CodebaseAnalysis } from './localScanner.js';
 
 export function isGitHubUrl(urlOrPath: string): boolean {
-  return /github\.com\/([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)/i.test(urlOrPath);
+  return /^https?:\/\/(www\.)?github\.com\/[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+/i.test(urlOrPath.trim());
 }
 
 export function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
@@ -29,12 +29,20 @@ export async function analyzeRemoteGitHubRepo(url: string): Promise<CodebaseAnal
     'Accept': 'application/vnd.github.v3+json',
   };
 
-  const repoRes = await fetch(repoApiUrl, { headers });
-  if (!repoRes.ok) {
-    throw new Error(`GitHub API returned ${repoRes.status}: Repository may be private or rate-limited.`);
+  const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const repoData = await repoRes.json() as any;
+  const repoRes = await fetch(repoApiUrl, { headers });
+  if (!repoRes.ok) {
+    if (repoRes.status === 403 || repoRes.status === 429) {
+      throw new Error(`GitHub API rate limit exceeded. Please set GITHUB_TOKEN environment variable.`);
+    }
+    throw new Error(`GitHub API returned ${repoRes.status}: Repository may be private or not found.`);
+  }
+
+  const repoData = (await repoRes.json()) as any;
   const defaultBranch = repoData.default_branch || 'main';
 
   // Fetch Git Tree
@@ -44,11 +52,13 @@ export async function analyzeRemoteGitHubRepo(url: string): Promise<CodebaseAnal
   let directories: string[] = [];
 
   if (treeRes.ok) {
-    const treeData = await treeRes.json() as any;
+    const treeData = (await treeRes.json()) as any;
     if (treeData.tree && Array.isArray(treeData.tree)) {
       files = treeData.tree.filter((item: any) => item.type === 'blob').map((item: any) => item.path);
       directories = treeData.tree.filter((item: any) => item.type === 'tree').map((item: any) => item.path);
     }
+  } else {
+    throw new Error(`Failed to retrieve repository git tree: HTTP ${treeRes.status}`);
   }
 
   // Fetch package.json if present
@@ -80,7 +90,7 @@ export async function analyzeRemoteGitHubRepo(url: string): Promise<CodebaseAnal
 
   // Fetch README if present
   let readmeContent = '';
-  const readmeFile = files.find(f => /^readme(\.md)?$/i.test(f));
+  const readmeFile = files.find((f) => /^readme(\.md)?$/i.test(f));
   if (readmeFile) {
     try {
       const rawReadme = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/${readmeFile}`, { headers });
@@ -96,7 +106,7 @@ export async function analyzeRemoteGitHubRepo(url: string): Promise<CodebaseAnal
     name: repo,
     filesIndexed: files.length,
     directories: directories.slice(0, 30),
-    entryPoints: files.filter(f => /^(src\/)?(index|main|app\/page)\.(ts|js|py|rs|go)$/i.test(f)),
+    entryPoints: files.filter((f) => /^(src\/)?(index|main|app\/page)\.(tsx|jsx|ts|js|py|rs|go)$/i.test(f)),
     manifest: {
       ecosystem,
       dependencies,

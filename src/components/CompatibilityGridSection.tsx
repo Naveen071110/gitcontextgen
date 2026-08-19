@@ -31,13 +31,13 @@ export default function CompatibilityGridSection() {
       name: 'Replit Agent',
       format: 'replit.md',
       description: 'Configures runtime environment, build targets, and code execution instructions.',
-      link: '/for/cursor',
+      link: '/agents-md-generator',
     },
     {
       name: 'Windsurf IDE',
       format: 'windsurf.json',
       description: 'JSON context specification detailing indexing rules and prompt parameters.',
-      link: '/for/claude-code',
+      link: '/agents-md-generator',
     },
   ];
 

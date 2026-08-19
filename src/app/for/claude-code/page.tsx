@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     images: ['https://gitcontextgen.com/og-image.png'],
   },
   alternates: {
-    canonical: 'https://gitcontextgen.com/for/claude-code',
+    canonical: '/for/claude-code',
   },
 };
 

@@ -1,5 +1,12 @@
+import zlib from 'zlib';
 function encodeDiagram(source) {
-    return Buffer.from(source, 'utf-8').toString('base64url');
+    try {
+        const deflated = zlib.deflateSync(Buffer.from(source, 'utf-8'));
+        return deflated.toString('base64url');
+    }
+    catch {
+        return Buffer.from(source, 'utf-8').toString('base64url');
+    }
 }
 /**
  * Generates Mermaid architecture diagram and Kroki export links from codebase structure
@@ -12,7 +19,7 @@ export function generateArchitecture(analysis, style = 'layered') {
     const hasComponents = tree.includes('components/');
     const hasLib = tree.includes('lib/') || tree.includes('utils/');
     const hasApi = tree.includes('api/') || tree.includes('routes/');
-    const hasSupabase = analysis.manifest.dependencies.some(d => d.includes('supabase'));
+    const hasSupabase = analysis.manifest.dependencies.some((d) => d.includes('supabase'));
     const hasDatabase = hasSupabase || tree.includes('prisma') || tree.includes('drizzle') || tree.includes('db/');
     let diagram = `graph TD
   subgraph Frontend ["Frontend UI Layer"]
@@ -25,10 +32,12 @@ export function generateArchitecture(analysis, style = 'layered') {
     ${hasLib ? `LibUtils["Utilities & Data Services (/lib)"]` : `Helpers["Helper Functions"]`}
   end
 
-  ${hasDatabase ? `
+  ${hasDatabase
+        ? `
   subgraph Persistence ["Data & Storage Layer"]
     ${hasSupabase ? `DB[("Supabase PostgreSQL")]` : `DB[("Database & Storage")]`}
-  end` : ''}
+  end`
+        : ''}
 
   ${hasComponents && hasApp ? `AppRouter --> Components` : ''}
   ${hasApp && hasApi ? `AppRouter --> ApiRoutes` : ''}

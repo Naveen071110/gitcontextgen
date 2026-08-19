@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { GithubIcon } from '@/components/icons/Github';
-import { analyzeRepositoryAction, saveProjectAction } from '@/lib/actions';
+import { analyzeRepositoryAction, saveProjectAction, switchExportFormatAction } from '@/lib/actions';
 import { createClient } from '@/lib/supabase/client';
 import { RepositoryAnalysisResult } from '@/lib/types';
 import Navbar from '@/components/Navbar';
@@ -12,7 +12,7 @@ import MermaidDiagram from '@/components/MermaidDiagram';
 import CodeViewer from '@/components/CodeViewer';
 import LoadingSkeleton from '@/components/LoadingSkeleton';
 import AgentReadinessScore from '@/components/AgentReadinessScore';
-import { calculateReadinessScore, ReadinessScoreResult, generateContextExport, ExportFormat } from '@/lib/ai-engine';
+import { calculateReadinessScore, ReadinessScoreResult, ExportFormat } from '@/lib/ai-engine';
 import {
   Zap,
   Cpu,
@@ -156,24 +156,31 @@ export default function HeroSection() {
     if (!result) return;
     setIsLoading(true);
     try {
-      const updated = await generateContextExport(
+      const res = await switchExportFormatAction(
         `${result.owner}/${result.repo}`,
         result.fileTreeSummary,
         format,
         result.readmeContent
       );
-      setFormattedContent(updated);
+      if (res.success && res.content) {
+        setFormattedContent(res.content);
+      }
     } catch (err) {
-      console.error(err);
+      console.error('Format switch error:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(formattedContent || result?.contextMarkdown || '');
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(formattedContent || result?.contextMarkdown || '')
+        .then(() => {
+          setCopiedCode(true);
+          setTimeout(() => setCopiedCode(false), 2000);
+        })
+        .catch((err) => console.warn('Clipboard write error:', err));
+    }
   };
 
   const handleSaveToWorkspace = async () => {

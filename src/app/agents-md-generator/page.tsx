@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     images: ['https://gitcontextgen.com/og-image.png'],
   },
   alternates: {
-    canonical: 'https://gitcontextgen.com/agents-md-generator',
+    canonical: '/agents-md-generator',
   },
 };
 
@@ -127,7 +127,7 @@ This repository provides evidence-backed instructions for AI coding agents.
         </div>
 
         <Link
-          href="/"
+          href="/?format=agents"
           className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl bg-white text-black font-bold text-sm hover:opacity-90 transition-opacity shadow-2xl"
         >
           Generate AGENTS.md in Live Sandbox <ArrowRight className="w-4 h-4" />

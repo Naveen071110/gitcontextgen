@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 
 export type ChangelogTone = 'developer' | 'marketing';
 
@@ -14,11 +14,16 @@ export function generateChangelog(
   let commitList: string[] = [];
 
   try {
-    const gitCmd = fromCommit
-      ? `git log ${fromCommit}..HEAD --oneline -n 25`
-      : `git log -n 15 --oneline`;
+    const args = fromCommit
+      ? ['log', `${fromCommit}..HEAD`, '--oneline', '-n', '25']
+      : ['log', '-n', '15', '--oneline'];
 
-    commitLogs = execSync(gitCmd, { cwd: targetPath, encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    commitLogs = execFileSync('git', args, {
+      cwd: targetPath,
+      encoding: 'utf-8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+
     if (commitLogs) {
       commitList = commitLogs.split('\n').filter(Boolean);
     }
@@ -35,7 +40,7 @@ export function generateChangelog(
   }
 
   if (tone === 'marketing') {
-    const highlights = commitList.slice(0, 5).map(c => {
+    const highlights = commitList.slice(0, 5).map((c) => {
       const clean = c.replace(/^[a-f0-9]+\s+/i, '').replace(/^(feat|fix|refactor|chore|docs)(\(.*?\))?:\s*/i, '');
       return `✨ **${clean.charAt(0).toUpperCase() + clean.slice(1)}**`;
     });

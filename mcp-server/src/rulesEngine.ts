@@ -12,17 +12,35 @@ export function generateRules(analysis: CodebaseAnalysis, format: RuleFormat): {
   const deps = analysis.manifest.dependencies || [];
   const ecosystem = analysis.manifest.ecosystem;
 
-  // Determine key commands
-  const devCmd = scripts['dev'] ? `npm run dev` : scripts['start'] ? `npm start` : 'npm run dev';
-  const buildCmd = scripts['build'] ? `npm run build` : 'npm run build';
-  const testCmd = scripts['test'] ? `npm run test` : scripts['lint'] ? `npm run lint` : 'npm test';
+  // Determine ecosystem-appropriate commands
+  let devCmd = 'npm run dev';
+  let buildCmd = 'npm run build';
+  let testCmd = 'npm test';
+
+  if (ecosystem === 'crates.io') {
+    devCmd = 'cargo run';
+    buildCmd = 'cargo build --release';
+    testCmd = 'cargo test';
+  } else if (ecosystem === 'PyPI') {
+    devCmd = 'python main.py';
+    buildCmd = 'pip install -r requirements.txt';
+    testCmd = 'pytest';
+  } else if (ecosystem === 'Go') {
+    devCmd = 'go run .';
+    buildCmd = 'go build -v ./...';
+    testCmd = 'go test ./...';
+  } else {
+    // npm / node
+    devCmd = scripts['dev'] ? `npm run dev` : scripts['start'] ? `npm start` : 'npm run dev';
+    buildCmd = scripts['build'] ? `npm run build` : 'npm run build';
+    testCmd = scripts['test'] ? `npm run test` : scripts['lint'] ? `npm run lint` : 'npm test';
+  }
 
   // Identify framework
   const isNext = deps.includes('next');
   const isReact = deps.includes('react');
   const isTailwind = deps.includes('tailwindcss') || deps.includes('@tailwindcss/postcss');
   const isSupabase = deps.includes('@supabase/supabase-js') || deps.includes('@supabase/ssr');
-  const isFastAPI = analysis.fileTreeSummary.includes('.py') && deps.some(d => d.toLowerCase().includes('fastapi'));
 
   switch (normalizedFormat) {
     case 'claude': {
@@ -60,7 +78,7 @@ ${isSupabase ? '- **Supabase Client**: Separate server-side auth/data operations
 ---
 
 ## 📐 Code Style & Conventions
-- Maintain strict TypeScript type annotations and eliminate \`any\` types.
+- Maintain strict type annotations and avoid ambiguous signatures.
 - Preserve existing comments and docstrings across modified source files.
 - Return early on error states with informative logging.
 `;
@@ -85,7 +103,7 @@ ${isTailwind ? '- [Tailwind CSS] Use clean semantic class ordering. Avoid inline
 - [Security] Exclude API tokens, passwords, and private environment variables from prompt outputs.
 
 ## 3. Directory Layout
-${analysis.directories.slice(0, 10).map(d => `- \`/${d}\``).join('\n')}
+${analysis.directories.slice(0, 10).map((d) => `- \`/${d}\``).join('\n')}
 `;
       return { filename: '.cursorrules', content: content.trim() };
     }
@@ -99,11 +117,11 @@ ${analysis.directories.slice(0, 10).map(d => `- \`/${d}\``).join('\n')}
 
 ## Development Workflow
 1. Run \`${devCmd}\` to start local dev environment.
-2. Run \`${buildCmd}\` to validate TypeScript compilation and page routing.
+2. Run \`${buildCmd}\` to validate compilation and page routing.
 3. Run \`${testCmd}\` to execute unit tests.
 
 ## Coding Standards
-- Follow idiomatic TypeScript patterns with explicit interfaces.
+- Follow idiomatic project patterns with explicit interfaces.
 - Avoid introducing circular dependencies.
 - Isolate database and external API integrations within dedicated service layers.
 `;
@@ -154,7 +172,7 @@ ${testCmd}
 ---
 
 ## 3. Tech Stack & Dependencies
-${deps.slice(0, 15).map(d => `- \`${d}\``).join('\n')}
+${deps.slice(0, 15).map((d) => `- \`${d}\``).join('\n')}
 
 ---
 

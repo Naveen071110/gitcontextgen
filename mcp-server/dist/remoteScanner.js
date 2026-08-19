@@ -1,5 +1,5 @@
 export function isGitHubUrl(urlOrPath) {
-    return /github\.com\/([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)/i.test(urlOrPath);
+    return /^https?:\/\/(www\.)?github\.com\/[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+/i.test(urlOrPath.trim());
 }
 export function parseGitHubUrl(url) {
     const match = url.match(/github\.com\/([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)/i);
@@ -24,11 +24,18 @@ export async function analyzeRemoteGitHubRepo(url) {
         'User-Agent': 'GitContextGen-MCP-Server/1.0',
         'Accept': 'application/vnd.github.v3+json',
     };
+    const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
     const repoRes = await fetch(repoApiUrl, { headers });
     if (!repoRes.ok) {
-        throw new Error(`GitHub API returned ${repoRes.status}: Repository may be private or rate-limited.`);
+        if (repoRes.status === 403 || repoRes.status === 429) {
+            throw new Error(`GitHub API rate limit exceeded. Please set GITHUB_TOKEN environment variable.`);
+        }
+        throw new Error(`GitHub API returned ${repoRes.status}: Repository may be private or not found.`);
     }
-    const repoData = await repoRes.json();
+    const repoData = (await repoRes.json());
     const defaultBranch = repoData.default_branch || 'main';
     // Fetch Git Tree
     const treeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${defaultBranch}?recursive=1`;
@@ -36,11 +43,14 @@ export async function analyzeRemoteGitHubRepo(url) {
     let files = [];
     let directories = [];
     if (treeRes.ok) {
-        const treeData = await treeRes.json();
+        const treeData = (await treeRes.json());
         if (treeData.tree && Array.isArray(treeData.tree)) {
             files = treeData.tree.filter((item) => item.type === 'blob').map((item) => item.path);
             directories = treeData.tree.filter((item) => item.type === 'tree').map((item) => item.path);
         }
+    }
+    else {
+        throw new Error(`Failed to retrieve repository git tree: HTTP ${treeRes.status}`);
     }
     // Fetch package.json if present
     let manifestContent = '';
@@ -76,7 +86,7 @@ export async function analyzeRemoteGitHubRepo(url) {
     }
     // Fetch README if present
     let readmeContent = '';
-    const readmeFile = files.find(f => /^readme(\.md)?$/i.test(f));
+    const readmeFile = files.find((f) => /^readme(\.md)?$/i.test(f));
     if (readmeFile) {
         try {
             const rawReadme = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/${readmeFile}`, { headers });
@@ -92,7 +102,7 @@ export async function analyzeRemoteGitHubRepo(url) {
         name: repo,
         filesIndexed: files.length,
         directories: directories.slice(0, 30),
-        entryPoints: files.filter(f => /^(src\/)?(index|main|app\/page)\.(ts|js|py|rs|go)$/i.test(f)),
+        entryPoints: files.filter((f) => /^(src\/)?(index|main|app\/page)\.(tsx|jsx|ts|js|py|rs|go)$/i.test(f)),
         manifest: {
             ecosystem,
             dependencies,

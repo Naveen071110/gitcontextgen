@@ -1,7 +1,7 @@
 'use server';
 
 import { parseGitHubUrl, fetchGitHubRepoDetails } from './github';
-import { generateClaudeContext, generateMermaidArchitecture, generateReleaseNotes, calculateReadinessScore } from './ai-engine';
+import { generateClaudeContext, generateMermaidArchitecture, generateReleaseNotes, calculateReadinessScore, generateContextExport } from './ai-engine';
 import { RepositoryAnalysisResult } from './types';
 import { MockStore } from './mockStore';
 import { sendBroadcastEmail } from './resend';
@@ -120,6 +120,20 @@ export async function analyzeRepositoryAction(
       success: false,
       error: err?.message || 'Failed to analyze repository. Please verify the URL and try again.',
     };
+  }
+}
+
+export async function switchExportFormatAction(
+  repoName: string,
+  fileTreeSummary: string,
+  format: 'claude' | 'cursor' | 'copilot' | 'replit' | 'windsurf' | 'agents',
+  readmeContent?: string
+): Promise<{ success: boolean; content?: string; error?: string }> {
+  try {
+    const content = await generateContextExport(repoName, fileTreeSummary, format, readmeContent);
+    return { success: true, content };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to generate context export format.' };
   }
 }
 

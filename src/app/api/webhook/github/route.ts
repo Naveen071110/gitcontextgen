@@ -3,7 +3,7 @@ import { generateReleaseNotes } from '@/lib/ai-engine';
 import { MockStore } from '@/lib/mockStore';
 import { sendBroadcastEmail } from '@/lib/resend';
 
-export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
 
 function escapeHtml(text: string): string {
   return text

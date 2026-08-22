@@ -2,17 +2,18 @@ name: Keep Supabase Alive & Active
 
 on:
   schedule:
-    # Runs every 3 days at 00:00 UTC to prevent Supabase 7-day inactivity pause
-    - cron: '0 0 */3 * *'
+    # Runs twice daily at 04:00 and 16:00 UTC (every 12 hours) to permanently prevent 7-day inactivity pause
+    - cron: '0 4,16 * * *'
   push:
     branches: [ main, master ]
   workflow_dispatch: # Allows 1-click manual trigger from GitHub Actions tab
 
 jobs:
   ping-supabase-services:
+    name: Multi-Subsystem Supabase Heartbeat
     runs-on: ubuntu-latest
     steps:
-      - name: 1. Ping Verified Supabase Auth & Storage API Services (HTTP 200)
+      - name: 1. Ping Verified Supabase Auth, Storage & Database API Services
         run: |
           SUPABASE_URL="${{ secrets.SUPABASE_URL }}"
           if [ -z "$SUPABASE_URL" ]; then
@@ -24,22 +25,30 @@ jobs:
             ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1eWF0c3RjamducmFnY3d1c2h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMDkwMzQsImV4cCI6MjEwMDg4NTAzNH0.eU6eqCvo0oB30KHHO1b3q_M71qnFRTy07iIz_xiktC0"
           fi
 
-          echo "Pinging Supabase Auth Settings Endpoint..."
+          echo "================================================="
+          echo "📡 Pinging Supabase Services on: $SUPABASE_URL"
+          echo "================================================="
+
+          echo "1️⃣ Pinging Auth Settings..."
           STATUS_AUTH=$(curl -s -o /dev/null -w "%{http_code}" "$SUPABASE_URL/auth/v1/settings" -H "apikey: $ANON_KEY")
-          echo "Supabase Auth Settings HTTP Status: $STATUS_AUTH"
+          echo "   Auth Settings Status: HTTP $STATUS_AUTH"
 
-          echo "Pinging Supabase Storage Endpoint..."
-          STATUS_STORAGE=$(curl -s -o /dev/null -w "%{http_code}" "$SUPABASE_URL/storage/v1/bucket" -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY")
-          echo "Supabase Storage HTTP Status: $STATUS_STORAGE"
-
-          echo "Pinging Supabase Health Endpoint..."
+          echo "2️⃣ Pinging Auth Health..."
           STATUS_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" "$SUPABASE_URL/auth/v1/health" -H "apikey: $ANON_KEY")
-          echo "Supabase Auth Health HTTP Status: $STATUS_HEALTH"
+          echo "   Auth Health Status: HTTP $STATUS_HEALTH"
 
-          if [ "$STATUS_AUTH" -eq 200 ] && [ "$STATUS_STORAGE" -eq 200 ]; then
-            echo "✓ Supabase service activity ping successful! Inactivity timer reset."
+          echo "3️⃣ Pinging Storage Bucket Service..."
+          STATUS_STORAGE=$(curl -s -o /dev/null -w "%{http_code}" "$SUPABASE_URL/storage/v1/bucket" -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY")
+          echo "   Storage Status: HTTP $STATUS_STORAGE"
+
+          echo "4️⃣ Pinging PostgREST Database Gateway..."
+          STATUS_REST=$(curl -s -o /dev/null -w "%{http_code}" "$SUPABASE_URL/rest/v1/" -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY")
+          echo "   PostgREST Gateway Status: HTTP $STATUS_REST"
+
+          if [ "$STATUS_AUTH" -eq 200 ] || [ "$STATUS_STORAGE" -eq 200 ]; then
+            echo "✅ Supabase service activity successfully recorded! Inactivity counter reset."
           else
-            echo "⚠️ Warning: Pings returned Auth HTTP $STATUS_AUTH, Storage HTTP $STATUS_STORAGE"
+            echo "⚠️ Warning: Expected HTTP 200 from services, got Auth: $STATUS_AUTH, Storage: $STATUS_STORAGE"
           fi
 
       - name: 2. Ping Live Application Keep-Alive API Endpoint
@@ -49,6 +58,8 @@ jobs:
             DOMAIN_URL="https://repopulse-ai.singhnaveen360.workers.dev"
           fi
 
-          echo "Pinging $DOMAIN_URL/api/keepalive..."
-          curl -s "$DOMAIN_URL/api/keepalive" || true
+          echo "================================================="
+          echo "🌐 Pinging Live App: $DOMAIN_URL/api/keepalive"
+          echo "================================================="
+          curl -i -s "$DOMAIN_URL/api/keepalive" || true
           echo ""

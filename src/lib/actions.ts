@@ -1,7 +1,7 @@
 'use server';
 
 import { parseGitHubUrl, fetchGitHubRepoDetails } from './github';
-import { generateClaudeContext, generateMermaidArchitecture, generateReleaseNotes, calculateReadinessScore, generateContextExport } from './ai-engine';
+import { generateClaudeContext, generateMermaidArchitecture, generateReleaseNotes, calculateReadinessScore, generateContextExport, ExportFormat } from './ai-engine';
 import { RepositoryAnalysisResult } from './types';
 import { MockStore } from './mockStore';
 import { sendBroadcastEmail } from './resend';
@@ -126,7 +126,7 @@ export async function analyzeRepositoryAction(
 export async function switchExportFormatAction(
   repoName: string,
   fileTreeSummary: string,
-  format: 'claude' | 'cursor' | 'copilot' | 'replit' | 'windsurf' | 'agents',
+  format: ExportFormat,
   readmeContent?: string
 ): Promise<{ success: boolean; content?: string; error?: string }> {
   try {

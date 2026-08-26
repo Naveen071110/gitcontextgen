@@ -1,5 +1,5 @@
 import { CodebaseAnalysis } from './localScanner.js';
-export type RuleFormat = 'claude' | 'cursor' | 'copilot' | 'windsurf' | 'universal' | 'agents';
+export type RuleFormat = 'claude' | 'cursor' | 'copilot' | 'windsurf' | 'universal' | 'agents' | 'agent_readme';
 /**
  * Generates structured context rules tailored to specific AI formats
  */

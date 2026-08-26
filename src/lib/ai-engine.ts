@@ -1,6 +1,6 @@
 import { deepseek } from './deepseek';
 
-export type ExportFormat = 'agents' | 'claude' | 'copilot' | 'cursor' | 'replit' | 'windsurf';
+export type ExportFormat = 'agents' | 'claude' | 'copilot' | 'cursor' | 'replit' | 'windsurf' | 'agent_readme';
 export type ReleaseTone = 'technical' | 'marketing';
 
 export interface ReadinessScoreResult {
@@ -170,6 +170,23 @@ export async function synthesizeMasterCoordinatorContext(
         safetyAndBoundaries: safetyFragment,
       },
       compiledMarkdown: replitContent,
+    };
+  }
+
+  if (format === 'agent_readme') {
+    const agentReadmeContent = generateAgentReadmeSpecification(repoName, fileTreeSummary, manifestContent, readmeContent);
+    return {
+      threeLineTruth: {
+        line1TechStack: `1. Core Tech Stack: ${repoName} • Comprehensive AI Intelligence Dossier`,
+        line2VerifiedCommands: `2. Verified Commands: npm run dev • npm run build • npm test`,
+        line3SafetyBoundaries: `3. Multi-Agent Blueprint: Modular Subagents & Non-Negotiable Invariants Active.`,
+      },
+      subAgentFragments: {
+        coreArchitecture: coreArchFragment,
+        executionAndSchemas: execSchemaFragment,
+        safetyAndBoundaries: safetyFragment,
+      },
+      compiledMarkdown: agentReadmeContent,
     };
   }
 
@@ -513,6 +530,150 @@ See the project instruction skills for workspace structure, TypeScript setup, an
 }
 
 /**
+ * Comprehensive AGENT_README.md Specification Generator
+ * Generates an adaptive, multi-agent codebase dossier for autonomous AI coding agents.
+ */
+export function generateAgentReadmeSpecification(
+  repoName: string,
+  fileTreeSummary: string,
+  manifestContent?: string,
+  readmeContent?: string
+): string {
+  const repoBaseName = repoName.split('/').pop() || repoName;
+  const lines = fileTreeSummary.split('\n').filter(l => l.trim().length > 0);
+  const isLargeRepo = lines.length > 25 || fileTreeSummary.includes('packages/') || fileTreeSummary.includes('apps/');
+
+  // Parse scripts from manifest if present
+  let devCmd = 'npm run dev';
+  let buildCmd = 'npm run build';
+  let testCmd = 'npm test';
+  let typecheckCmd = 'npx tsc --noEmit';
+
+  if (manifestContent) {
+    try {
+      const manifest = JSON.parse(manifestContent);
+      if (manifest.scripts) {
+        if (manifest.scripts.dev) devCmd = `npm run dev`;
+        if (manifest.scripts.build) buildCmd = `npm run build`;
+        if (manifest.scripts.test) testCmd = `npm test`;
+        if (manifest.scripts.typecheck) typecheckCmd = `npm run typecheck`;
+      }
+    } catch {}
+  }
+
+  const subagentSection = isLargeRepo
+    ? `## 👥 6. Multi-Agent Delegation Blueprint & Subagent Specialization
+> 💡 **Large Codebase Detected**: This project benefits from specialized subagent roles to prevent context window saturation and conflicting edits.
+
+### 🎨 Subagent 1: Frontend & Presentation Specialist
+- **Primary Scope**: \`/src/app\`, \`/src/components\`, \`/src/styles\`
+- **Responsibilities**: UI components, responsive layouts, accessibility (ARIA), animations, client state.
+- **Constraints**: Never import server secrets or modify database schema definitions directly. Always use typed props interfaces.
+
+### ⚙️ Subagent 2: Backend, API & Data Specialist
+- **Primary Scope**: \`/src/app/api\`, \`/src/lib/actions.ts\`, \`/src/lib/supabase\`, database models.
+- **Responsibilities**: Route handlers, server actions, authentication verification, data validation (Zod), rate limiting.
+- **Constraints**: Never expose API keys to client responses. Validate all incoming request payloads.
+
+### 🛡️ Subagent 3: QA, Security & Verification Specialist
+- **Primary Scope**: Test suites, end-to-end tests, security headers, dependency vulnerability audits.
+- **Responsibilities**: Automated test validation (\`${testCmd}\`), typecheck validation (\`${typecheckCmd}\`), guardrail enforcement.
+- **Verification Trigger**: Run before submitting pull requests or finishing complex refactors.
+
+---
+
+## 📁 7. Modular Knowledge Architecture (.agents/ Directory Blueprint)
+For extensive autonomous workflows, organize subagent context into modular files:
+\`\`\`
+.agents/
+├── AGENT_README.md           # Master index & architectural invariants (this file)
+├── rules/
+│   ├── frontend-rules.md     # UI/UX, styling, and client component guidelines
+│   ├── backend-rules.md      # API contracts, database, and authentication rules
+│   └── security-rules.md     # Secret protection, input sanitization, and CVE rules
+└── context/
+    ├── database-schema.md    # Active database schema & table relations
+    └── state-management.md   # State lifecycle & synchronization flows
+\`\`\``
+    : `## 👥 6. Multi-Agent Delegation Blueprint
+- **Single Master Dossier Mode**: This repository is lightweight and self-contained. All AI agents (Sonnet 5, Opus 5, Claude Code, Cursor, Windsurf) should reference this single master \`AGENT_README.md\` file.
+- **Agent Coordination Rule**: When delegating tasks across multiple subagents, partition work strictly by directory boundaries:
+  - Frontend edits: \`/src/components\`, \`/src/app\`
+  - Backend & utility edits: \`/src/lib\`, \`/src/app/api\`
+  - Verification: Always execute \`${typecheckCmd}\` and \`${buildCmd}\` before completion.`;
+
+  return `# 🤖 AGENT_README.md — ${repoBaseName} AI Intelligence Dossier
+
+> **Generated Automatically by**: GitContextGen Knowledge Engine
+> **Target Audience**: Autonomous AI Coding Agents, Multi-Agent Swarms & LLM Assistants (Sonnet 5, Opus 5, Claude Code, Cursor, Windsurf, Copilot)
+> **Standard**: Universal Codebase AI Agent Specification
+> **Repository**: \`${repoName}\`
+> **Mode**: ${isLargeRepo ? 'Modular Multi-Agent Architecture' : 'Unified Master Dossier'}
+
+---
+
+## 🎯 1. Executive Mission & System Invariants
+- **Repository Purpose**: High-performance, production-ready application for \`${repoBaseName}\`.
+- **Primary Language & Ecosystem**: TypeScript / JavaScript (Modern Node.js / Edge Runtime).
+- **Core Architecture Paradigm**: Clean modular architecture with strict separation between presentation UI, server execution actions, and data services.
+- **Deterministic Truth**: All guidelines in this file supersede generic LLM pre-training assumptions.
+
+---
+
+## 🧱 2. Architectural Topology & Directory Boundaries
+
+\`\`\`
+${fileTreeSummary.slice(0, 3000)}
+\`\`\`
+
+### Directory Ownership Matrix
+- **UI & Presentation Layer** (\`/src/components\`, \`/src/app\`): Client & server React components, styling tokens, responsive layouts.
+- **Server Action & Route Layer** (\`/src/app/api\`, \`/src/lib/actions.ts\`): Pure server-executed mutations, input validation, and external integrations.
+- **Data & Shared Utilities** (\`/src/lib\`): Database client singletons, business logic, TypeScript interfaces, third-party connectors.
+
+---
+
+## 🛡️ 3. Non-Negotiable Guardrails & Anti-Patterns ("The Red Lines")
+*AI Agents MUST strictly adhere to these guardrails to prevent codebase corruption and regressions:*
+
+- ❌ **NEVER** expose private secrets or API keys (\`process.env.*_SECRET\`, \`*_KEY\`) to client components or public responses.
+- ❌ **NEVER** edit auto-generated build directories (\`.next/\`, \`dist/\`, \`out/\`, \`node_modules/\`) or lockfiles without explicit instruction.
+- ❌ **NEVER** execute shell commands via string interpolation with untrusted input (CWE-78 Command Injection vulnerability).
+- ❌ **NEVER** use implicit \`any\` types in TypeScript — always declare explicit interfaces for props and function signatures.
+- ✅ **ALWAYS** wrap asynchronous I/O and external API calls in robust try/catch blocks with graceful fallbacks.
+- ✅ **ALWAYS** preserve existing architectural comments, docstrings, and non-deprecated method exports.
+- ✅ **ALWAYS** run the full typecheck and build command before marking tasks as complete.
+
+---
+
+## ⚡ 4. Verified Execution & Verification Workflows
+
+| Lifecycle Phase | Command | Purpose | Verification Source |
+| :--- | :--- | :--- | :---: |
+| **Development Server** | \`${devCmd}\` | Starts local development server | \`package.json#scripts\` |
+| **Type Check** | \`${typecheckCmd}\` | Strict TypeScript compilation check | \`tsconfig.json\` |
+| **Production Build** | \`${buildCmd}\` | Compiles optimized production bundle | \`package.json#scripts\` |
+| **Test Runner** | \`${testCmd}\` | Executes automated test suite | \`package.json#scripts\` |
+
+---
+
+## 🗄️ 5. Database, Schema & State Contracts
+- **Data Layer**: Type-safe data interactions with validation (Zod / TypeScript interfaces).
+- **Authentication**: Stateless token / OAuth verification with protected route middleware gating.
+- **State Management**: Localized component state for UI controls; server-side state for persistent data.
+
+---
+
+${subagentSection}
+
+---
+
+## 🔄 8. Context Drift & Synchronization Protocol
+- When adding new dependencies, routes, or database tables, update this \`AGENT_README.md\` to keep AI agents aligned.
+- Run GitContextGen CLI / MCP tool (\`gitcontextgen_get_rules\`) to re-sync after major architectural changes.`;
+}
+
+/**
  * High-Value Deep Agency Audit Report & Context Generator
  */
 function generateDeepAgencyAuditReport(
@@ -524,6 +685,10 @@ function generateDeepAgencyAuditReport(
 ): string {
   if (format === 'replit') {
     return generateReplitMdSpecification(repoName, fileTreeSummary, manifestContent, readmeContent);
+  }
+
+  if (format === 'agent_readme') {
+    return generateAgentReadmeSpecification(repoName, fileTreeSummary, manifestContent, readmeContent);
   }
 
   const fileName = format === 'agents' ? 'AGENTS.md' : format === 'copilot' ? '.github/copilot-instructions.md' : format === 'cursor' ? '.cursorrules' : 'CLAUDE.md';

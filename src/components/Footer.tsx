@@ -24,6 +24,9 @@ export default function Footer() {
           <Link href="/" className="hover:text-white transition-colors cursor-pointer">
             Free AI Sandbox
           </Link>
+          <Link href="/agent-readme-generator" className="hover:text-white transition-colors cursor-pointer text-cyan-400 font-bold">
+            AGENT_README.md
+          </Link>
           <Link href="/claude-md-generator" className="hover:text-white transition-colors cursor-pointer">
             CLAUDE.md Generator
           </Link>

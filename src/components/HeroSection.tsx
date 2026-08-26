@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { GithubIcon } from '@/components/icons/Github';
@@ -59,6 +59,16 @@ export default function HeroSection() {
   const [copiedCode, setCopiedCode] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [showNonCoderGuide, setShowNonCoderGuide] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const fmtParam = params.get('format') as ExportFormat | null;
+      if (fmtParam && ['agent_readme', 'agents', 'claude', 'copilot', 'cursor', 'replit', 'windsurf'].includes(fmtParam)) {
+        setSelectedFormat(fmtParam);
+      }
+    }
+  }, []);
 
   const handleAnalyze = async (e?: React.FormEvent, targetUrl?: string) => {
     if (e) e.preventDefault();
@@ -428,7 +438,7 @@ export default function HeroSection() {
 
                 <div className="flex items-center gap-2 p-1.5 rounded-xl bg-black border border-white/10">
                   <span className="text-xs font-mono text-white/50 px-2 shrink-0">Format:</span>
-                  {(['agents', 'claude', 'copilot', 'cursor', 'replit', 'windsurf'] as ExportFormat[]).map((fmt) => (
+                  {(['agent_readme', 'agents', 'claude', 'copilot', 'cursor', 'replit', 'windsurf'] as ExportFormat[]).map((fmt) => (
                     <button
                       key={fmt}
                       onClick={() => handleFormatChange(fmt)}
@@ -438,7 +448,7 @@ export default function HeroSection() {
                           : 'text-white/60 hover:text-white hover:bg-white/10'
                       }`}
                     >
-                      {fmt}
+                      {fmt === 'agent_readme' ? 'AGENT_README' : fmt}
                     </button>
                   ))}
                 </div>

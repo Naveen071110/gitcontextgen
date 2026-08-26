@@ -69,7 +69,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                         },
                         format: {
                             type: 'string',
-                            enum: ['claude', 'cursor', 'copilot', 'windsurf', 'universal', 'agents'],
+                            enum: ['claude', 'cursor', 'copilot', 'windsurf', 'universal', 'agents', 'agent_readme'],
                             description: 'Target instruction format standard.',
                         },
                     },

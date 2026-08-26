@@ -25,13 +25,13 @@ memoryDocAssets.set(sampleId, [
     id: 'asset-1',
     project_id: sampleId,
     type: 'context',
-    content: `# CLAUDE.md - RepoPulse AI Development Guide
+    content: `# CLAUDE.md - GitContextGen Development Guide
 
 ## Project Overview
-**RepoPulse AI** is a production-ready Next.js 16 App Router application for AI repository context generation, Mermaid.js architecture visualization, and release automation.
+**GitContextGen** is a production-ready Next.js 16 App Router application for AI repository context generation, Mermaid.js architecture visualization, and release automation.
 
-- **Stack**: Next.js 16, Tailwind CSS v4, Lucide React, Supabase PostgreSQL, Gemini 3.6 Flash, Resend API.
-- **Goal**: Help developers maintain CLAUDE.md context files and automate release note emails upon GitHub push events.
+- **Stack**: Next.js 16, Tailwind CSS v4, Lucide React, Supabase PostgreSQL, Sonnet 5 / Claude Code, Resend API.
+- **Goal**: Help developers maintain CLAUDE.md & AGENT_README.md context files and automate release note emails upon GitHub push events.
 
 ---
 

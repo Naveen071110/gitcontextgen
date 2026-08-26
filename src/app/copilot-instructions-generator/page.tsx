@@ -4,6 +4,8 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { ShieldCheck, FileCode2, ArrowRight } from 'lucide-react';
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://repopulse-ai.singhnaveen360.workers.dev';
+
 export const metadata: Metadata = {
   title: 'GitHub Copilot Instructions Generator | Repository Custom Instructions',
   description: 'Generate official .github/copilot-instructions.md files from any GitHub repository to customize Copilot code completions.',
@@ -17,23 +19,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'GitHub Copilot Instructions Generator | Repository Custom Instructions',
     description: 'Generate official .github/copilot-instructions.md files from any GitHub repository.',
-    url: 'https://gitcontextgen.com/copilot-instructions-generator',
+    url: `${baseUrl}/copilot-instructions-generator`,
     siteName: 'GitContextGen',
     type: 'website',
-    images: [
-      {
-        url: 'https://gitcontextgen.com/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'Copilot Instructions Generator by GitContextGen',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'GitHub Copilot Instructions Generator | Repository Custom Instructions',
     description: 'Generate official .github/copilot-instructions.md files from any GitHub repository.',
-    images: ['https://gitcontextgen.com/og-image.png'],
   },
   alternates: {
     canonical: '/copilot-instructions-generator',
@@ -45,12 +38,12 @@ const jsonLd = {
   '@type': 'TechArticle',
   headline: 'GitHub Copilot Custom Instructions Generator',
   description: 'Automated tool to generate .github/copilot-instructions.md files for GitHub Copilot repository customization.',
-  url: 'https://gitcontextgen.com/copilot-instructions-generator',
+  url: `${baseUrl}/copilot-instructions-generator`,
   inLanguage: 'en-US',
   author: {
     '@type': 'Organization',
     name: 'GitContextGen',
-    url: 'https://gitcontextgen.com',
+    url: baseUrl,
   },
 };
 

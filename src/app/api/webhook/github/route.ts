@@ -14,12 +14,61 @@ function escapeHtml(text: string): string {
     .replace(/'/g, '&#039;');
 }
 
+/**
+ * Validates GitHub HMAC-SHA256 signature using Web Crypto API (Universal Edge & Node)
+ */
+async function verifyGitHubSignature(secret: string, headerSignature: string | null, rawBody: string): Promise<boolean> {
+  if (!headerSignature || !headerSignature.startsWith('sha256=')) {
+    return false;
+  }
+  const expectedSig = headerSignature.slice(7);
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(rawBody));
+  const hexSignature = Array.from(new Uint8Array(signatureBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+
+  if (expectedSig.length !== hexSignature.length) return false;
+  let diff = 0;
+  for (let i = 0; i < hexSignature.length; i++) {
+    diff |= expectedSig.charCodeAt(i) ^ hexSignature.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
 export async function POST(request: Request) {
   try {
     const url = new URL(request.url);
     const projectId = url.searchParams.get('project_id') || 'demo-project-123';
+    const signature = request.headers.get('x-hub-signature-256');
+    const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
 
-    const payload = await request.json();
+    const rawBody = await request.text();
+
+    // 0. Enforce HMAC Signature Security if secret is configured
+    if (webhookSecret) {
+      const isValid = await verifyGitHubSignature(webhookSecret, signature, rawBody);
+      if (!isValid) {
+        return NextResponse.json(
+          { error: 'Unauthorized: Invalid or missing X-Hub-Signature-256 HMAC signature.' },
+          { status: 401 }
+        );
+      }
+    }
+
+    let payload: any;
+    try {
+      payload = JSON.parse(rawBody);
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+    }
 
     // Check if event is a GitHub push event with commits
     const commits = payload.commits || [];

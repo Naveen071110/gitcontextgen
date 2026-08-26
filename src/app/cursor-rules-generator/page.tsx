@@ -4,6 +4,8 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { ShieldCheck, FileCode2, ArrowRight } from 'lucide-react';
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://repopulse-ai.singhnaveen360.workers.dev';
+
 export const metadata: Metadata = {
   title: '.cursorrules Generator | AI Codebase Rules for Cursor IDE',
   description: 'Generate .cursorrules prompt configuration files instantly from any public or private GitHub repository to customize Cursor AI behavior.',
@@ -19,23 +21,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: '.cursorrules Generator | AI Codebase Rules for Cursor IDE',
     description: 'Generate .cursorrules prompt configuration files instantly from any public or private GitHub repository.',
-    url: 'https://gitcontextgen.com/cursor-rules-generator',
+    url: `${baseUrl}/cursor-rules-generator`,
     siteName: 'GitContextGen',
     type: 'website',
-    images: [
-      {
-        url: 'https://gitcontextgen.com/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: '.cursorrules Generator by GitContextGen',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: '.cursorrules Generator | AI Codebase Rules for Cursor IDE',
     description: 'Generate .cursorrules configuration files instantly from any GitHub repository.',
-    images: ['https://gitcontextgen.com/og-image.png'],
   },
   alternates: {
     canonical: '/cursor-rules-generator',
@@ -47,12 +40,12 @@ const jsonLd = {
   '@type': 'TechArticle',
   headline: '.cursorrules Specification Generator for Cursor IDE',
   description: 'Automated tool to generate .cursorrules prompt rules from GitHub repository structures for Cursor AI.',
-  url: 'https://gitcontextgen.com/cursor-rules-generator',
+  url: `${baseUrl}/cursor-rules-generator`,
   inLanguage: 'en-US',
   author: {
     '@type': 'Organization',
     name: 'GitContextGen',
-    url: 'https://gitcontextgen.com',
+    url: baseUrl,
   },
 };
 

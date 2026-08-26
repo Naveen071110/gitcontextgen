@@ -4,6 +4,8 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { ShieldCheck, ArrowRight } from 'lucide-react';
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://repopulse-ai.singhnaveen360.workers.dev';
+
 export const metadata: Metadata = {
   title: 'GitContextGen for Cursor IDE | Auto-generate .cursorrules',
   description: 'Auto-generate evidence-backed .cursorrules files tuned specifically to your codebase.',
@@ -16,16 +18,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'GitContextGen for Cursor IDE | Auto-generate .cursorrules',
     description: 'Auto-generate evidence-backed .cursorrules files tuned specifically to your codebase.',
-    url: 'https://gitcontextgen.com/for/cursor',
+    url: `${baseUrl}/for/cursor`,
     siteName: 'GitContextGen',
     type: 'website',
-    images: [{ url: 'https://gitcontextgen.com/og-image.png', width: 1200, height: 630, alt: 'GitContextGen for Cursor' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'GitContextGen for Cursor IDE',
     description: 'Auto-generate evidence-backed .cursorrules files tuned specifically to your codebase.',
-    images: ['https://gitcontextgen.com/og-image.png'],
   },
   alternates: {
     canonical: '/for/cursor',

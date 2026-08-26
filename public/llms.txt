@@ -1,0 +1,37 @@
+# GitContextGen
+
+> High-Fidelity Codebase AI Context Engine & Official Model Context Protocol (MCP) Server for Sonnet 5, Claude Code, Cursor, Copilot, Replit & Windsurf.
+
+GitContextGen (https://repopulse-ai.singhnaveen360.workers.dev) solves AI context drift and hallucinations by parsing repository file trees, package manifests, build scripts, and security boundaries to synthesize zero-drift "Floor Plan" specifications for autonomous AI coding agents.
+
+## Core Capabilities
+- **Universal AGENT_README.md & AGENTS.md Generator**: Evidence-backed AI intelligence dossier with adaptive single-file vs multi-agent subagent delegation.
+- **CLAUDE.md & Sonnet 5 Context Generator**: Native memory configuration for Claude Code and Anthropic models.
+- **.cursorrules Exporter**: System prompt rules and architectural constraints for Cursor IDE.
+- **GitHub Copilot Instructions**: Workspace directives for GitHub Copilot.
+- **replit.md Blueprint**: Project layout and run commands for Replit Agent.
+- **Google OSV.dev CVE Scanning**: Real-time batch vulnerability detection for npm, PyPI, Crates.io, and Go dependencies.
+- **Kroki Architecture Visualizer**: Vector SVG/PNG Mermaid.js architecture diagrams for README embedding.
+- **QuickChart Radar Scorecards**: 5-axis agent readiness metrics visualizing Setup, Test, Architecture, Boundary Safety, and Multi-Agent coverage.
+- **SPDX License Compliance**: Automated copyright and open-source license guardrail mapping.
+
+## Official Model Context Protocol (MCP) Server
+AI coding assistants can connect directly over `stdio` without copying large markdown files:
+```bash
+npx -y gitcontextgen-mcp
+```
+
+### Available MCP Tools
+- `gitcontextgen_analyze`: Analyzes local directories or remote GitHub repos for file trees, dependencies, scripts, and entry points.
+- `gitcontextgen_get_rules`: Generates formatted context rules (AGENT_README.md, CLAUDE.md, .cursorrules, copilot-instructions, universal AGENTS.md).
+- `gitcontextgen_get_architecture`: Produces Mermaid.js diagrams and Kroki SVG/PNG links for repository architecture.
+- `gitcontextgen_get_changelog`: Generates audience-tailored release notes from git commit history.
+
+## Documentation & Key Links
+- Web App & Free Sandbox: https://repopulse-ai.singhnaveen360.workers.dev/
+- AGENT_README Generator: https://repopulse-ai.singhnaveen360.workers.dev/agent-readme-generator
+- AGENTS.md Generator: https://repopulse-ai.singhnaveen360.workers.dev/agents-md-generator
+- CLAUDE.md Generator: https://repopulse-ai.singhnaveen360.workers.dev/claude-md-generator
+- Cursor Rules Generator: https://repopulse-ai.singhnaveen360.workers.dev/cursor-rules-generator
+- Copilot Instructions Generator: https://repopulse-ai.singhnaveen360.workers.dev/copilot-instructions-generator
+- GitHub Repository: https://github.com/Naveen071110/gitcontextgen

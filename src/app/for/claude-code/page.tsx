@@ -4,6 +4,8 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { ShieldCheck, ArrowRight } from 'lucide-react';
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://repopulse-ai.singhnaveen360.workers.dev';
+
 export const metadata: Metadata = {
   title: 'GitContextGen for Claude Code | Repository Context Engine',
   description: 'Instantly make any GitHub repository ready for Claude Code & Sonnet 5.',
@@ -16,16 +18,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'GitContextGen for Claude Code | Repository Context Engine',
     description: 'Instantly make any GitHub repository ready for Claude Code & Sonnet 5.',
-    url: 'https://gitcontextgen.com/for/claude-code',
+    url: `${baseUrl}/for/claude-code`,
     siteName: 'GitContextGen',
     type: 'website',
-    images: [{ url: 'https://gitcontextgen.com/og-image.png', width: 1200, height: 630, alt: 'GitContextGen for Claude Code' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'GitContextGen for Claude Code',
     description: 'Instantly make any GitHub repository ready for Claude Code.',
-    images: ['https://gitcontextgen.com/og-image.png'],
   },
   alternates: {
     canonical: '/for/claude-code',

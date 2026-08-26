@@ -4,6 +4,8 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { ShieldCheck, FileCode2, ArrowRight, CheckCircle2 } from 'lucide-react';
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://repopulse-ai.singhnaveen360.workers.dev';
+
 export const metadata: Metadata = {
   title: 'AGENTS.md Generator | Free Vendor-Neutral AI Agent Context Spec',
   description: 'Instantly generate an evidence-backed AGENTS.md file for any GitHub repository. Works seamlessly across Claude Code, GitHub Copilot, Cursor IDE, Replit Agent, and Windsurf.',
@@ -19,23 +21,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'AGENTS.md Generator | Free Vendor-Neutral AI Agent Context Spec',
     description: 'Instantly generate an evidence-backed AGENTS.md file for any GitHub repository. Works across Claude, Copilot, Cursor, Replit, and Windsurf.',
-    url: 'https://gitcontextgen.com/agents-md-generator',
+    url: `${baseUrl}/agents-md-generator`,
     siteName: 'GitContextGen',
     type: 'website',
-    images: [
-      {
-        url: 'https://gitcontextgen.com/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'AGENTS.md Generator by GitContextGen',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'AGENTS.md Generator | Free Vendor-Neutral AI Agent Context Spec',
     description: 'Instantly generate an evidence-backed AGENTS.md file for any GitHub repository.',
-    images: ['https://gitcontextgen.com/og-image.png'],
   },
   alternates: {
     canonical: '/agents-md-generator',
@@ -47,12 +40,12 @@ const jsonLd = {
   '@type': 'TechArticle',
   headline: 'AGENTS.md Specification Generator for AI Coding Agents',
   description: 'Automated tool to create vendor-neutral AGENTS.md context specifications from GitHub repositories.',
-  url: 'https://gitcontextgen.com/agents-md-generator',
+  url: `${baseUrl}/agents-md-generator`,
   inLanguage: 'en-US',
   author: {
     '@type': 'Organization',
     name: 'GitContextGen',
-    url: 'https://gitcontextgen.com',
+    url: baseUrl,
   },
 };
 

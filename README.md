@@ -152,7 +152,6 @@ gitcontextgen/
 │   │   ├── ai-engine.ts        # AI Context & Readiness scoring engine
 │   │   ├── github.ts           # GitHub API client
 │   │   └── mockStore.ts        # In-memory global store fallback
-│   └── middleware.ts           # Supabase edge session middleware
 ├── .github/workflows/          # Keep-alive heartbeat workflows
 ├── package.json
 └── wrangler.jsonc              # Cloudflare Workers OpenNext configuration

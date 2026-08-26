@@ -4,6 +4,8 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { ShieldCheck, FileCode2, ArrowRight } from 'lucide-react';
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://repopulse-ai.singhnaveen360.workers.dev';
+
 export const metadata: Metadata = {
   title: 'CLAUDE.md Generator | Instant Codebase Context for Sonnet 5 & Claude Code',
   description: 'Generate formatted CLAUDE.md files from any GitHub repository so Claude Code & Sonnet write perfect code with zero hallucinations.',
@@ -19,23 +21,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'CLAUDE.md Generator | Instant Codebase Context for Sonnet 5 & Claude Code',
     description: 'Generate formatted CLAUDE.md files from any GitHub repository so Claude Code & Sonnet write perfect code with zero hallucinations.',
-    url: 'https://gitcontextgen.com/claude-md-generator',
+    url: `${baseUrl}/claude-md-generator`,
     siteName: 'GitContextGen',
     type: 'website',
-    images: [
-      {
-        url: 'https://gitcontextgen.com/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'CLAUDE.md Generator by GitContextGen',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'CLAUDE.md Generator | Instant Codebase Context for Sonnet 5 & Claude Code',
     description: 'Generate formatted CLAUDE.md files from any GitHub repository instantly.',
-    images: ['https://gitcontextgen.com/og-image.png'],
   },
   alternates: {
     canonical: '/claude-md-generator',
@@ -47,12 +40,12 @@ const jsonLd = {
   '@type': 'TechArticle',
   headline: 'CLAUDE.md Context Specification Generator for Claude AI & Claude Code',
   description: 'Automated tool to create repository-level CLAUDE.md context files for Anthropic Sonnet 5 and Claude Code agent.',
-  url: 'https://gitcontextgen.com/claude-md-generator',
+  url: `${baseUrl}/claude-md-generator`,
   inLanguage: 'en-US',
   author: {
     '@type': 'Organization',
     name: 'GitContextGen',
-    url: 'https://gitcontextgen.com',
+    url: baseUrl,
   },
 };
 

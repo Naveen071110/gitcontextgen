@@ -61,6 +61,7 @@ export async function fetchKrokiSvg(mermaidCode: string): Promise<string | null>
         'Accept': 'image/svg+xml',
       },
       body: mermaidCode.trim(),
+      signal: AbortSignal.timeout(7000),
       next: { revalidate: 86400 },
     });
 

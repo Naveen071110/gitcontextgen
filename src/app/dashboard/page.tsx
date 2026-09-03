@@ -53,25 +53,30 @@ export default function DashboardPage() {
   const [userToken, setUserToken] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    setProjects(MockStore.getProjects());
-
     const fetchUser = async () => {
       try {
         const supabase = createClient();
         const { data } = await supabase.auth.getUser();
-        if (data?.user) {
-          setUser(data.user);
+        if (!data?.user) {
+          router.push('/auth/login?error=Please+sign+in+to+access+your+dashboard');
+          return;
         }
+
+        setUser(data.user);
+        // Tenant Isolation: Only show projects belonging to the logged-in user
+        setProjects(MockStore.getProjects().filter(p => p.user_id === data.user.id));
+
         const { data: sessionData } = await supabase.auth.getSession();
         if (sessionData?.session?.provider_token) {
           setUserToken(sessionData.session.provider_token);
         }
       } catch (e) {
         console.warn('Auth check error:', e);
+        router.push('/auth/login');
       }
     };
     fetchUser();
-  }, []);
+  }, [router]);
 
   const handleSignOut = async () => {
     try {
@@ -95,7 +100,6 @@ export default function DashboardPage() {
 
     try {
       const analysisRes = await analyzeRepositoryAction(newRepoUrl, userToken);
-
       if (!analysisRes.success || !analysisRes.data) {
         setError(analysisRes.error || 'Failed to analyze repository. Please verify URL.');
         setIsCreating(false);
@@ -108,12 +112,13 @@ export default function DashboardPage() {
         repoUrl: newRepoUrl,
         contextMarkdown: analysisRes.data.contextMarkdown,
         mermaidArchitecture: analysisRes.data.mermaidArchitecture,
-        userId: user?.id || 'user_demo'
       });
 
       if (res.success) {
         setNewRepoUrl('');
-        setProjects(MockStore.getProjects());
+        if (user) {
+          setProjects(MockStore.getProjects().filter(p => p.user_id === user.id));
+        }
       } else {
         setError(res.error || 'Failed to save project.');
       }
@@ -129,8 +134,12 @@ export default function DashboardPage() {
     e.stopPropagation();
     if (!confirm('Remove this repository stream from your workspace?')) return;
     try {
-      await deleteProjectAction(id);
-      setProjects(MockStore.getProjects());
+      const res = await deleteProjectAction(id);
+      if (res.success) {
+        setProjects(prev => prev.filter(p => p.id !== id));
+      } else {
+        setError(res.error || 'Failed to delete workspace.');
+      }
     } catch (e) {
       console.error(e);
     }

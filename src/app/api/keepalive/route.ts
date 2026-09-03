@@ -4,16 +4,26 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const startTime = Date.now();
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://tuyatstcjgnragcwushu.supabase.co';
-  const anonKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1eWF0c3RjamducmFnY3d1c2h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMDkwMzQsImV4cCI6MjEwMDg4NTAzNH0.eU6eqCvo0oB30KHHO1b3q_M71qnFRTy07iIz_xiktC0';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !anonKey) {
+    return NextResponse.json(
+      {
+        status: 'skipped',
+        service: 'GitContextGen Supabase Heartbeat',
+        message: 'Supabase environment variables not configured on host.',
+      },
+      { status: 200 }
+    );
+  }
 
   const results: Record<string, { status: number; ok: boolean }> = {};
 
   try {
     const authPromise = fetch(`${supabaseUrl}/auth/v1/settings`, {
       headers: { apikey: anonKey },
+      signal: AbortSignal.timeout(5000),
     })
       .then((r) => {
         results.auth = { status: r.status, ok: r.status === 200 };
@@ -24,6 +34,7 @@ export async function GET() {
 
     const healthPromise = fetch(`${supabaseUrl}/auth/v1/health`, {
       headers: { apikey: anonKey },
+      signal: AbortSignal.timeout(5000),
     })
       .then((r) => {
         results.authHealth = { status: r.status, ok: r.status === 200 };
@@ -37,6 +48,7 @@ export async function GET() {
         apikey: anonKey,
         Authorization: `Bearer ${anonKey}`,
       },
+      signal: AbortSignal.timeout(5000),
     })
       .then((r) => {
         results.storage = { status: r.status, ok: r.status === 200 };
@@ -55,16 +67,16 @@ export async function GET() {
 
   return NextResponse.json(
     {
-      status: 'ok',
+      status: isHealthy ? 'ok' : 'degraded',
       service: 'GitContextGen Supabase Heartbeat',
       timestamp: new Date().toISOString(),
       durationMs,
       supabase: {
-        url: supabaseUrl,
+        healthy: isHealthy,
         results,
         message: isHealthy
           ? 'Supabase multi-service keep-alive ping successful. Inactivity timer active.'
-          : 'Keep-alive executed.',
+          : 'Keep-alive executed with degraded status.',
       },
     },
     {

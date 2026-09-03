@@ -53,6 +53,7 @@ export async function auditPackageVulnerabilities(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ queries }),
+      signal: AbortSignal.timeout(7000),
       next: { revalidate: 86400 }, // Cache results for 24h
     });
 

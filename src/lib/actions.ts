@@ -10,6 +10,7 @@ import { generateKrokiDiagramUrls } from './integrations/kroki';
 import { auditEcosystemFrameworks } from './integrations/registries';
 import { generateReadinessRadarChartUrl } from './integrations/quickchart';
 import { getLicenseGuardrail } from './integrations/licenses';
+import { createClient } from './supabase/server';
 
 // Global in-memory cache for analyzed repositories (24-hour TTL with max size limit)
 const analysisCache = new Map<string, { data: RepositoryAnalysisResult; timestamp: number }>();
@@ -137,22 +138,31 @@ export async function switchExportFormatAction(
   }
 }
 
+// In-memory rate limiting map for subscriber submissions (max 5 per minute per IP/project)
+const subscriberRateLimit = new Map<string, { count: number; expires: number }>();
+
 export async function saveProjectAction(payload: {
   repoUrl: string;
   contextMarkdown: string;
   mermaidArchitecture: string;
   brandingColor?: string;
-  userId?: string;
 }): Promise<{ success: boolean; projectId?: string; slug?: string; error?: string }> {
   try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: 'Unauthorized: You must be signed in with GitHub to save a workspace.' };
+    }
+
     const parsed = parseGitHubUrl(payload.repoUrl);
     const repoName = parsed ? parsed.repo : 'my-repo';
     const slug = (repoName + '-' + Math.random().toString(36).substring(2, 6)).toLowerCase();
 
-    // Save project using local store (with Supabase fallback capability)
+    // Save project strictly bound to the authenticated user's session
     const project = MockStore.saveProject(
       {
-        user_id: payload.userId || 'user_demo',
+        user_id: user.id,
         repo_url: payload.repoUrl,
         slug,
         branding_color: payload.brandingColor || '#6366f1',
@@ -163,19 +173,36 @@ export async function saveProjectAction(payload: {
     );
 
     return { success: true, projectId: project.id, slug: project.slug };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error saving project:', err);
-    return { success: false, error: err?.message || 'Failed to save project.' };
+    return { success: false, error: 'Failed to securely save project workspace.' };
   }
 }
 
 export async function deleteProjectAction(projectId: string): Promise<{ success: boolean; error?: string }> {
   try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: 'Unauthorized: Please sign in to delete workspaces.' };
+    }
+
+    const project = MockStore.getProjectById(projectId);
+    if (!project) {
+      return { success: false, error: 'Workspace not found.' };
+    }
+
+    // Strict Tenant Isolation / BOLA Protection
+    if (project.user_id !== user.id) {
+      return { success: false, error: 'Forbidden: You do not have permission to delete this workspace.' };
+    }
+
     MockStore.deleteProject(projectId);
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error deleting project:', err);
-    return { success: false, error: err?.message || 'Failed to delete project.' };
+    return { success: false, error: 'Failed to delete workspace.' };
   }
 }
 
@@ -187,9 +214,21 @@ export async function publishReleaseAction(payload: {
   audienceTone?: 'technical' | 'marketing';
 }): Promise<{ success: boolean; releaseId?: string; error?: string }> {
   try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: 'Unauthorized: Please sign in to publish releases.' };
+    }
+
     const project = MockStore.getProjectById(payload.projectId);
     if (!project) {
-      return { success: false, error: 'Project not found.' };
+      return { success: false, error: 'Project workspace not found.' };
+    }
+
+    // Strict Tenant Isolation / BOLA Protection
+    if (project.user_id !== user.id) {
+      return { success: false, error: 'Forbidden: You do not own this project workspace.' };
     }
 
     const generatedNotes = await generateReleaseNotes(
@@ -223,31 +262,52 @@ export async function publishReleaseAction(payload: {
             </div>
             <p style="margin-top: 16px;"><a href="https://repopulse-ai.singhnaveen360.workers.dev/p/${project.slug}" style="color: #6366f1;">View Showcase Changelog →</a></p>
           </div>`,
-        }).catch(e => console.error(`Failed to send email to ${sub.email}:`, e));
+        }).catch((e: unknown) => console.error(`Failed to send email to ${sub.email}:`, e));
       }
     }
 
     return { success: true, releaseId: release.id };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error publishing release:', err);
-    return { success: false, error: err?.message || 'Failed to publish release notes.' };
+    return { success: false, error: 'Failed to publish release notes.' };
   }
 }
+
+const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
 
 export async function addSubscriberAction(
   projectId: string,
   email: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    if (!email || !email.includes('@')) {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    if (!cleanEmail || cleanEmail.length > 254 || !EMAIL_REGEX.test(cleanEmail)) {
       return { success: false, error: 'Please enter a valid email address.' };
     }
 
-    MockStore.addSubscriber(projectId, email);
+    const project = MockStore.getProjectById(projectId);
+    if (!project) {
+      return { success: false, error: 'Target workspace not found.' };
+    }
+
+    // Rate Limiting: max 5 subscribe attempts per 60 seconds per project
+    const now = Date.now();
+    const rateKey = `${projectId}`;
+    const entry = subscriberRateLimit.get(rateKey);
+    if (entry && entry.expires > now) {
+      if (entry.count >= 5) {
+        return { success: false, error: 'Too many subscription requests. Please try again in a moment.' };
+      }
+      entry.count++;
+    } else {
+      subscriberRateLimit.set(rateKey, { count: 1, expires: now + 60000 });
+    }
+
+    MockStore.addSubscriber(projectId, cleanEmail);
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error adding subscriber:', err);
-    return { success: false, error: err?.message || 'Failed to subscribe.' };
+    return { success: false, error: 'Failed to subscribe.' };
   }
 }
 

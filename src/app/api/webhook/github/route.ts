@@ -43,24 +43,69 @@ async function verifyGitHubSignature(secret: string, headerSignature: string | n
   return diff === 0;
 }
 
+// Cache recent GitHub delivery IDs to defend against replay attacks (1-hour TTL)
+const processedDeliveryIds = new Map<string, number>();
+
+function checkAndRecordDelivery(deliveryId: string | null): boolean {
+  if (!deliveryId) return true;
+  const now = Date.now();
+  for (const [id, ts] of processedDeliveryIds.entries()) {
+    if (now - ts > 3600000) processedDeliveryIds.delete(id);
+  }
+  if (processedDeliveryIds.has(deliveryId)) return false;
+  processedDeliveryIds.set(deliveryId, now);
+  return true;
+}
+
 export async function POST(request: Request) {
   try {
     const url = new URL(request.url);
-    const projectId = url.searchParams.get('project_id') || 'demo-project-123';
+    const projectId = url.searchParams.get('project_id');
     const signature = request.headers.get('x-hub-signature-256');
+    const deliveryId = request.headers.get('x-github-delivery');
     const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
+
+    // 0. Fail-Closed: Require configured webhook secret
+    if (!webhookSecret) {
+      console.error('FATAL: GITHUB_WEBHOOK_SECRET is not configured on server.');
+      return NextResponse.json(
+        { error: 'Server security configuration error: Webhook verification unavailable.' },
+        { status: 500 }
+      );
+    }
 
     const rawBody = await request.text();
 
-    // 0. Enforce HMAC Signature Security if secret is configured
-    if (webhookSecret) {
-      const isValid = await verifyGitHubSignature(webhookSecret, signature, rawBody);
-      if (!isValid) {
-        return NextResponse.json(
-          { error: 'Unauthorized: Invalid or missing X-Hub-Signature-256 HMAC signature.' },
-          { status: 401 }
-        );
-      }
+    // 1. Enforce HMAC Signature Security
+    const isValid = await verifyGitHubSignature(webhookSecret, signature, rawBody);
+    if (!isValid) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Invalid or missing X-Hub-Signature-256 HMAC signature.' },
+        { status: 401 }
+      );
+    }
+
+    // 2. Defend against Webhook Replay Attacks
+    if (deliveryId && !checkAndRecordDelivery(deliveryId)) {
+      return NextResponse.json(
+        { message: 'Duplicate webhook delivery acknowledged.' },
+        { status: 200 }
+      );
+    }
+
+    if (!projectId) {
+      return NextResponse.json(
+        { error: 'Missing required project_id query parameter.' },
+        { status: 400 }
+      );
+    }
+
+    const project = MockStore.getProjectById(projectId);
+    if (!project) {
+      return NextResponse.json(
+        { error: 'Referenced project workspace not found.' },
+        { status: 404 }
+      );
     }
 
     let payload: any;
@@ -81,8 +126,7 @@ export async function POST(request: Request) {
       });
     }
 
-    const project = MockStore.getProjectById(projectId);
-    const repoName = payload.repository?.full_name || (project ? project.repo_url.replace('https://github.com/', '') : 'repository');
+    const repoName = payload.repository?.full_name || project.repo_url.replace('https://github.com/', '');
 
     // 1. Format commit messages
     const formattedCommits = commits.map((c: any) => ({

@@ -31,6 +31,7 @@ export async function sendBroadcastEmail(payload: SendEmailPayload): Promise<{ s
         subject: payload.subject,
         html: payload.html,
       }),
+      signal: AbortSignal.timeout(10000),
     });
 
     const data = await response.json();

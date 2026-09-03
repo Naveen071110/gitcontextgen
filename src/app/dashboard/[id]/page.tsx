@@ -8,6 +8,8 @@ import MermaidDiagram from '@/components/MermaidDiagram';
 import CodeViewer from '@/components/CodeViewer';
 import { MockStore } from '@/lib/mockStore';
 import { Project, DocAsset, Release } from '@/lib/types';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 import {
   FileText,
   GitGraph,
@@ -19,37 +21,73 @@ import {
   Key,
   Radio,
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  ShieldAlert
 } from 'lucide-react';
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const router = useRouter();
   const resolvedParams = use(params);
   const projectId = resolvedParams.id;
 
   const [project, setProject] = useState<Project | null>(null);
   const [docAssets, setDocAssets] = useState<DocAsset[]>([]);
   const [releases, setReleases] = useState<Release[]>([]);
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   const [activeTab, setActiveTab] = useState<'truth' | 'context' | 'architecture' | 'automation'>('truth');
   const [copiedWebhook, setCopiedWebhook] = useState(false);
 
   useEffect(() => {
-    const proj = MockStore.getProjectById(projectId);
-    if (proj) {
-      setProject(proj);
-      setDocAssets(MockStore.getDocAssets(proj.id));
-      setReleases(MockStore.getReleases(proj.id));
-    }
-  }, [projectId]);
+    const checkAuthAndLoad = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
 
-  if (!project) {
+        if (!user) {
+          router.push('/auth/login?error=Please+sign+in+to+view+this+workspace');
+          return;
+        }
+
+        const proj = MockStore.getProjectById(projectId);
+        if (!proj) {
+          setProject(null);
+          setIsAuthorized(false);
+          return;
+        }
+
+        // Strict Tenant Isolation: verify ownership
+        if (proj.user_id !== user.id) {
+          setIsAuthorized(false);
+          return;
+        }
+
+        setIsAuthorized(true);
+        setProject(proj);
+        setDocAssets(MockStore.getDocAssets(proj.id));
+        setReleases(MockStore.getReleases(proj.id));
+      } catch (err) {
+        console.error('Auth verification error:', err);
+        router.push('/auth/login');
+      }
+    };
+
+    checkAuthAndLoad();
+  }, [projectId, router]);
+
+  if (isAuthorized === false || !project) {
     return (
       <div className="min-h-screen bg-black text-white flex flex-col font-sans">
         <Navbar />
         <div className="flex-1 flex items-center justify-center p-6 text-center">
           <div>
-            <h2 className="text-xl font-bold text-white mb-2">Workspace Not Found</h2>
-            <p className="text-sm text-white/60 mb-4">The requested agency workspace does not exist or has been removed.</p>
+            <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-red-400">
+              <ShieldAlert className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl font-bold text-white mb-2">Access Denied or Not Found</h2>
+            <p className="text-sm text-white/60 mb-4 max-w-sm">
+              The requested repository workspace does not exist or you do not have permission to view it.
+            </p>
             <Link href="/dashboard" className="px-4 py-2 bg-white text-black rounded-lg text-xs font-bold">
               Return to Agency Dashboard
             </Link>

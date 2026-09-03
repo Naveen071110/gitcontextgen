@@ -5,6 +5,18 @@ export interface ParsedRepoUrl {
   repo: string;
 }
 
+const GITHUB_NAME_REGEX = /^[a-zA-Z0-9_.-]+$/;
+const DEFAULT_FETCH_TIMEOUT_MS = 10000;
+
+export async function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeoutMs: number = DEFAULT_FETCH_TIMEOUT_MS
+): Promise<Response> {
+  const signal = options.signal || AbortSignal.timeout(timeoutMs);
+  return fetch(url, { ...options, signal });
+}
+
 export function parseGitHubUrl(url: string): ParsedRepoUrl | null {
   try {
     const cleaned = url.trim().replace(/\/$/, '');
@@ -19,11 +31,11 @@ export function parseGitHubUrl(url: string): ParsedRepoUrl | null {
       repo = repo.slice(0, -4);
     }
 
-    if (owner && repo) {
+    if (owner && repo && GITHUB_NAME_REGEX.test(owner) && GITHUB_NAME_REGEX.test(repo)) {
       return { owner, repo };
     }
     return null;
-  } catch (e) {
+  } catch {
     return null;
   }
 }
@@ -83,7 +95,7 @@ export async function fetchGitHubRepoDetails(
   }
 
   // 1. Fetch Repository Info
-  const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+  const repoRes = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}`, {
     headers,
     next: { revalidate: 3600 },
   });
@@ -106,7 +118,7 @@ export async function fetchGitHubRepoDetails(
 
   // 2. Fetch Recursive Git Tree
   const treeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${defaultBranch}?recursive=1`;
-  const treeRes = await fetch(treeUrl, { headers, next: { revalidate: 3600 } });
+  const treeRes = await fetchWithTimeout(treeUrl, { headers, next: { revalidate: 3600 } });
 
   let fileTree: GitHubFile[] = [];
   if (treeRes.ok) {
@@ -138,14 +150,14 @@ export async function fetchGitHubRepoDetails(
   // 3. Fetch README if present
   let readmeContent = '';
   try {
-    const readmeRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`, {
+    const readmeRes = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}/readme`, {
       headers: { ...headers, 'Accept': 'application/vnd.github.v3.raw' },
       next: { revalidate: 3600 }
     });
     if (readmeRes.ok) {
       readmeContent = await readmeRes.text();
     }
-  } catch (e) {
+  } catch {
     // README fetch optional
   }
 
@@ -161,7 +173,7 @@ export async function fetchGitHubRepoDetails(
     const hasGoMod = filteredTree.some(item => item.path === 'go.mod');
 
     if (hasPkgJson) {
-      const pkgRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/package.json`, {
+      const pkgRes = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}/contents/package.json`, {
         headers: { ...headers, 'Accept': 'application/vnd.github.v3.raw' },
         next: { revalidate: 3600 }
       });
@@ -174,11 +186,13 @@ export async function fetchGitHubRepoDetails(
             ...(pkgJson.devDependencies || {}),
           };
           ecosystem = 'npm';
-        } catch (jsonErr) {}
+        } catch {
+          // ignore invalid json
+        }
       }
     } else if (hasReqs) {
       ecosystem = 'PyPI';
-      const reqRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/requirements.txt`, {
+      const reqRes = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}/contents/requirements.txt`, {
         headers: { ...headers, 'Accept': 'application/vnd.github.v3.raw' },
         next: { revalidate: 3600 }
       });
@@ -195,7 +209,7 @@ export async function fetchGitHubRepoDetails(
       }
     } else if (hasCargo) {
       ecosystem = 'crates.io';
-      const cargoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/Cargo.toml`, {
+      const cargoRes = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}/contents/Cargo.toml`, {
         headers: { ...headers, 'Accept': 'application/vnd.github.v3.raw' },
         next: { revalidate: 3600 }
       });
@@ -204,7 +218,7 @@ export async function fetchGitHubRepoDetails(
       }
     } else if (hasGoMod) {
       ecosystem = 'Go';
-      const goRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/go.mod`, {
+      const goRes = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}/contents/go.mod`, {
         headers: { ...headers, 'Accept': 'application/vnd.github.v3.raw' },
         next: { revalidate: 3600 }
       });
@@ -212,7 +226,7 @@ export async function fetchGitHubRepoDetails(
         manifestContent = await goRes.text();
       }
     }
-  } catch (e) {
+  } catch {
     // Optional
   }
 

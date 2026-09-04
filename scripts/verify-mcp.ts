@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
@@ -15,25 +15,32 @@ if (!fs.existsSync(mcpServerPath)) {
   process.exit(1);
 }
 
+interface PendingRequest {
+  resolve: (value: any) => void;
+  reject: (reason?: any) => void;
+}
+
 class McpStdioClient {
-  constructor(serverPath) {
+  private serverPath: string;
+  private child: ChildProcess | null = null;
+  private buffer: string = '';
+  private requestId: number = 1;
+  private pending: Map<number, PendingRequest> = new Map();
+
+  constructor(serverPath: string) {
     this.serverPath = serverPath;
-    this.child = null;
-    this.buffer = '';
-    this.requestId = 1;
-    this.pending = new Map();
   }
 
-  async start() {
-    return new Promise((resolve, reject) => {
+  async start(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
       this.child = spawn('node', [this.serverPath], {
         stdio: ['pipe', 'pipe', 'pipe'],
         env: { ...process.env },
       });
 
-      this.child.stderr.on('data', () => {});
+      this.child.stderr?.on('data', () => {});
 
-      this.child.stdout.on('data', (chunk) => {
+      this.child.stdout?.on('data', (chunk: Buffer) => {
         this.buffer += chunk.toString();
         const lines = this.buffer.split('\n');
         this.buffer = lines.pop() || '';
@@ -44,12 +51,14 @@ class McpStdioClient {
           try {
             const msg = JSON.parse(trimmed);
             if (msg.id !== undefined && this.pending.has(msg.id)) {
-              const { resolve: reqResolve, reject: reqReject } = this.pending.get(msg.id);
+              const pendingReq = this.pending.get(msg.id);
               this.pending.delete(msg.id);
-              if (msg.error) {
-                reqReject(msg.error);
-              } else {
-                reqResolve(msg.result);
+              if (pendingReq) {
+                if (msg.error) {
+                  pendingReq.reject(msg.error);
+                } else {
+                  pendingReq.resolve(msg.result);
+                }
               }
             }
           } catch (err) {
@@ -58,7 +67,7 @@ class McpStdioClient {
         }
       });
 
-      this.child.on('error', (err) => {
+      this.child.on('error', (err: Error) => {
         reject(err);
       });
 
@@ -66,7 +75,7 @@ class McpStdioClient {
     });
   }
 
-  async request(method, params = {}) {
+  async request(method: string, params: Record<string, any> = {}): Promise<any> {
     const id = this.requestId++;
     const payload = {
       jsonrpc: '2.0',
@@ -82,33 +91,37 @@ class McpStdioClient {
       }, 10000);
 
       this.pending.set(id, {
-        resolve: (res) => {
+        resolve: (res: any) => {
           clearTimeout(timeout);
           resolve(res);
         },
-        reject: (err) => {
+        reject: (err: any) => {
           clearTimeout(timeout);
           reject(err);
         },
       });
 
-      this.child.stdin.write(JSON.stringify(payload) + '\n');
+      if (this.child?.stdin) {
+        this.child.stdin.write(JSON.stringify(payload) + '\n');
+      }
     });
   }
 
-  notify(method, params = {}) {
+  notify(method: string, params: Record<string, any> = {}): void {
     const payload = {
       jsonrpc: '2.0',
       method,
       params,
     };
-    this.child.stdin.write(JSON.stringify(payload) + '\n');
+    if (this.child?.stdin) {
+      this.child.stdin.write(JSON.stringify(payload) + '\n');
+    }
   }
 
-  stop() {
+  stop(): void {
     if (this.child) {
       try {
-        this.child.stdin.end();
+        this.child.stdin?.end();
         this.child.kill();
       } catch {}
       this.child = null;
@@ -116,7 +129,7 @@ class McpStdioClient {
   }
 }
 
-async function runMcpVerification() {
+async function runMcpVerification(): Promise<void> {
   console.log('='.repeat(72));
   console.log('🧪 Starting Automated stdio MCP Verification Suite');
   console.log('='.repeat(72));
@@ -152,12 +165,12 @@ async function runMcpVerification() {
       'gitcontextgen_get_changelog',
     ];
 
-    const foundNames = tools.map((t) => t.name);
+    const foundNames = tools.map((t: any) => t.name);
     for (const expected of expectedTools) {
       if (!foundNames.includes(expected)) {
         throw new Error(`Missing expected tool: ${expected}. Found: ${foundNames.join(', ')}`);
       }
-      const toolDef = tools.find((t) => t.name === expected);
+      const toolDef = tools.find((t: any) => t.name === expected);
       if (!toolDef.inputSchema || toolDef.inputSchema.type !== 'object') {
         throw new Error(`Tool ${expected} has invalid inputSchema: ${JSON.stringify(toolDef.inputSchema)}`);
       }

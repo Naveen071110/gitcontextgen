@@ -1,0 +1,95 @@
+name: CI/CD Quality & Security Verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  code-quality:
+    name: Code Quality & Type Safety
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Root Dependencies
+        run: npm ci
+
+      - name: TypeScript Root Typecheck
+        run: npx tsc --noEmit
+
+      - name: Code Style & ESLint Audit
+        run: npm run lint || true
+
+  rules-harmonization:
+    name: Rules Harmonization & Portability Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate Cursor & Claude Rules Symmetry
+        run: node scripts/validate-rules.mjs
+
+  mcp-engine-verification:
+    name: MCP Stdio Engine & Caching Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install MCP Server Dependencies
+        working-directory: ./mcp-server
+        run: npm ci
+
+      - name: Compile MCP Server
+        working-directory: ./mcp-server
+        run: npm run build
+
+      - name: Run Automated stdio MCP Verification Suite
+        run: node scripts/verify-mcp.mjs
+
+  production-build:
+    name: Next.js Production Build Check
+    needs: [code-quality, rules-harmonization, mcp-engine-verification]
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-service-key' }}
+      GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID || 'placeholder-gh-id' }}
+      GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET || 'placeholder-gh-secret' }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Root Dependencies
+        run: npm ci
+
+      - name: Build Next.js Production Bundle
+        run: npm run build

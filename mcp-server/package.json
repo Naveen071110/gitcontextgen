@@ -1,6 +1,6 @@
 {
   "name": "gitcontextgen-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Official GitContextGen Model Context Protocol (MCP) Server for dynamic codebase analysis, IDE rule generation, architecture visualization, and changelog synthesis.",
   "main": "./dist/index.js",
   "type": "module",
@@ -10,6 +10,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node ./dist/index.js",
+    "verify": "node ../scripts/verify-mcp.mjs",
     "prepare": "npm run build"
   },
   "keywords": [

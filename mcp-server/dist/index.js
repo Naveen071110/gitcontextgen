@@ -7,14 +7,11 @@ import { analyzeRemoteGitHubRepo, isGitHubUrl } from './remoteScanner.js';
 import { generateRules } from './rulesEngine.js';
 import { generateArchitecture } from './architectureEngine.js';
 import { generateChangelog } from './changelogEngine.js';
-// Cache recent analyses in-memory to avoid redundant disk or network scans
-const analysisCache = new Map();
-const CACHE_TTL_MS = 60 * 1000; // 1 minute
+import { getCachedAnalysis, setCachedAnalysis } from './cacheStore.js';
 async function getOrFetchAnalysis(targetPath, customExcludes = []) {
-    const cacheKey = targetPath.trim();
-    const cached = analysisCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-        return cached.data;
+    const cached = getCachedAnalysis(targetPath, customExcludes);
+    if (cached) {
+        return cached;
     }
     let result;
     if (isGitHubUrl(targetPath)) {
@@ -23,7 +20,7 @@ async function getOrFetchAnalysis(targetPath, customExcludes = []) {
     else {
         result = await analyzeLocalDirectory(targetPath, customExcludes);
     }
-    analysisCache.set(cacheKey, { data: result, timestamp: Date.now() });
+    setCachedAnalysis(targetPath, result, customExcludes);
     return result;
 }
 const server = new Server({
@@ -124,10 +121,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
     try {
+        const VALID_FORMATS = new Set(['claude', 'cursor', 'copilot', 'windsurf', 'universal', 'agents', 'agent_readme']);
         switch (name) {
             case 'gitcontextgen_analyze': {
-                const targetPath = String(args?.path || '.');
-                const excludes = Array.isArray(args?.exclude) ? args.exclude.map(String) : [];
+                if (!args?.path || typeof args.path !== 'string') {
+                    throw new Error('Missing required string parameter: "path"');
+                }
+                const targetPath = args.path.trim();
+                const excludes = Array.isArray(args.exclude) ? args.exclude.map(String) : [];
                 const analysis = await getOrFetchAnalysis(targetPath, excludes);
                 const responsePayload = {
                     status: 'success',
@@ -154,8 +155,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 };
             }
             case 'gitcontextgen_get_rules': {
-                const targetPath = String(args?.path || '.');
-                const format = args?.format || 'universal';
+                if (!args?.path || typeof args.path !== 'string') {
+                    throw new Error('Missing required string parameter: "path"');
+                }
+                if (!args?.format || !VALID_FORMATS.has(args.format)) {
+                    throw new Error(`Invalid or missing "format" parameter. Must be one of: ${Array.from(VALID_FORMATS).join(', ')}`);
+                }
+                const targetPath = args.path.trim();
+                const format = args.format;
                 const analysis = await getOrFetchAnalysis(targetPath);
                 const rulesResult = generateRules(analysis, format);
                 return {
@@ -172,7 +179,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 };
             }
             case 'gitcontextgen_get_architecture': {
-                const targetPath = String(args?.path || '.');
+                if (!args?.path || typeof args.path !== 'string') {
+                    throw new Error('Missing required string parameter: "path"');
+                }
+                const targetPath = args.path.trim();
                 const style = String(args?.style || 'layered');
                 const analysis = await getOrFetchAnalysis(targetPath);
                 const archResult = generateArchitecture(analysis, style);
@@ -190,7 +200,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 };
             }
             case 'gitcontextgen_get_changelog': {
-                const targetPath = String(args?.path || '.');
+                if (!args?.path || typeof args.path !== 'string') {
+                    throw new Error('Missing required string parameter: "path"');
+                }
+                const targetPath = args.path.trim();
+                if (isGitHubUrl(targetPath)) {
+                    throw new Error('gitcontextgen_get_changelog requires a local git repository directory path to inspect git logs.');
+                }
                 const fromCommit = args?.from_commit ? String(args.from_commit) : undefined;
                 const tone = args?.tone || 'developer';
                 const changelogResult = generateChangelog(targetPath, fromCommit, tone);
@@ -208,12 +224,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
     }
     catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
         return {
             isError: true,
             content: [
                 {
                     type: 'text',
-                    text: `[GitContextGen MCP Error] ${error?.message || String(error)}`,
+                    text: `[GitContextGen MCP Error] ${errorMsg}`,
                 },
             ],
         };

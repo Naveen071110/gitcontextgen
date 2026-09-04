@@ -691,14 +691,23 @@ function generateDeepAgencyAuditReport(
     return generateAgentReadmeSpecification(repoName, fileTreeSummary, manifestContent, readmeContent);
   }
 
-  const fileName = format === 'agents' ? 'AGENTS.md' : format === 'copilot' ? '.github/copilot-instructions.md' : format === 'cursor' ? '.cursorrules' : 'CLAUDE.md';
+  const fileName = format === 'agents' ? 'AGENTS.md' : format === 'copilot' ? '.github/copilot-instructions.md' : format === 'cursor' ? '.cursor/rules/project-rules.mdc' : 'CLAUDE.md';
 
-  return `# ${fileName} - ${repoName} High-Fidelity Agency Specification & Architectural Audit
+  const cursorFrontmatter = format === 'cursor' ? `---
+description: ${repoName} High-Fidelity Agency Specification & Architectural Guardrails
+globs: *
+alwaysApply: true
+---
+
+` : '';
+
+  return `${cursorFrontmatter}# ${fileName} - ${repoName} High-Fidelity Agency Specification & Architectural Audit
 
 > **Agency Audit Status**: VERIFIED BY GITCONTEXTGEN KNOWLEDGE ENGINE
 > **Repository Target**: \`${repoName}\`
 > **Multi-Agent Format**: \`${format.toUpperCase()}\`
 > **Audit Confidence Rating**: **98.4%** (Backed by physical repository manifests)
+${format === 'cursor' ? `> **Rule Interoperability**: Synchronized with [CLAUDE.md](CLAUDE.md) for verified commands.` : format === 'claude' ? `> **Cursor Interoperability**: Compatible with \`.cursor/rules/project-rules.mdc\` (\`alwaysApply: true\`).` : ''}
 
 ---
 

@@ -13,15 +13,12 @@ import { generateRules, RuleFormat } from './rulesEngine.js';
 import { generateArchitecture } from './architectureEngine.js';
 import { generateChangelog, ChangelogTone } from './changelogEngine.js';
 
-// Cache recent analyses in-memory to avoid redundant disk or network scans
-const analysisCache = new Map<string, { data: CodebaseAnalysis; timestamp: number }>();
-const CACHE_TTL_MS = 60 * 1000; // 1 minute
+import { getCachedAnalysis, setCachedAnalysis } from './cacheStore.js';
 
 async function getOrFetchAnalysis(targetPath: string, customExcludes: string[] = []): Promise<CodebaseAnalysis> {
-  const cacheKey = targetPath.trim();
-  const cached = analysisCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return cached.data;
+  const cached = getCachedAnalysis(targetPath, customExcludes);
+  if (cached) {
+    return cached;
   }
 
   let result: CodebaseAnalysis;
@@ -31,7 +28,7 @@ async function getOrFetchAnalysis(targetPath: string, customExcludes: string[] =
     result = await analyzeLocalDirectory(targetPath, customExcludes);
   }
 
-  analysisCache.set(cacheKey, { data: result, timestamp: Date.now() });
+  setCachedAnalysis(targetPath, result, customExcludes);
   return result;
 }
 
@@ -143,10 +140,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   try {
+    const VALID_FORMATS = new Set<RuleFormat>(['claude', 'cursor', 'copilot', 'windsurf', 'universal', 'agents', 'agent_readme']);
+
     switch (name) {
       case 'gitcontextgen_analyze': {
-        const targetPath = String(args?.path || '.');
-        const excludes = Array.isArray(args?.exclude) ? args.exclude.map(String) : [];
+        if (!args?.path || typeof args.path !== 'string') {
+          throw new Error('Missing required string parameter: "path"');
+        }
+        const targetPath = args.path.trim();
+        const excludes = Array.isArray(args.exclude) ? args.exclude.map(String) : [];
         const analysis = await getOrFetchAnalysis(targetPath, excludes);
 
         const responsePayload = {
@@ -176,8 +178,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'gitcontextgen_get_rules': {
-        const targetPath = String(args?.path || '.');
-        const format = (args?.format as RuleFormat) || 'universal';
+        if (!args?.path || typeof args.path !== 'string') {
+          throw new Error('Missing required string parameter: "path"');
+        }
+        if (!args?.format || !VALID_FORMATS.has(args.format as RuleFormat)) {
+          throw new Error(`Invalid or missing "format" parameter. Must be one of: ${Array.from(VALID_FORMATS).join(', ')}`);
+        }
+
+        const targetPath = args.path.trim();
+        const format = args.format as RuleFormat;
         const analysis = await getOrFetchAnalysis(targetPath);
         const rulesResult = generateRules(analysis, format);
 
@@ -200,7 +209,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'gitcontextgen_get_architecture': {
-        const targetPath = String(args?.path || '.');
+        if (!args?.path || typeof args.path !== 'string') {
+          throw new Error('Missing required string parameter: "path"');
+        }
+        const targetPath = args.path.trim();
         const style = String(args?.style || 'layered');
         const analysis = await getOrFetchAnalysis(targetPath);
         const archResult = generateArchitecture(analysis, style);
@@ -224,7 +236,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'gitcontextgen_get_changelog': {
-        const targetPath = String(args?.path || '.');
+        if (!args?.path || typeof args.path !== 'string') {
+          throw new Error('Missing required string parameter: "path"');
+        }
+        const targetPath = args.path.trim();
+        if (isGitHubUrl(targetPath)) {
+          throw new Error('gitcontextgen_get_changelog requires a local git repository directory path to inspect git logs.');
+        }
+
         const fromCommit = args?.from_commit ? String(args.from_commit) : undefined;
         const tone = (args?.tone as ChangelogTone) || 'developer';
 
@@ -243,13 +262,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       default:
         throw new Error(`Unknown tool requested: ${name}`);
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
     return {
       isError: true,
       content: [
         {
           type: 'text',
-          text: `[GitContextGen MCP Error] ${error?.message || String(error)}`,
+          text: `[GitContextGen MCP Error] ${errorMsg}`,
         },
       ],
     };

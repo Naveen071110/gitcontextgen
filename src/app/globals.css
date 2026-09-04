@@ -46,15 +46,53 @@ body {
 button,
 a,
 select,
+summary,
+label[for],
+[role="button"],
+[role="tab"],
+[role="switch"],
+[role="checkbox"],
+[role="menuitem"],
+[tabindex="0"],
 input[type="submit"],
 input[type="button"],
-[role="button"] {
+input[type="checkbox"],
+input[type="radio"] {
   cursor: pointer;
 }
 
 button:disabled,
-input:disabled {
+input:disabled,
+select:disabled,
+[aria-disabled="true"] {
   cursor: not-allowed !important;
+}
+
+/* Mobile Touch Target and Touch Action Optimization */
+@media (pointer: coarse) {
+  button,
+  a,
+  input,
+  select,
+  summary,
+  [role="button"],
+  [role="tab"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Code Viewer & Text Selection Precision */
+pre, code, .selectable-code {
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+
+.line-number {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
 }
 
 /* Liquid Glass CSS */

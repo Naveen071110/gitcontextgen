@@ -10,6 +10,13 @@ export function generateChangelog(
   fromCommit?: string,
   tone: ChangelogTone = 'developer'
 ): { tone_applied: ChangelogTone; changelog: string; commitsCount: number } {
+  // Check for HTTP/HTTPS web links
+  if (/^https?:\/\//i.test(targetPath)) {
+    throw new Error(
+      "Input validation failed: Git changelog extraction requires a cloned local repository directory path. HTTP remote URLs are not supported for this action."
+    );
+  }
+
   let commitLogs = '';
   let commitList: string[] = [];
 

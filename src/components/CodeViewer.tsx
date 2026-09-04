@@ -70,14 +70,14 @@ export default function CodeViewer({ content, filename = 'CLAUDE.md', className 
 
       {/* Code Text Content */}
       <div className="p-4 sm:p-5 overflow-x-auto font-mono text-xs leading-relaxed bg-black/40 max-h-[500px]">
-        <table className="w-full border-collapse">
+        <table className="w-full border-collapse table-fixed">
           <tbody>
             {lines.map((line, idx) => (
               <tr key={idx} className="hover:bg-white/5 group">
-                <td className="w-10 select-none text-right pr-4 text-white/30 group-hover:text-white/50 font-mono text-[11px]">
+                <td className="w-12 line-number text-right pr-4 text-white/30 group-hover:text-white/50 font-mono text-[11px]">
                   {idx + 1}
                 </td>
-                <td className="text-white/80 whitespace-pre-wrap font-mono">
+                <td className="selectable-code text-white/80 whitespace-pre-wrap font-mono break-all sm:break-normal">
                   {formatMarkdownLine(line)}
                 </td>
               </tr>

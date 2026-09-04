@@ -3,6 +3,10 @@ import { execFileSync } from 'child_process';
  * Extracts recent git commit history and generates audience-aware changelog markdown
  */
 export function generateChangelog(targetPath, fromCommit, tone = 'developer') {
+    // Check for HTTP/HTTPS web links
+    if (/^https?:\/\//i.test(targetPath)) {
+        throw new Error("Input validation failed: Git changelog extraction requires a cloned local repository directory path. HTTP remote URLs are not supported for this action.");
+    }
     let commitLogs = '';
     let commitList = [];
     try {

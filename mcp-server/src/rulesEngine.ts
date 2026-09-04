@@ -135,12 +135,27 @@ ${isSupabase ? '- **Supabase Client**: Separate server-side auth/data operations
 - Maintain strict type annotations and avoid ambiguous signatures.
 - Preserve existing comments and docstrings across modified source files.
 - Return early on error states with informative logging.
+
+---
+
+## 🔄 Agent Rule Synchronization
+> **Cursor & Claude Interoperability**: This file operates as the canonical execution truth.
+> If using Cursor, see synchronized \`.cursor/rules/project-rules.mdc\` (\`alwaysApply: true\`).
 `;
       return { filename: 'CLAUDE.md', content: content.trim() };
     }
 
     case 'cursor': {
-      const content = `# .cursorrules - ${name} AI Guidelines
+      const content = `---
+description: ${name} Core Project Rules, Architectural Boundaries & Invariants
+globs: *
+alwaysApply: true
+---
+
+# .cursor/rules/project-rules.mdc — ${name} AI Guidelines
+
+> **Single Source of Truth**: Execution commands and invariants are synchronized with [CLAUDE.md](CLAUDE.md).
+> Cursor agent rules are enforced globally via \`alwaysApply: true\`.
 
 You are an expert developer working on ${name}. Adhere strictly to these project constraints:
 
@@ -159,7 +174,7 @@ ${isTailwind ? '- [Tailwind CSS] Use clean semantic class ordering. Avoid inline
 ## 3. Directory Layout
 ${analysis.directories.slice(0, 10).map((d) => `- \`/${d}\``).join('\n')}
 `;
-      return { filename: '.cursorrules', content: content.trim() };
+      return { filename: '.cursor/rules/project-rules.mdc', content: content.trim() };
     }
 
     case 'copilot': {

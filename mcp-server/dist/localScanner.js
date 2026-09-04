@@ -21,6 +21,8 @@ const DEFAULT_IGNORES = new Set([
     '.idea',
     '.vscode',
 ]);
+// Strict Pattern Filtering to prevent indexing private keys, credentials, and sensitive databases
+const SENSITIVE_FILE_REGEX = /\.(pem|key|pkcs12|pfx|p12|kdb|sqlite|sqlite3|rdb|env(\..+)?)$|^(id_rsa|id_dsa|id_ecdsa|id_ed25519|secrets?|credentials|service-account|master\.key)$/i;
 /**
  * Scans a local directory and creates a comprehensive codebase analysis
  */
@@ -29,16 +31,28 @@ export async function analyzeLocalDirectory(targetPath, customExcludes = []) {
     if (!fs.existsSync(resolvedPath)) {
         throw new Error(`Target path does not exist: ${resolvedPath}`);
     }
-    const stat = fs.statSync(resolvedPath);
-    if (!stat.isDirectory()) {
-        throw new Error(`Target path is not a directory: ${resolvedPath}`);
+    try {
+        const stat = fs.statSync(resolvedPath);
+        if (!stat.isDirectory()) {
+            throw new Error(`Target path is not a directory: ${resolvedPath}`);
+        }
+    }
+    catch (err) {
+        throw new Error(`Cannot access directory at ${resolvedPath}: ${err.message}`);
     }
     const excludesSet = new Set([...DEFAULT_IGNORES, ...customExcludes]);
     const indexedFiles = [];
     const directoriesSet = new Set();
+    const visitedRealPaths = new Set();
+    try {
+        visitedRealPaths.add(fs.realpathSync(resolvedPath));
+    }
+    catch {
+        visitedRealPaths.add(resolvedPath);
+    }
     function walk(currentDir, relativeDir = '', depth = 0) {
-        if (depth > 8)
-            return; // Guard against deep recursion
+        if (depth > 12)
+            return; // Deep recursion ceiling for large monorepos
         let entries = [];
         try {
             entries = fs.readdirSync(currentDir, { withFileTypes: true });
@@ -48,12 +62,30 @@ export async function analyzeLocalDirectory(targetPath, customExcludes = []) {
         }
         for (const entry of entries) {
             const name = entry.name;
-            if (excludesSet.has(name) || name.startsWith('.')) {
+            // Skip hidden files, default ignores, custom ignores, or sensitive credential files
+            if (excludesSet.has(name) || name.startsWith('.') || SENSITIVE_FILE_REGEX.test(name)) {
                 continue;
             }
             const relPath = relativeDir ? `${relativeDir}/${name}` : name;
             const fullPath = path.join(currentDir, name);
-            if (entry.isDirectory()) {
+            let isDirectory = entry.isDirectory();
+            let realPath = fullPath;
+            if (entry.isSymbolicLink()) {
+                try {
+                    realPath = fs.realpathSync(fullPath);
+                    const realStat = fs.statSync(realPath);
+                    isDirectory = realStat.isDirectory();
+                }
+                catch {
+                    continue; // Broken or inaccessible symlink
+                }
+            }
+            // Circular symlink and infinite loop prevention
+            if (isDirectory) {
+                if (visitedRealPaths.has(realPath)) {
+                    continue; // Detected symlink cycle or already visited path
+                }
+                visitedRealPaths.add(realPath);
                 directoriesSet.add(relPath);
                 walk(fullPath, relPath, depth + 1);
             }

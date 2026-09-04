@@ -34,7 +34,10 @@ export async function analyzeRemoteGitHubRepo(url: string): Promise<CodebaseAnal
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const repoRes = await fetch(repoApiUrl, { headers });
+  const repoRes = await fetch(repoApiUrl, {
+    headers,
+    signal: AbortSignal.timeout(10000),
+  });
   if (!repoRes.ok) {
     if (repoRes.status === 403 || repoRes.status === 429) {
       throw new Error(`GitHub API rate limit exceeded. Please set GITHUB_TOKEN environment variable.`);
@@ -42,20 +45,23 @@ export async function analyzeRemoteGitHubRepo(url: string): Promise<CodebaseAnal
     throw new Error(`GitHub API returned ${repoRes.status}: Repository may be private or not found.`);
   }
 
-  const repoData = (await repoRes.json()) as any;
+  const repoData = (await repoRes.json()) as { default_branch?: string; license?: { spdx_id?: string } };
   const defaultBranch = repoData.default_branch || 'main';
 
   // Fetch Git Tree
   const treeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${defaultBranch}?recursive=1`;
-  const treeRes = await fetch(treeUrl, { headers });
+  const treeRes = await fetch(treeUrl, {
+    headers,
+    signal: AbortSignal.timeout(10000),
+  });
   let files: string[] = [];
   let directories: string[] = [];
 
   if (treeRes.ok) {
-    const treeData = (await treeRes.json()) as any;
+    const treeData = (await treeRes.json()) as { tree?: Array<{ path: string; type: string }> };
     if (treeData.tree && Array.isArray(treeData.tree)) {
-      files = treeData.tree.filter((item: any) => item.type === 'blob').map((item: any) => item.path);
-      directories = treeData.tree.filter((item: any) => item.type === 'tree').map((item: any) => item.path);
+      files = treeData.tree.filter((item) => item.type === 'blob').map((item) => item.path);
+      directories = treeData.tree.filter((item) => item.type === 'tree').map((item) => item.path);
     }
   } else {
     throw new Error(`Failed to retrieve repository git tree: HTTP ${treeRes.status}`);
@@ -71,7 +77,10 @@ export async function analyzeRemoteGitHubRepo(url: string): Promise<CodebaseAnal
   if (files.includes('package.json')) {
     ecosystem = 'npm';
     try {
-      const rawPkg = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/package.json`, { headers });
+      const rawPkg = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/package.json`, {
+        headers,
+        signal: AbortSignal.timeout(10000),
+      });
       if (rawPkg.ok) {
         manifestContent = await rawPkg.text();
         const pkg = JSON.parse(manifestContent);
@@ -93,7 +102,10 @@ export async function analyzeRemoteGitHubRepo(url: string): Promise<CodebaseAnal
   const readmeFile = files.find((f) => /^readme(\.md)?$/i.test(f));
   if (readmeFile) {
     try {
-      const rawReadme = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/${readmeFile}`, { headers });
+      const rawReadme = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/${readmeFile}`, {
+        headers,
+        signal: AbortSignal.timeout(10000),
+      });
       if (rawReadme.ok) {
         readmeContent = await rawReadme.text();
       }
@@ -112,7 +124,7 @@ export async function analyzeRemoteGitHubRepo(url: string): Promise<CodebaseAnal
       dependencies,
       devDependencies,
       scripts,
-      manifestContent,
+      manifestContent: manifestContent.slice(0, 2000),
     },
     fileTreeSummary: files.slice(0, 150).join('\n'),
     readmeContent: readmeContent.slice(0, 3000),

@@ -22,7 +22,8 @@ import {
   Radio,
   Sparkles,
   CheckCircle2,
-  ShieldAlert
+  ShieldAlert,
+  Columns
 } from 'lucide-react';
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -37,6 +38,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
   const [activeTab, setActiveTab] = useState<'truth' | 'context' | 'architecture' | 'automation'>('truth');
   const [copiedWebhook, setCopiedWebhook] = useState(false);
+  const [isDualPane, setIsDualPane] = useState(false);
 
   useEffect(() => {
     const checkAuthAndLoad = async () => {
@@ -176,11 +178,61 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     </button>
                   );
                 })}
+                <button
+                  onClick={() => setIsDualPane(!isDualPane)}
+                  aria-pressed={isDualPane}
+                  className={`inline-flex items-center gap-2 shrink-0 px-4 py-2.5 rounded-lg text-xs font-semibold font-mono transition-all whitespace-nowrap cursor-pointer border ${
+                    isDualPane
+                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.3)]'
+                      : 'border-transparent text-slate-400 hover:text-white hover:bg-white/[0.05]'
+                  }`}
+                >
+                  <Columns className="w-3.5 h-3.5 shrink-0" />
+                  Dual-Pane View
+                </button>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Dual-Pane Code & Architecture Workspace */}
+        {isDualPane ? (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between px-1">
+              <div>
+                <h3 className="text-base font-bold text-white font-mono inline-flex items-center gap-2">
+                  <Columns className="w-4 h-4 text-cyan-400 shrink-0" /> Dual-Pane Code & Architecture Workspace
+                </h3>
+                <p className="text-xs text-slate-400 font-mono">Synchronized view of codebase rules and system topology</p>
+              </div>
+              <button
+                onClick={() => setIsDualPane(false)}
+                className="text-xs font-mono text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+              >
+                Close Split View
+              </button>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs font-mono text-cyan-300 font-bold flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-cyan-400" /> Context Specifications (AGENTS.md)
+                  </span>
+                </div>
+                <CodeViewer content={contextDoc} filename="AGENTS.md" />
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs font-mono text-indigo-300 font-bold flex items-center gap-1.5">
+                    <GitGraph className="w-3.5 h-3.5 text-indigo-400" /> System Architecture Topology
+                  </span>
+                </div>
+                <MermaidDiagram chart={archDoc} />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
         {/* Tab 1: 3-Line High-Fidelity Architectural Truth */}
         {activeTab === 'truth' && (
           <div className="space-y-6">
@@ -309,6 +361,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
           </div>
+        )}
+        </>
         )}
       </main>
 

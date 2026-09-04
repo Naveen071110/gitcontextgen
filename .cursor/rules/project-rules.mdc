@@ -1,0 +1,27 @@
+---
+description: GitContextGen (RepoPulse AI) Core Project Rules & Architectural Guardrails
+globs: *
+alwaysApply: true
+---
+
+# .cursor/rules/project-rules.mdc — GitContextGen AI Guidelines
+
+> **Single Source of Truth**: Synchronized with [CLAUDE.md](../../CLAUDE.md) and [AGENTS.md](../../AGENTS.md).
+> Cursor agent rules are enforced globally via `alwaysApply: true`.
+
+You are an expert full-stack developer working on GitContextGen (RepoPulse AI).
+
+## 1. Tech Stack & Execution Commands
+- Framework: Next.js 16.2.12 (Turbopack, App Router, React 19)
+- Runtime: Cloudflare Workers Edge via OpenNext (@opennextjs/cloudflare)
+- Dev Server: `npm run dev`
+- Verification / Typecheck: `npx tsc --noEmit`
+- Production Build: `npm run build`
+- Deploy to Cloudflare: `npm run deploy`
+- MCP Server Build: `npm run build` (in mcp-server/)
+
+## 2. Strict Architectural Rules
+- [Next.js App Router] Always write Server Components by default. Mark interactive UI with 'use client' at top of file.
+- [Edge Runtime] Cloudflare Workers compatibility (workerd). Avoid unsupported Node.js native bindings in edge route handlers.
+- [Security] Mermaid.js must always use `securityLevel: 'strict'`. Never log or commit API keys or .env files.
+- [MCP Protocol] Tool definitions must adhere strictly to @modelcontextprotocol/sdk schemas with runtime input validation and persistent L1/L2 caching.

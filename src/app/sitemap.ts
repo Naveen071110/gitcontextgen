@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://repopulse-ai.singhnaveen360.workers.dev';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gitcontextgen.com';
 
   return [
     {
@@ -59,7 +59,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/p/repopulse-ai-demo`,
+      url: `${baseUrl}/p/gitcontextgen-demo`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.7,

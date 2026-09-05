@@ -5,12 +5,14 @@ export async function POST(req: Request) {
   try {
     const rawBody = await req.text();
     const signature = req.headers.get('x-dodo-signature');
-    const webhookKey = process.env.DODO_PAYMENTS_WEBHOOK_KEY?.trim();
+    const webhookKey = (
+      process.env.DODO_PAYMENTS_WEBHOOK_SECRET || process.env.DODO_PAYMENTS_WEBHOOK_KEY
+    )?.trim();
 
     let event: any;
 
     // Cryptographic signature check if webhook secret key is configured
-    if (webhookKey && webhookKey !== 'i will add these later') {
+    if (webhookKey && webhookKey !== 'i will add these later' && webhookKey !== 'your_dodo_webhook_secret_here') {
       try {
         const dodo = new DodoPayments({
           bearerToken: process.env.DODO_PAYMENTS_API_KEY || 'test',

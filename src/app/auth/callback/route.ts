@@ -19,10 +19,12 @@ export async function GET(request: Request) {
       
       if (isLocalEnv) {
         return NextResponse.redirect(`${origin}${safeNext}`);
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${safeNext}`);
       } else {
-        return NextResponse.redirect(`${origin}${safeNext}`);
+        const allowedHost =
+          forwardedHost && (forwardedHost === 'gitcontextgen.com' || forwardedHost.endsWith('.gitcontextgen.com'))
+            ? forwardedHost
+            : new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://gitcontextgen.com').host;
+        return NextResponse.redirect(`https://${allowedHost}${safeNext}`);
       }
     }
   }

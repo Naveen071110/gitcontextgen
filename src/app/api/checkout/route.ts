@@ -22,7 +22,10 @@ export async function POST(req: Request) {
     }
 
     const apiKey = process.env.DODO_PAYMENTS_API_KEY?.trim();
-    const returnUrl = process.env.DODO_PAYMENTS_RETURN_URL || 'http://localhost:3000/dashboard';
+    const defaultBaseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.NODE_ENV === 'production' ? 'https://gitcontextgen.com' : 'http://localhost:3000');
+    const returnUrl = process.env.DODO_PAYMENTS_RETURN_URL || `${defaultBaseUrl}/success`;
     const isPlaceholder = !apiKey || apiKey === 'i will add these later' || apiKey === 'your_dodo_api_key_here';
 
     // Development / Demo Mode: if real Dodo API key is not yet set, provide a mock checkout redirect

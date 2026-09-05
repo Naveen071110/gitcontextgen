@@ -4,7 +4,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { ShieldCheck, FileCode2, ArrowRight } from 'lucide-react';
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://repopulse-ai.singhnaveen360.workers.dev';
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gitcontextgen.com';
 
 export const metadata: Metadata = {
   title: 'CLAUDE.md Generator | Instant Codebase Context for Sonnet 5 & Claude Code',

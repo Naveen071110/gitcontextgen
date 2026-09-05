@@ -21,6 +21,7 @@
     "verify:mcp": "node scripts/verify-mcp.mjs",
     "security:check-staged": "node scripts/pre-commit-check.mjs",
     "test:cli": "node scripts/test-cli-distribution.mjs",
+    "test:webhook": "npx tsx scripts/test-dodo-webhook.mjs",
     "release:mcp": "powershell -ExecutionPolicy Bypass -File scripts/npm-publish.ps1"
   },
   "dependencies": {

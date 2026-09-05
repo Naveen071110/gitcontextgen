@@ -9,7 +9,7 @@
 [![npm version](https://img.shields.io/npm/v/@gitcontextgen/core?style=flat-square&color=emerald)](https://www.npmjs.com/package/@gitcontextgen/core)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Standard_Protocol_v1.6-06b6d4?style=flat-square)](https://modelcontextprotocol.io/)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16.2_Turbopack-black?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![Cloudflare Workers](https://img.shields.io/badge/Edge-Cloudflare_Workers-f38020?style=flat-square&logo=cloudflare)](https://repopulse-ai.singhnaveen360.workers.dev)
+[![Production Web](https://img.shields.io/badge/Production-gitcontextgen.com-f38020?style=flat-square&logo=cloudflare)](https://gitcontextgen.com)
 [![CI Status](https://img.shields.io/github/actions/workflow/status/Naveen071110/gitcontextgen/ci-cd.yml?branch=main&style=flat-square&label=CI%2FCD)](https://github.com/Naveen071110/gitcontextgen/actions)
 
 ---
@@ -269,7 +269,7 @@ gitcontextgen map --style layered --output architecture.mmd
 ## 🌐 Web App & Cloudflare Edge Sandbox
 
 Prefer a browser GUI? Use our live production deployment on Cloudflare Workers:  
-👉 **[https://repopulse-ai.singhnaveen360.workers.dev](https://repopulse-ai.singhnaveen360.workers.dev)**
+👉 **[https://gitcontextgen.com](https://gitcontextgen.com)**
 
 * **OSV.dev Integration**: Live batch vulnerability scanning.
 * **Kroki.io Engine**: Instant vector SVG architecture rendering.

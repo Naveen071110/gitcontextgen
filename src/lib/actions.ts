@@ -260,7 +260,7 @@ export async function publishReleaseAction(payload: {
             <div style="background: #171717; padding: 16px; border-radius: 8px; font-family: monospace; white-space: pre-wrap;">
               ${generatedNotes}
             </div>
-            <p style="margin-top: 16px;"><a href="https://repopulse-ai.singhnaveen360.workers.dev/p/${project.slug}" style="color: #6366f1;">View Showcase Changelog →</a></p>
+            <p style="margin-top: 16px;"><a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://gitcontextgen.com'}/p/${project.slug}" style="color: #6366f1;">View Showcase Changelog →</a></p>
           </div>`,
         }).catch((e: unknown) => console.error(`Failed to send email to ${sub.email}:`, e));
       }

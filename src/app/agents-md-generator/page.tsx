@@ -4,7 +4,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { ShieldCheck, FileCode2, ArrowRight, CheckCircle2 } from 'lucide-react';
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://repopulse-ai.singhnaveen360.workers.dev';
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gitcontextgen.com';
 
 export const metadata: Metadata = {
   title: 'AGENTS.md Generator | Free Vendor-Neutral AI Agent Context Spec',

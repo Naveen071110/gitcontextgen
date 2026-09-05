@@ -7,8 +7,11 @@ export async function POST(req: Request) {
     const customerId = body.customerId || 'cus_agency_demo_id';
 
     const apiKey = process.env.DODO_PAYMENTS_API_KEY?.trim();
+    const defaultBaseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.NODE_ENV === 'production' ? 'https://gitcontextgen.com' : 'http://localhost:3000');
     const returnUrl =
-      process.env.DODO_PAYMENTS_RETURN_URL || 'http://localhost:3000/dashboard/agency';
+      process.env.DODO_PAYMENTS_RETURN_URL || `${defaultBaseUrl}/dashboard/agency`;
     const isPlaceholder =
       !apiKey || apiKey === 'i will add these later' || apiKey === 'your_dodo_api_key_here';
 

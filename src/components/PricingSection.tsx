@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CheckCircle2, ArrowRight, Zap, ShieldCheck, Sparkles, Loader2, Users } from 'lucide-react';
 import { DodoPayments } from 'dodopayments-checkout';
 import { DODO_PRODUCTS } from '@/lib/products';
@@ -9,6 +9,19 @@ export default function PricingSection() {
   // Step 3: Default toggle state is Annual (true) on load to maximize cash flow
   const [isAnnual, setIsAnnual] = useState<boolean>(true);
   const [loadingProductId, setLoadingProductId] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const mode =
+        process.env.NEXT_PUBLIC_DODO_MODE === 'live' ||
+        process.env.NEXT_PUBLIC_DODO_MODE === 'live_mode'
+          ? 'live'
+          : 'test';
+      DodoPayments.Initialize({ mode });
+    } catch {
+      // Non-fatal if modal initialization is already initialized or SSR
+    }
+  }, []);
 
   // Pricing values matching specification
   const starterMonthly = 9;

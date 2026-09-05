@@ -20,8 +20,10 @@ const instrumentSerif = Instrument_Serif({
   style: ["normal", "italic"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://gitcontextgen.com";
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://repopulse-ai.singhnaveen360.workers.dev"),
+  metadataBase: new URL(siteUrl),
   title: "GitContextGen | High-Fidelity AI Context Engine for Cursor, Claude & Replit",
   description:
     "Stop fighting your AI co-pilot. Automatically audit any GitHub repository, detect CVE vulnerabilities via OSV.dev, export Kroki architecture diagrams, and generate zero-hallucination context files directly for Sonnet 5, Cursor, Claude Code, and Replit.",
@@ -51,13 +53,13 @@ export const metadata: Metadata = {
     title: "GitContextGen | High-Fidelity AI Context Engine for Everyone Who Builds",
     description:
       "Automatically audit any repository, resolve complex logic, and deliver a zero-hallucination 'Floor Plan' directly to Cursor, Claude, or Replit. Built for Agencies, Solopreneurs, and No-Code Builders.",
-    url: "https://repopulse-ai.singhnaveen360.workers.dev",
+    url: siteUrl,
     siteName: "GitContextGen",
     locale: "en_US",
     type: "website",
     images: [
       {
-        url: "https://repopulse-ai.singhnaveen360.workers.dev/og-image.png",
+        url: `${siteUrl}/og-image.png`,
         width: 1200,
         height: 630,
         alt: "GitContextGen AI Context Engine & Repository Auditor",
@@ -69,10 +71,10 @@ export const metadata: Metadata = {
     title: "GitContextGen | High-Fidelity AI Context Engine for Everyone Who Builds",
     description:
       "Automatically audit any repository, resolve complex logic, and deliver a zero-hallucination 'Floor Plan' directly to Cursor, Claude, or Replit. Built for Agencies, Solopreneurs, and No-Code Builders.",
-    images: ["https://repopulse-ai.singhnaveen360.workers.dev/og-image.png"],
+    images: [`${siteUrl}/og-image.png`],
   },
   alternates: {
-    canonical: "https://repopulse-ai.singhnaveen360.workers.dev",
+    canonical: siteUrl,
   },
   robots: {
     index: true,
@@ -86,7 +88,7 @@ const jsonLd = {
   name: "GitContextGen",
   operatingSystem: "Any",
   applicationCategory: "DeveloperApplication",
-  url: "https://repopulse-ai.singhnaveen360.workers.dev",
+  url: siteUrl,
   aggregateRating: {
     "@type": "AggregateRating",
     ratingValue: "4.95",

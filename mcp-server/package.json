@@ -8,6 +8,11 @@
     "gitcontextgen": "./dist/bin/cli.js",
     "gitcontextgen-mcp": "./dist/bin/cli.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "engines": {
     "node": ">=18.0.0"
   },

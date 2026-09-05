@@ -22,15 +22,15 @@ export default function FeatureGrid() {
         <div className="w-full max-w-3xl mx-auto flex flex-col items-center text-center mb-20">
           <div className="w-full flex justify-center mb-6">
             <div className="w-fit inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white/[0.04] text-xs font-mono text-white/80">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> Built for Modern AI Tools
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> Context-Debt Hallucination Insurance
             </div>
           </div>
           <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-6 text-white leading-tight text-center">
-            Everything You Need to Make{' '}
-            <span className="font-serif italic font-normal text-white/80">AI Write Perfect Code.</span>
+            Stop AI Models From Burning Your{' '}
+            <span className="font-serif italic font-normal text-white/80">Context & Corrupting Code.</span>
           </h2>
           <p className="text-white/60 text-base sm:text-lg leading-relaxed text-center">
-            Paste any GitHub link. Get formatted context files for Claude, Cursor, Replit, Windsurf, or Bolt in seconds.
+            Solve rule fragmentation, eliminate multi-agent race conditions, and save up to 92% on API token bills across Claude Code, Cursor, and Windsurf.
           </p>
         </div>
 
@@ -52,11 +52,11 @@ export default function FeatureGrid() {
                 </div>
 
                 <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-                  1. Universal Context Presets
+                  1. Synchronized Rules Engine
                 </h3>
 
                 <p className="text-xs sm:text-sm text-white/60 leading-relaxed">
-                  Export tailored AI instruction files for your favorite tool. Switch format presets with one click.
+                  Generate paired, bi-directionally linked <code className="text-cyan-300">.cursor/rules/*.mdc</code> (enforced with <code className="text-emerald-400">alwaysApply: true</code>) and <code className="text-cyan-300">CLAUDE.md</code> files. Zero rule drift.
                 </p>
 
                 {/* Dropdown UI Preview */}
@@ -133,23 +133,23 @@ export default function FeatureGrid() {
                 </div>
 
                 <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-                  2. Automatic Codebase Analysis
+                  2. 92% Token Cache & AST Mapping
                 </h3>
 
                 <p className="text-xs sm:text-sm text-white/60 leading-relaxed">
-                  GitContextGen scans directory layouts, package dependencies, and file structures automatically.
+                  Persistent L2 disk cache stores SHA-256 AST fingerprints. AI coding agents pull local context without repeatedly re-reading raw repositories.
                 </p>
 
                 <div className="p-5 rounded-xl bg-black/60 font-mono text-xs space-y-4">
                   <div className="flex items-center justify-between text-white/50 text-[11px] pb-2">
-                    <span className="flex items-center gap-1.5 text-cyan-400 font-bold">Codebase Indexer</span>
-                    <span className="text-emerald-400">100% Complete</span>
+                    <span className="flex items-center gap-1.5 text-cyan-400 font-bold">L2 Disk Cache</span>
+                    <span className="text-emerald-400">92% Bill Reduction</span>
                   </div>
 
                   <div className="p-4 rounded-lg bg-neutral-950/80 text-[11px] space-y-2 text-white/80">
-                    <p className="text-white/60">✓ Scanned 120 source files</p>
-                    <p className="text-white/60">✓ Mapped route handlers & utilities</p>
-                    <p className="text-white/60">✓ Extracted component conventions</p>
+                    <p className="text-white/60">✓ 120 files indexed via AST hash</p>
+                    <p className="text-white/60">✓ Instant sub-agent context retrieval</p>
+                    <p className="text-emerald-400">✓ 0 tokens burned on repetitive scans</p>
                   </div>
                 </div>
               </div>
@@ -159,12 +159,12 @@ export default function FeatureGrid() {
                   <CheckCircle2 className="w-4 h-4 text-white shrink-0" /> Zero manual copying or file loss
                 </li>
                 <li className="flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-white shrink-0" /> Instant repository directory mapping
+                  <CheckCircle2 className="w-4 h-4 text-white shrink-0" /> 92% average token bill reduction
                 </li>
               </ul>
             </motion.article>
 
-            {/* Card 3: Zero AI Hallucinations */}
+            {/* Card 3: Multi-Agent Write Protection */}
             <motion.article
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -178,32 +178,32 @@ export default function FeatureGrid() {
                 </div>
 
                 <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-                  3. Zero AI Hallucinations
+                  3. Multi-Agent Write Protection
                 </h3>
 
                 <p className="text-xs sm:text-sm text-white/60 leading-relaxed">
-                  Give AI tools strict project boundaries so they write clean, working code on the first attempt.
+                  Parallel sub-agents running across Cursor, Claude Code, and Windsurf are locked with cross-agent file protections to eliminate silent overwrite corruption.
                 </p>
 
                 <div className="p-5 rounded-xl bg-black/60 font-mono text-xs space-y-4">
                   <div className="flex items-center justify-between text-white/50 text-[11px] pb-2">
-                    <span className="text-emerald-400 font-bold">Accuracy Guard</span>
-                    <span className="text-white/40">Active</span>
+                    <span className="text-emerald-400 font-bold">Multi-Agent Lockfile</span>
+                    <span className="text-white/40">Guarded</span>
                   </div>
 
                   <div className="p-4 rounded-lg bg-neutral-950/80 text-[11px] text-white/80 space-y-1.5">
-                    <p className="text-emerald-400 font-bold">[Verified Project Rules]</p>
-                    <p className="text-white/70">"AI MUST use existing components from /src/components and preserve TypeScript contracts."</p>
+                    <p className="text-emerald-400 font-bold">[File Lock Guard: ACTIVE]</p>
+                    <p className="text-white/70">"Prevents parallel last-writer-wins collisions across Composer sessions."</p>
                   </div>
                 </div>
               </div>
 
               <ul className="space-y-3 text-xs sm:text-sm font-mono text-white/70 pt-6">
                 <li className="flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-white shrink-0" /> Perfect for non-coders & solo builders
+                  <CheckCircle2 className="w-4 h-4 text-white shrink-0" /> Multi-agent race condition protection
                 </li>
                 <li className="flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-white shrink-0" /> Stops AI from breaking your app
+                  <CheckCircle2 className="w-4 h-4 text-white shrink-0" /> Zero silent code regressions
                 </li>
               </ul>
             </motion.article>

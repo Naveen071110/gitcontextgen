@@ -4,6 +4,14 @@ import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { GithubIcon } from '@/components/icons/Github';
+import {
+  GitHubBrandIcon,
+  ClaudeCodeIcon,
+  CursorIcon,
+  WindsurfIcon,
+  WordPressStudioIcon,
+  DodoPaymentsIcon,
+} from '@/components/icons/Integrations';
 import { analyzeRepositoryAction, saveProjectAction, switchExportFormatAction } from '@/lib/actions';
 import { createClient } from '@/lib/supabase/client';
 import { RepositoryAnalysisResult } from '@/lib/types';
@@ -274,7 +282,10 @@ export default function HeroSection() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="text-4xl sm:text-5xl md:text-7xl font-semibold tracking-[-2px] sm:tracking-[-3px] leading-[1.1] mb-6 text-white text-center w-full max-w-full"
         >
-          High-Fidelity AI Context for <span className="font-serif italic font-normal text-cyan-300">Everyone Who Builds.</span>
+          Stop AI models from burning your context.{' '}
+          <span className="font-serif italic font-normal text-cyan-300">
+            Automatically sync Cursor rules & Claude Code configurations across your entire team.
+          </span>
         </motion.h1>
 
         {/* Subtitle Statement */}
@@ -284,7 +295,7 @@ export default function HeroSection() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-base sm:text-lg md:text-xl font-normal leading-relaxed opacity-95 mb-10 max-w-3xl text-center w-full text-[hsl(var(--hero-subtitle))]"
         >
-          Stop fighting your AI co-pilot. Automatically audit any repository, resolve complex logic, and deliver a zero-hallucination &quot;Floor Plan&quot; directly to Cursor, Claude, or Replit. Built for Agencies, Solopreneurs, and No-Code Builders.
+          GitContextGen acts as hallucination insurance—saving agencies up to 92% on token bills by using a persistent L2 caching layer and keeping parallel sub-agents from overwriting files via multi-agent write locks.
         </motion.p>
 
         {/* PLG Sandbox Input CTA */}
@@ -367,6 +378,62 @@ export default function HeroSection() {
           <p className="mt-3 text-xs text-white/50 font-mono">
             Zero setup. No credit card required for public audits. Instant billable recovery.
           </p>
+
+          {/* Professional Monochrome Integration Trust Badges */}
+          <div className="mt-8 pt-6 border-t border-white/10 flex flex-col items-center gap-3 w-full max-w-3xl">
+            <span className="text-[11px] font-mono uppercase tracking-widest text-white/40">
+              Engineered for Modern Enterprise AI Developer Ecosystems
+            </span>
+            <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-7 text-white/60">
+              <div className="flex items-center gap-2 hover:text-white transition">
+                <GitHubBrandIcon className="w-4 h-4 text-white/70" />
+                <span className="text-xs font-mono">GitHub</span>
+              </div>
+              <div className="flex items-center gap-2 hover:text-white transition">
+                <ClaudeCodeIcon className="w-4 h-4 text-white/70" />
+                <span className="text-xs font-mono">Claude Code</span>
+              </div>
+              <div className="flex items-center gap-2 hover:text-white transition">
+                <CursorIcon className="w-4 h-4 text-white/70" />
+                <span className="text-xs font-mono">Cursor</span>
+              </div>
+              <div className="flex items-center gap-2 hover:text-white transition">
+                <WindsurfIcon className="w-4 h-4 text-white/70" />
+                <span className="text-xs font-mono">Windsurf</span>
+              </div>
+              <div className="flex items-center gap-2 hover:text-white transition">
+                <WordPressStudioIcon className="w-4 h-4 text-white/70" />
+                <span className="text-xs font-mono">WordPress Studio</span>
+              </div>
+              <div className="flex items-center gap-2 hover:text-white transition">
+                <DodoPaymentsIcon className="w-4 h-4 text-white/70" />
+                <span className="text-xs font-mono">Dodo Payments</span>
+              </div>
+            </div>
+          </div>
+
+          {/* $299 Done-For-You (DFY) Integration Service Callout */}
+          <div className="mt-6 w-full max-w-2xl px-4 py-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] border border-cyan-500/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-left transition shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shrink-0">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs text-white font-medium">
+                  Busy agency team? Skip manual configuration.
+                </p>
+                <p className="text-[11px] text-white/60 font-mono">
+                  Book our premium <span className="text-cyan-300 font-bold">$299 Done-For-You (DFY) Team Onboarding Pack</span>.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/pricing#dfy-setup"
+              className="px-3.5 py-1.5 rounded-lg bg-cyan-500 text-black text-xs font-bold font-mono hover:bg-cyan-400 transition whitespace-nowrap shrink-0"
+            >
+              Get DFY Setup →
+            </Link>
+          </div>
         </motion.div>
 
         {error && (

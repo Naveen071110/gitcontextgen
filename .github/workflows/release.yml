@@ -1,0 +1,174 @@
+name: Release & Distribution Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Manual release tag (e.g. v1.0.2)'
+        required: false
+        default: 'v1.0.2'
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+jobs:
+  pre-flight-security-gate:
+    name: Security & Verification Pre-Flight
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Root Dependencies
+        run: npm ci
+
+      - name: Install MCP Server Dependencies
+        working-directory: ./mcp-server
+        run: npm ci
+
+      - name: Build MCP Server
+        working-directory: ./mcp-server
+        run: npm run build
+
+      - name: Rule Portability & Cursor Frontmatter Audit
+        run: npm run lint:rules
+
+      - name: MCP Stdio Protocol & Caching Verification
+        run: npm run verify:mcp
+
+      - name: CLI Packaging & Mock Distribution Test
+        run: npm run test:cli
+
+  compile-binaries:
+    name: Standalone Binary Compilation (macOS, Linux, Windows)
+    needs: pre-flight-security-gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install MCP Server Dependencies
+        working-directory: ./mcp-server
+        run: npm ci
+
+      - name: Compile TypeScript CLI & Server
+        working-directory: ./mcp-server
+        run: npm run build
+
+      - name: Ensure Executable Permissions & Shebang
+        run: |
+          chmod +x ./mcp-server/dist/bin/cli.js
+          head -n 1 ./mcp-server/dist/bin/cli.js
+
+      - name: Compile Single-File Executables via pkg
+        working-directory: ./mcp-server
+        run: |
+          mkdir -p ../binaries
+          npx --yes @yao-pkg/pkg dist/bin/cli.js \
+            --targets node18-linux-x64,node18-macos-x64,node18-win-x64 \
+            --output ../binaries/gitcontextgen
+
+      - name: Verify Compiled Binaries
+        run: |
+          ls -la binaries/
+          # Normalize filenames
+          mv binaries/gitcontextgen-linux-x64 binaries/gitcontextgen-linux || mv binaries/gitcontextgen-linux binaries/gitcontextgen-linux || true
+          mv binaries/gitcontextgen-macos-x64 binaries/gitcontextgen-macos || mv binaries/gitcontextgen-macos binaries/gitcontextgen-macos || true
+          mv binaries/gitcontextgen-win-x64.exe binaries/gitcontextgen-win.exe || mv binaries/gitcontextgen-win.exe binaries/gitcontextgen-win.exe || true
+          ls -la binaries/
+
+      - name: Upload Binary Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: standalone-binaries
+          path: binaries/*
+
+  publish-npm:
+    name: Publish to npm Public Registry
+    needs: pre-flight-security-gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install MCP Dependencies & Build
+        working-directory: ./mcp-server
+        run: |
+          npm ci
+          npm run build
+
+      - name: Publish @gitcontextgen/core to npm
+        working-directory: ./mcp-server
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "$NODE_AUTH_TOKEN" ]; then
+            npm publish --access public
+          else
+            echo "⚠️ NPM_TOKEN secret not configured. Skipping live publish, running dry-run."
+            npm publish --dry-run
+          fi
+
+  create-github-release:
+    name: Create GitHub Release & Upload Assets
+    needs: [compile-binaries, publish-npm]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Standalone Binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: standalone-binaries
+          path: binaries
+
+      - name: Extract Release Tag
+        id: vars
+        run: |
+          TAG="${{ github.ref_name }}"
+          if [ -z "$TAG" ] || [ "$TAG" = "main" ]; then
+            TAG="${{ github.event.inputs.tag_name || 'v1.0.1' }}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.tag }}
+          name: GitContextGen ${{ steps.vars.outputs.tag }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            binaries/gitcontextgen-linux*
+            binaries/gitcontextgen-macos*
+            binaries/gitcontextgen-win*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

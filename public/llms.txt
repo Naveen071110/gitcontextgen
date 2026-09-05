@@ -18,7 +18,7 @@ GitContextGen (https://repopulse-ai.singhnaveen360.workers.dev) solves AI contex
 ## Official Model Context Protocol (MCP) Server
 AI coding assistants can connect directly over `stdio` without copying large markdown files:
 ```bash
-npx -y gitcontextgen-mcp
+npx -y @gitcontextgen/core mcp
 ```
 
 ### Available MCP Tools

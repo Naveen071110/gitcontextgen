@@ -39,7 +39,7 @@ export default function QuickSetupSection() {
             <div className="p-6 sm:p-8 font-mono text-xs sm:text-sm space-y-4 leading-relaxed">
               <p className="text-white/40">// Option A: Connect directly via MCP Server (Claude Code, Cursor, Windsurf)</p>
               <p className="text-white">
-                <span className="text-cyan-400 font-bold">$</span> npx -y gitcontextgen-mcp
+                <span className="text-cyan-400 font-bold">$</span> npx -y @gitcontextgen/core mcp
               </p>
 
               <p className="text-white/40 pt-2">// Option B: Web UI & Instant Markdown Exporter</p>

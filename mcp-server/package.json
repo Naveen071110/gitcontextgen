@@ -1,5 +1,5 @@
 {
-  "name": "gitcontextgen-mcp",
+  "name": "@gitcontextgen/core",
   "version": "1.0.1",
   "description": "Official GitContextGen Model Context Protocol (MCP) Server and CLI for dynamic codebase analysis, IDE rule generation, architecture visualization, changelog synthesis, and WordPress AI, Telex, and WordPress Studio Integration.",
   "main": "./dist/index.js",

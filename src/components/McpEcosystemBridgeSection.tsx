@@ -16,7 +16,7 @@ export default function McpEcosystemBridgeSection() {
   "mcpServers": {
     "gitcontextgen": {
       "command": "npx",
-      "args": ["-y", "gitcontextgen-mcp"]
+      "args": ["-y", "@gitcontextgen/core", "mcp"]
     }
   }
 }`,
@@ -28,7 +28,7 @@ export default function McpEcosystemBridgeSection() {
       snippet: `{
   "name": "GitContextGen",
   "type": "command",
-  "command": "npx -y gitcontextgen-mcp"
+  "command": "npx -y @gitcontextgen/core mcp"
 }`,
     },
     antigravity: {
@@ -39,7 +39,7 @@ export default function McpEcosystemBridgeSection() {
   "mcpServers": {
     "gitcontextgen": {
       "command": "npx",
-      "args": ["-y", "gitcontextgen-mcp"]
+      "args": ["-y", "@gitcontextgen/core", "mcp"]
     }
   }
 }`,
@@ -52,7 +52,7 @@ export default function McpEcosystemBridgeSection() {
   "mcpServers": {
     "gitcontextgen": {
       "command": "npx",
-      "args": ["-y", "gitcontextgen-mcp"]
+      "args": ["-y", "@gitcontextgen/core", "mcp"]
     }
   }
 }`,

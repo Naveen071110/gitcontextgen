@@ -3,10 +3,22 @@ import DodoPayments from 'dodopayments';
 
 export async function POST(req: Request) {
   try {
-    const { productId, userEmail, userName, userId } = await req.json();
+    const body = await req.json();
+    const { productId, productCart, userEmail, userName, userId } = body;
 
-    if (!productId) {
-      return NextResponse.json({ error: 'Missing required field: productId' }, { status: 400 });
+    let cart: Array<{ product_id: string; quantity: number }> = [];
+    if (Array.isArray(productCart) && productCart.length > 0) {
+      cart = productCart.map((item: any) => ({
+        product_id: item.product_id || item.productId,
+        quantity: typeof item.quantity === 'number' ? item.quantity : 1,
+      }));
+    } else if (productId) {
+      cart = [{ product_id: productId, quantity: 1 }];
+    } else {
+      return NextResponse.json(
+        { error: 'Missing required field: productId or productCart' },
+        { status: 400 }
+      );
     }
 
     const apiKey = process.env.DODO_PAYMENTS_API_KEY?.trim();
@@ -18,8 +30,9 @@ export async function POST(req: Request) {
       console.warn(
         '[Dodo Payments] DODO_PAYMENTS_API_KEY is currently set to placeholder. Generating test redirect session.'
       );
-      const mockCheckoutUrl = `${returnUrl}?dodo_session=mock_checkout_success&product_id=${encodeURIComponent(
-        productId
+      const productIdsParam = cart.map((i) => i.product_id).join(',');
+      const mockCheckoutUrl = `${returnUrl}?dodo_session=mock_checkout_success&product_ids=${encodeURIComponent(
+        productIdsParam
       )}`;
       return NextResponse.json({
         url: mockCheckoutUrl,
@@ -34,12 +47,7 @@ export async function POST(req: Request) {
     });
 
     const session = await dodo.checkoutSessions.create({
-      product_cart: [
-        {
-          product_id: productId,
-          quantity: 1,
-        },
-      ],
+      product_cart: cart,
       return_url: returnUrl,
       customer: {
         email: userEmail || 'developer@example.com',

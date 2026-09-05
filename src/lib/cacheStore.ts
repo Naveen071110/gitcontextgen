@@ -2,10 +2,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as crypto from 'crypto';
-import { CodebaseAnalysis } from './localScanner.js';
 
-interface CacheEntry {
-  data: CodebaseAnalysis;
+export interface CacheEntry<T = any> {
+  data: T;
   timestamp: number;
 }
 
@@ -24,7 +23,7 @@ function ensureCacheDir(): void {
       fs.mkdirSync(CACHE_DIR, { recursive: true });
     }
   } catch {
-    // Graceful fallback to in-memory cache only if disk permissions fail
+    // Graceful fallback if filesystem access fails
   }
 }
 
@@ -67,7 +66,7 @@ export function purgeStaleCache(maxAgeMs: number = CACHE_TTL_MS): { memoryPurged
       }
     }
   } catch {
-    // Disk access issues handled gracefully
+    // Non-fatal
   }
 
   return { memoryPurged, diskPurged };
@@ -93,65 +92,60 @@ export function clearAllCache(): void {
 }
 
 /**
- * Retrieves cached analysis from L1 (memory) or L2 (disk)
+ * Retrieves cached data from L1 (memory) or L2 (disk)
  */
-export function getCachedAnalysis(targetPath: string, customExcludes: string[] = []): CodebaseAnalysis | null {
-  const cacheKey = `${targetPath.trim()}::${customExcludes.sort().join(',')}`;
+export function getCachedData<T = any>(key: string): T | null {
+  const normalizedKey = key.trim();
 
   // 1. Check L1 In-Memory Cache
-  const memoryEntry = IN_MEMORY_CACHE.get(cacheKey);
+  const memoryEntry = IN_MEMORY_CACHE.get(normalizedKey);
   if (memoryEntry) {
     if (Date.now() - memoryEntry.timestamp < CACHE_TTL_MS) {
-      return memoryEntry.data;
+      return memoryEntry.data as T;
     } else {
-      IN_MEMORY_CACHE.delete(cacheKey);
+      IN_MEMORY_CACHE.delete(normalizedKey);
     }
   }
 
   // 2. Check L2 Persistent Disk Cache
   try {
-    const filePath = getCacheFilePath(cacheKey);
+    const filePath = getCacheFilePath(normalizedKey);
     if (fs.existsSync(filePath)) {
       const raw = fs.readFileSync(filePath, 'utf-8');
-      const diskEntry = JSON.parse(raw) as CacheEntry;
+      const diskEntry = JSON.parse(raw) as CacheEntry<T>;
       if (Date.now() - diskEntry.timestamp < CACHE_TTL_MS) {
-        IN_MEMORY_CACHE.set(cacheKey, diskEntry);
+        IN_MEMORY_CACHE.set(normalizedKey, diskEntry);
         return diskEntry.data;
       } else {
-        // Disk entry expired - actively remove it
         try {
           fs.unlinkSync(filePath);
         } catch {}
       }
     }
   } catch {
-    // Disk read failure: proceed to scan
+    // Fallthrough to scan
   }
 
   return null;
 }
 
 /**
- * Stores codebase analysis in L1 (memory) and L2 (disk)
+ * Stores data in L1 (memory) and L2 (disk)
  */
-export function setCachedAnalysis(
-  targetPath: string,
-  analysis: CodebaseAnalysis,
-  customExcludes: string[] = []
-): void {
-  const cacheKey = `${targetPath.trim()}::${customExcludes.sort().join(',')}`;
-  const entry: CacheEntry = {
-    data: analysis,
+export function setCachedData<T = any>(key: string, data: T): void {
+  const normalizedKey = key.trim();
+  const entry: CacheEntry<T> = {
+    data,
     timestamp: Date.now(),
   };
 
   // 1. Store in Memory
-  IN_MEMORY_CACHE.set(cacheKey, entry);
+  IN_MEMORY_CACHE.set(normalizedKey, entry);
 
   // 2. Store on Disk
   try {
     ensureCacheDir();
-    const filePath = getCacheFilePath(cacheKey);
+    const filePath = getCacheFilePath(normalizedKey);
     fs.writeFileSync(filePath, JSON.stringify(entry), 'utf-8');
   } catch {
     // Non-fatal if disk write fails

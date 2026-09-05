@@ -27,7 +27,7 @@ Add the server entry to your Claude Code configuration:
   "mcpServers": {
     "gitcontextgen": {
       "command": "npx",
-      "args": ["-y", "gitcontextgen-mcp"]
+      "args": ["-y", "@gitcontextgen/core", "mcp"]
     }
   }
 }
@@ -39,7 +39,7 @@ Add the server entry to your Claude Code configuration:
 3. Set **Type** to `command`.
 4. Enter:
    - **Name**: `GitContextGen`
-   - **Command**: `npx -y gitcontextgen-mcp`
+   - **Command**: `npx -y @gitcontextgen/core mcp`
 
 ### 3. Antigravity (`~/.gemini/config/mcp_config.json` or project `.agents/`)
 Add to `mcp_config.json`:
@@ -48,7 +48,7 @@ Add to `mcp_config.json`:
   "mcpServers": {
     "gitcontextgen": {
       "command": "npx",
-      "args": ["-y", "gitcontextgen-mcp"]
+      "args": ["-y", "@gitcontextgen/core", "mcp"]
     }
   }
 }
@@ -60,7 +60,7 @@ Add to `mcp_config.json`:
   "mcpServers": {
     "gitcontextgen": {
       "command": "npx",
-      "args": ["-y", "gitcontextgen-mcp"]
+      "args": ["-y", "@gitcontextgen/core", "mcp"]
     }
   }
 }

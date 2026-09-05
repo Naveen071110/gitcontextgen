@@ -140,7 +140,7 @@ export default function McpParadigmSection() {
               <Terminal className="w-4 h-4" /> Zero-Setup CLI
             </div>
             <p className="text-white/60 font-sans leading-relaxed text-xs">
-              Launch instantly with <code className="text-emerald-300">npx -y gitcontextgen-mcp</code> without downloading binaries or configuring API keys.
+              Launch instantly with <code className="text-emerald-300">npx -y @gitcontextgen/core mcp</code> without downloading binaries or configuring API keys.
             </p>
           </div>
         </div>

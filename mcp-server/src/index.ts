@@ -277,13 +277,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 // Launch Stdio Transport
-async function main() {
+export async function runMcpServer(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error('GitContextGen MCP Server running on stdio');
 }
 
-main().catch((err) => {
-  console.error('Fatal error initializing GitContextGen MCP Server:', err);
-  process.exit(1);
-});
+export { server };
+
+// Auto-run if executed directly as entrypoint
+const isDirectExecution =
+  process.argv[1] &&
+  (process.argv[1].endsWith('index.js') ||
+    process.argv[1].endsWith('index.ts') ||
+    process.argv[1].endsWith('gitcontextgen-mcp'));
+
+if (isDirectExecution) {
+  runMcpServer().catch((err) => {
+    console.error('Fatal error initializing GitContextGen MCP Server:', err);
+    process.exit(1);
+  });
+}

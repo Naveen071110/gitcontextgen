@@ -2,6 +2,13 @@
   "name": "repopulse-ai",
   "version": "0.1.0",
   "private": true,
+  "bin": {
+    "gitcontextgen": "./mcp-server/dist/bin/cli.js",
+    "gitcontextgen-mcp": "./mcp-server/dist/bin/cli.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -13,6 +20,7 @@
     "lint:rules": "node scripts/validate-rules.mjs",
     "verify:mcp": "node scripts/verify-mcp.mjs",
     "security:check-staged": "node scripts/pre-commit-check.mjs",
+    "test:cli": "node scripts/test-cli-distribution.mjs",
     "release:mcp": "powershell -ExecutionPolicy Bypass -File scripts/npm-publish.ps1"
   },
   "dependencies": {

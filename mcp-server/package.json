@@ -5,13 +5,30 @@
   "main": "./dist/index.js",
   "type": "module",
   "bin": {
-    "gitcontextgen-mcp": "./dist/index.js"
+    "gitcontextgen": "./dist/bin/cli.js",
+    "gitcontextgen-mcp": "./dist/bin/cli.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "scripts": {
     "build": "tsc",
-    "start": "node ./dist/index.js",
+    "start": "node ./dist/bin/cli.js",
     "verify": "node ../scripts/verify-mcp.mjs",
+    "build:binary": "npm run build && npx @yao-pkg/pkg . --output binaries/gitcontextgen",
     "prepare": "npm run build"
+  },
+  "pkg": {
+    "scripts": "dist/**/*.js",
+    "assets": [
+      "README.md"
+    ],
+    "targets": [
+      "node18-linux-x64",
+      "node18-macos-x64",
+      "node18-win-x64"
+    ],
+    "outputPath": "binaries"
   },
   "keywords": [
     "mcp",
@@ -27,6 +44,7 @@
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.1",
+    "commander": "^15.0.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {

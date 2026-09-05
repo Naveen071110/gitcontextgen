@@ -69,7 +69,7 @@ export async function analyzeRemoteGitHubRepo(url: string): Promise<CodebaseAnal
 
   // Fetch package.json if present
   let manifestContent = '';
-  let ecosystem: 'npm' | 'PyPI' | 'crates.io' | 'Go' | 'unknown' = 'unknown';
+  let ecosystem: 'npm' | 'PyPI' | 'crates.io' | 'Go' | 'wordpress' | 'unknown' = 'unknown';
   const dependencies: string[] = [];
   const devDependencies: string[] = [];
   const scripts: Record<string, string> = {};
@@ -112,13 +112,91 @@ export async function analyzeRemoteGitHubRepo(url: string): Promise<CodebaseAnal
     } catch {}
   }
 
+  // Detect WordPress in remote files
+  let wpDetection: import('./analyzer/detector.js').WordPressDetection | undefined = undefined;
+  const hasWpConfig = files.includes('wp-config.php') || files.includes('wp-config-sample.php');
+  const hasWpContent = files.some((f) => f.startsWith('wp-content/'));
+  const hasStyleCss = files.includes('style.css');
+  const hasBlockJson = files.includes('block.json') || files.includes('src/block.json');
+  const hasTelex = files.includes('telex.json');
+  const hasWpCli = files.includes('wp-cli.yml') || files.includes('wp-cli.local.yml');
+  const phpFiles = files.filter((f) => f.endsWith('.php') && !f.includes('/'));
+
+  if (hasWpConfig || hasWpContent || hasStyleCss || hasBlockJson || hasTelex || hasWpCli || phpFiles.length > 0) {
+    let wpName: string | undefined = undefined;
+    let wpType: import('./analyzer/detector.js').WordPressProjectType = 'unknown';
+
+    if (hasWpConfig || hasWpContent) {
+      wpType = 'core';
+    }
+
+    // Check style.css for Theme Name
+    if (hasStyleCss) {
+      try {
+        const rawStyle = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/style.css`, {
+          headers,
+          signal: AbortSignal.timeout(10000),
+        });
+        if (rawStyle.ok) {
+          const styleText = await rawStyle.text();
+          const themeMatch = styleText.match(/Theme Name:\s*([^\r\n*]+)/i);
+          if (themeMatch) {
+            wpName = themeMatch[1].trim();
+            wpType = 'theme';
+          }
+        }
+      } catch {}
+    }
+
+    // Check root PHP files for Plugin Name
+    if (!wpName && phpFiles.length > 0) {
+      for (const phpFile of phpFiles.slice(0, 3)) {
+        try {
+          const rawPhp = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/${phpFile}`, {
+            headers,
+            signal: AbortSignal.timeout(10000),
+          });
+          if (rawPhp.ok) {
+            const phpText = await rawPhp.text();
+            const pluginMatch = phpText.match(/Plugin Name:\s*([^\r\n*]+)/i);
+            if (pluginMatch) {
+              wpName = pluginMatch[1].trim();
+              wpType = 'plugin';
+              break;
+            }
+          }
+        } catch {}
+      }
+    }
+
+    if (hasBlockJson && wpType === 'unknown') {
+      wpType = 'block';
+    }
+
+    const isWp = Boolean(hasWpConfig || hasWpContent || wpName || hasBlockJson || hasTelex || hasWpCli);
+    if (isWp) {
+      ecosystem = 'wordpress';
+      wpDetection = {
+        isWordPress: true,
+        type: wpType,
+        name: wpName,
+        hasWpConfig,
+        hasWpContent,
+        hasBlockJson,
+        hasTelex,
+        hasWpCli,
+        confidence: wpName ? 100 : 85,
+      };
+    }
+  }
+
   return {
     path: url,
     isRemote: true,
-    name: repo,
+    name: wpDetection?.name || repo,
     filesIndexed: files.length,
     directories: directories.slice(0, 30),
-    entryPoints: files.filter((f) => /^(src\/)?(index|main|app\/page)\.(tsx|jsx|ts|js|py|rs|go)$/i.test(f)),
+    entryPoints: files.filter((f) => /^(src\/)?(index|main|app\/page|functions)\.(tsx|jsx|ts|js|py|rs|go|php)$/i.test(f)),
     manifest: {
       ecosystem,
       dependencies,
@@ -129,5 +207,6 @@ export async function analyzeRemoteGitHubRepo(url: string): Promise<CodebaseAnal
     fileTreeSummary: files.slice(0, 150).join('\n'),
     readmeContent: readmeContent.slice(0, 3000),
     licenseSpdx: repoData.license?.spdx_id || undefined,
+    wordpress: wpDetection,
   };
 }

@@ -1,7 +1,7 @@
 {
   "name": "gitcontextgen-mcp",
   "version": "1.0.1",
-  "description": "Official GitContextGen Model Context Protocol (MCP) Server for dynamic codebase analysis, IDE rule generation, architecture visualization, and changelog synthesis.",
+  "description": "Official GitContextGen Model Context Protocol (MCP) Server and CLI for dynamic codebase analysis, IDE rule generation, architecture visualization, changelog synthesis, and WordPress AI, Telex, and WordPress Studio Integration.",
   "main": "./dist/index.js",
   "type": "module",
   "bin": {
@@ -38,7 +38,13 @@
     "cursor",
     "agents-md",
     "claude-md",
-    "context-engine"
+    "context-engine",
+    "wordpress",
+    "wordpress-ai",
+    "telex",
+    "wordpress-studio",
+    "wpcs",
+    "wp-cli"
   ],
   "author": "GitContextGen Team",
   "license": "MIT",

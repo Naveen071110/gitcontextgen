@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { detectWordPress } from './analyzer/detector.js';
 const DEFAULT_IGNORES = new Set([
     'node_modules',
     '.git',
@@ -185,6 +186,13 @@ export async function analyzeLocalDirectory(targetPath, customExcludes = []) {
         }
         catch { }
     }
+    // Detect WordPress Project Structure & Metadata
+    const wpDetection = detectWordPress(resolvedPath, indexedFiles);
+    if (wpDetection.isWordPress) {
+        if (ecosystem === 'unknown' || ecosystem === 'npm') {
+            ecosystem = 'wordpress';
+        }
+    }
     // Detect Entry Points
     const entryPoints = [];
     const commonEntries = [
@@ -202,7 +210,14 @@ export async function analyzeLocalDirectory(targetPath, customExcludes = []) {
         'app.py',
         'src/main.rs',
         'main.go',
+        'functions.php',
+        'index.php',
+        'style.css',
+        'block.json',
     ];
+    if (wpDetection.mainFile && !commonEntries.includes(wpDetection.mainFile)) {
+        commonEntries.unshift(wpDetection.mainFile);
+    }
     for (const entry of commonEntries) {
         if (indexedFiles.includes(entry)) {
             entryPoints.push(entry);
@@ -213,7 +228,7 @@ export async function analyzeLocalDirectory(targetPath, customExcludes = []) {
     return {
         path: resolvedPath,
         isRemote: false,
-        name: path.basename(resolvedPath),
+        name: wpDetection.name || path.basename(resolvedPath),
         filesIndexed: indexedFiles.length,
         directories: Array.from(directoriesSet).slice(0, 30),
         entryPoints,
@@ -227,5 +242,6 @@ export async function analyzeLocalDirectory(targetPath, customExcludes = []) {
         fileTreeSummary,
         readmeContent: readmeContent.slice(0, 3000),
         licenseSpdx,
+        wordpress: wpDetection.isWordPress ? wpDetection : undefined,
     };
 }

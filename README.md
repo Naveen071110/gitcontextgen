@@ -152,6 +152,34 @@ Connect the local stdio MCP server to Claude Desktop for zero-token context quer
 
 ---
 
+## 🌐 WordPress AI, Telex & WordPress Studio Integration
+
+GitContextGen provides turnkey, first-class AI development support for WordPress Core, Plugins, Themes, and Gutenberg Blocks:
+
+* **Automated Workspace Detection**: Scans for `wp-config.php`, `wp-content/`, plugin headers (`/* Plugin Name: ... */`), theme headers in `style.css`, and `block.json`.
+* **WPCS & VIP Security Standards**: Scaffolds `.cursor/rules/wordpress.mdc` enforcing:
+  - **Tabs for indentation** & **Yoda conditions** (`true === $is_active`).
+  - **Strict input sanitization**: `sanitize_text_field()`, `absint()`, `filter_input()`, `sanitize_key()`.
+  - **Late output escaping**: `esc_html()`, `esc_attr()`, `esc_url()`, and localized wrappers (`esc_html__()`, `esc_html_e()`).
+  - **CSRF & Nonce Protection**: `check_admin_referer()`, `check_ajax_referer()`, `wp_verify_nonce()`.
+  - **Safe Database Queries**: Guaranteed prepared statements via `$wpdb->prepare()`.
+* **Modern Block & Telex Integration**: Optimized for modern block themes (`theme.json`), Gutenberg architectures, and Automattic's experimental **Telex block builder**.
+* **WordPress Studio & wp-cli**: Generates pre-configured terminal execution blocks:
+  ```bash
+  wp plugin activate --all      # Activate all plugins
+  wp cache flush                # Flush object cache
+  wp transient delete --all     # Delete expired transients
+  wp option update siteurl <url> # Update local development site URL
+  ```
+
+Export WordPress rules directly anytime:
+```bash
+# Output WordPress rules to stdout or file
+gitcontextgen rules --format wordpress --output .cursor/rules/wordpress.mdc
+```
+
+---
+
 ## 🛡️ The Technical Moat: L2 Caching & Defensive Security
 
 ```mermaid

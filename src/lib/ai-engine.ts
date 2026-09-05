@@ -1,6 +1,7 @@
 import { deepseek } from './deepseek';
+import { getWordPressCursorRules } from '../rules/presets/wordpress';
 
-export type ExportFormat = 'agents' | 'claude' | 'copilot' | 'cursor' | 'replit' | 'windsurf' | 'agent_readme';
+export type ExportFormat = 'agents' | 'claude' | 'copilot' | 'cursor' | 'replit' | 'windsurf' | 'agent_readme' | 'wordpress';
 export type ReleaseTone = 'technical' | 'marketing';
 
 export interface ReadinessScoreResult {
@@ -187,6 +188,23 @@ export async function synthesizeMasterCoordinatorContext(
         safetyAndBoundaries: safetyFragment,
       },
       compiledMarkdown: agentReadmeContent,
+    };
+  }
+
+  if (format === 'wordpress') {
+    const wpContent = getWordPressCursorRules({ name: repoName });
+    return {
+      threeLineTruth: {
+        line1TechStack: `1. Core Tech Stack: ${repoName} • WordPress (WPCS, Gutenberg Blocks, Telex & wp-cli)`,
+        line2VerifiedCommands: `2. Verified Commands: wp plugin activate --all • wp cache flush • wp db check`,
+        line3SafetyBoundaries: `3. Boundary Safety: Strict input sanitization (sanitize_text_field), output escaping, nonces, and $wpdb->prepare().`,
+      },
+      subAgentFragments: {
+        coreArchitecture: coreArchFragment,
+        executionAndSchemas: execSchemaFragment,
+        safetyAndBoundaries: safetyFragment,
+      },
+      compiledMarkdown: wpContent,
     };
   }
 
@@ -689,6 +707,10 @@ function generateDeepAgencyAuditReport(
 
   if (format === 'agent_readme') {
     return generateAgentReadmeSpecification(repoName, fileTreeSummary, manifestContent, readmeContent);
+  }
+
+  if (format === 'wordpress') {
+    return getWordPressCursorRules({ name: repoName });
   }
 
   const fileName = format === 'agents' ? 'AGENTS.md' : format === 'copilot' ? '.github/copilot-instructions.md' : format === 'cursor' ? '.cursor/rules/project-rules.mdc' : 'CLAUDE.md';

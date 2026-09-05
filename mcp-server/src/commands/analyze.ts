@@ -34,6 +34,13 @@ export async function executeAnalyze(targetPath?: string, options: AnalyzeOption
   console.log(`- Entry Points: ${analysis.entryPoints.join(', ') || 'Auto-detected'}`);
   console.log(`- License: ${analysis.licenseSpdx || 'Unknown'}`);
   console.log(`- Ecosystem: ${analysis.manifest.ecosystem}`);
+  if (analysis.wordpress?.isWordPress) {
+    console.log(`- WordPress: Architecture: ${analysis.wordpress.type.toUpperCase()}${analysis.wordpress.name ? ' (' + analysis.wordpress.name + ')' : ''}`);
+    if (analysis.wordpress.version) console.log(`  ↳ Version: ${analysis.wordpress.version}`);
+    if (analysis.wordpress.hasBlockJson) console.log(`  ↳ Gutenberg Block Support (block.json)`);
+    if (analysis.wordpress.hasTelex) console.log(`  ↳ Automattic Telex Compatible`);
+    if (analysis.wordpress.hasWpCli) console.log(`  ↳ wp-cli Configuration Detected`);
+  }
   console.log(`- Dependencies (${analysis.manifest.dependencies.length}): ${analysis.manifest.dependencies.slice(0, 10).join(', ')}${analysis.manifest.dependencies.length > 10 ? '...' : ''}`);
   console.log(`- Dev Dependencies (${analysis.manifest.devDependencies.length}): ${analysis.manifest.devDependencies.slice(0, 8).join(', ')}${analysis.manifest.devDependencies.length > 8 ? '...' : ''}`);
   console.log(`- Scripts (${Object.keys(analysis.manifest.scripts).length}): ${Object.keys(analysis.manifest.scripts).join(', ')}`);

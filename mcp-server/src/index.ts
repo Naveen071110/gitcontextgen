@@ -81,8 +81,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             format: {
               type: 'string',
-              enum: ['claude', 'cursor', 'copilot', 'windsurf', 'universal', 'agents', 'agent_readme'],
-              description: 'Target instruction format standard.',
+              enum: ['claude', 'cursor', 'copilot', 'windsurf', 'universal', 'agents', 'agent_readme', 'wordpress'],
+              description: 'Target instruction format standard (e.g. claude, cursor, wordpress).',
             },
           },
           required: ['path', 'format'],
@@ -140,7 +140,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   try {
-    const VALID_FORMATS = new Set<RuleFormat>(['claude', 'cursor', 'copilot', 'windsurf', 'universal', 'agents', 'agent_readme']);
+    const VALID_FORMATS = new Set<RuleFormat>(['claude', 'cursor', 'copilot', 'windsurf', 'universal', 'agents', 'agent_readme', 'wordpress']);
 
     switch (name) {
       case 'gitcontextgen_analyze': {
@@ -165,6 +165,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             scripts: analysis.manifest.scripts,
           },
           license: analysis.licenseSpdx || 'Unknown',
+          wordpress: analysis.wordpress,
         };
 
         return {

@@ -151,6 +151,81 @@ try {
   const serverInfo = await handshakePromise;
   console.log(`✅ MCP Command Handshake Passed: Connected to "${serverInfo.name}" v${serverInfo.version}`);
 
+  // 8. Test: WordPress Workspace Detection & Rule Generation
+  console.log('\n[STEP 8] Validating WordPress Workspace Detection & Rules Generation...');
+  const tempWpWorkspace = path.join(os.tmpdir(), `gitcontextgen-mock-wp-${Date.now()}`);
+  fs.mkdirSync(tempWpWorkspace, { recursive: true });
+
+  // Create sample WordPress plugin file
+  const samplePluginPhp = `<?php
+/*
+Plugin Name: Enterprise Secure Gateway
+Version: 3.2.0
+Description: VIP-standard payment gateway for WordPress and WooCommerce.
+Author: Enterprise Agency
+Text Domain: enterprise-secure-gateway
+*/
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+`;
+  fs.writeFileSync(path.join(tempWpWorkspace, 'enterprise-gateway.php'), samplePluginPhp, 'utf-8');
+  fs.writeFileSync(path.join(tempWpWorkspace, 'block.json'), JSON.stringify({ name: 'enterprise/payment-box', title: 'Payment Box' }), 'utf-8');
+  fs.writeFileSync(path.join(tempWpWorkspace, 'wp-cli.yml'), 'path: wp-core\n', 'utf-8');
+
+  // Run gitcontextgen init --silent in WordPress workspace
+  execSync(`node "${localCliBin}" init --silent`, { cwd: tempWpWorkspace, stdio: 'inherit' });
+
+  const wpMdcFile = path.join(tempWpWorkspace, '.cursor', 'rules', 'wordpress.mdc');
+  const wpClaudeFile = path.join(tempWpWorkspace, 'CLAUDE.md');
+
+  if (!fs.existsSync(wpMdcFile)) {
+    throw new Error(`WordPress assertion failed: .cursor/rules/wordpress.mdc not found at ${wpMdcFile}`);
+  }
+  if (!fs.existsSync(wpClaudeFile)) {
+    throw new Error(`WordPress assertion failed: CLAUDE.md not found at ${wpClaudeFile}`);
+  }
+
+  const wpMdcContent = fs.readFileSync(wpMdcFile, 'utf-8');
+  const wpClaudeContent = fs.readFileSync(wpClaudeFile, 'utf-8');
+
+  if (!wpMdcContent.includes('alwaysApply: true')) {
+    throw new Error('WordPress assertion failed: wordpress.mdc missing "alwaysApply: true"');
+  }
+  if (!wpMdcContent.includes('sanitize_text_field') || !wpMdcContent.includes('$wpdb->prepare')) {
+    throw new Error('WordPress assertion failed: wordpress.mdc missing WPCS/Security rules');
+  }
+  if (!wpMdcContent.includes('wp plugin activate --all')) {
+    throw new Error('WordPress assertion failed: wordpress.mdc missing wp-cli commands');
+  }
+  if (!wpClaudeContent.includes('Enterprise Secure Gateway')) {
+    throw new Error('WordPress assertion failed: CLAUDE.md does not contain detected plugin name');
+  }
+
+  // Test gitcontextgen rules --format wordpress
+  const wpRulesOutput = execSync(`node "${localCliBin}" rules --format wordpress`, {
+    cwd: tempWpWorkspace,
+    encoding: 'utf-8',
+  });
+  if (!wpRulesOutput.includes('WordPress Coding Standards') || !wpRulesOutput.includes('$wpdb->prepare')) {
+    throw new Error('WordPress rules command output failed validation.');
+  }
+
+  // Test gitcontextgen analyze --json in WordPress workspace
+  const wpAnalyzeOutput = execSync(`node "${localCliBin}" analyze --json`, {
+    cwd: tempWpWorkspace,
+    encoding: 'utf-8',
+  });
+  const wpParsed = JSON.parse(wpAnalyzeOutput);
+  if (!wpParsed.wordpress?.isWordPress || wpParsed.wordpress?.type !== 'plugin' || wpParsed.manifest?.ecosystem !== 'wordpress') {
+    throw new Error(`WordPress analysis failed to identify plugin architecture: ${wpAnalyzeOutput}`);
+  }
+  console.log('✅ WordPress AI Detection & WPCS Rules Test Passed: Successfully detected plugin, generated wordpress.mdc, CLAUDE.md, and validated wp-cli.');
+
+  // Clean up WP workspace
+  fs.rmSync(tempWpWorkspace, { recursive: true, force: true });
+
   console.log('\n' + '='.repeat(72));
   console.log('🎉 ALL CLI PACKAGING & DISTRIBUTION TESTS PASSED (Exit code 0)');
   console.log('='.repeat(72) + '\n');

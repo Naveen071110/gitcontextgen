@@ -4,6 +4,7 @@ import * as os from 'os';
 import * as readline from 'readline/promises';
 import { analyzeLocalDirectory } from '../localScanner.js';
 import { generateRules } from '../rulesEngine.js';
+import { detectWordPress } from '../analyzer/detector.js';
 
 export interface InitOptions {
   silent?: boolean;
@@ -27,11 +28,21 @@ export async function executeInit(options: InitOptions = {}): Promise<void> {
   const claudeConfigPath = path.join(os.homedir(), '.claude.json');
   const hasClaudeConfig = fs.existsSync(claudeConfigPath);
 
+  // WordPress Environment Detection
+  const wpDetection = detectWordPress(targetDir);
+  const isWordPress = wpDetection.isWordPress;
+
   console.log('\n🔍 Environment Detection:');
   console.log(`   - Git Repository: ${hasGit ? '✅ Detected' : '⚠️ Not detected (.git missing)'}`);
   console.log(`   - Cursor IDE Configuration: ${hasCursorRules ? '✅ Detected (.cursor/rules)' : '⚪ Not configured'}`);
   console.log(`   - VS Code Configuration: ${hasVsCode ? '✅ Detected (.vscode/)' : '⚪ Not configured'}`);
   console.log(`   - Claude CLI Settings: ${hasClaudeConfig ? '✅ Detected (~/.claude.json)' : '⚪ Not found'}`);
+  if (isWordPress) {
+    console.log(`   - WordPress Architecture: ✅ Detected (${wpDetection.type.toUpperCase()}${wpDetection.name ? ': ' + wpDetection.name : ''})`);
+    if (wpDetection.hasBlockJson) console.log(`     ↳ Gutenberg block.json schema active`);
+    if (wpDetection.hasTelex) console.log(`     ↳ Automattic Telex compatibility enabled`);
+    if (wpDetection.hasWpCli) console.log(`     ↳ wp-cli configuration detected`);
+  }
 
   let rl: readline.Interface | null = null;
   if (!isAuto) {
@@ -48,9 +59,10 @@ export async function executeInit(options: InitOptions = {}): Promise<void> {
   };
 
   try {
-    // 2. Rule Configuration (.cursor/rules/project-rules.mdc & CLAUDE.md)
+    // 2. Rule Configuration (.cursor/rules/wordpress.mdc or project-rules.mdc & CLAUDE.md)
     const cursorRulesDir = path.join(targetDir, '.cursor', 'rules');
-    const mdcPath = path.join(cursorRulesDir, 'project-rules.mdc');
+    const mdcFilename = isWordPress ? 'wordpress.mdc' : 'project-rules.mdc';
+    const mdcPath = path.join(cursorRulesDir, mdcFilename);
     const claudePath = path.join(targetDir, 'CLAUDE.md');
 
     const mdcExists = fs.existsSync(mdcPath);
@@ -63,7 +75,11 @@ export async function executeInit(options: InitOptions = {}): Promise<void> {
       if (claudeExists) console.log(`   - ${path.relative(targetDir, claudePath)}`);
       proceedWithRules = await ask('\nOverwrite existing rule files with fresh analysis? [y/N]: ', false);
     } else if (!isAuto) {
-      proceedWithRules = await ask('\nBootstrap synchronized project rules (CLAUDE.md & .cursor/rules/*.mdc)? [Y/n]: ', true);
+      if (isWordPress) {
+        proceedWithRules = await ask('\nWe detected a WordPress workspace! Would you like to generate WordPress-optimized Cursor (.mdc) and Claude Code (CLAUDE.md) rules? [Y/n]: ', true);
+      } else {
+        proceedWithRules = await ask('\nBootstrap synchronized project rules (CLAUDE.md & .cursor/rules/*.mdc)? [Y/n]: ', true);
+      }
     }
 
     if (proceedWithRules) {
@@ -74,13 +90,23 @@ export async function executeInit(options: InitOptions = {}): Promise<void> {
         fs.mkdirSync(cursorRulesDir, { recursive: true });
       }
 
-      const cursorResult = generateRules(analysis, 'cursor');
-      fs.writeFileSync(mdcPath, cursorResult.content, 'utf-8');
-      console.log(`✅ Generated: .cursor/rules/project-rules.mdc (with alwaysApply: true)`);
+      if (isWordPress) {
+        const cursorResult = generateRules(analysis, 'wordpress');
+        fs.writeFileSync(mdcPath, cursorResult.content, 'utf-8');
+        console.log(`✅ Generated: .cursor/rules/wordpress.mdc (with alwaysApply: true)`);
 
-      const claudeResult = generateRules(analysis, 'claude');
-      fs.writeFileSync(claudePath, claudeResult.content, 'utf-8');
-      console.log(`✅ Generated: CLAUDE.md (synchronized single source of truth)`);
+        const claudeResult = generateRules(analysis, 'claude');
+        fs.writeFileSync(claudePath, claudeResult.content, 'utf-8');
+        console.log(`✅ Generated: CLAUDE.md (containing wp-cli sequences & context maps)`);
+      } else {
+        const cursorResult = generateRules(analysis, 'cursor');
+        fs.writeFileSync(mdcPath, cursorResult.content, 'utf-8');
+        console.log(`✅ Generated: .cursor/rules/project-rules.mdc (with alwaysApply: true)`);
+
+        const claudeResult = generateRules(analysis, 'claude');
+        fs.writeFileSync(claudePath, claudeResult.content, 'utf-8');
+        console.log(`✅ Generated: CLAUDE.md (synchronized single source of truth)`);
+      }
     } else {
       console.log('⚪ Rule bootstrapping skipped.');
     }

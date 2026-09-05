@@ -61,6 +61,7 @@ export interface RepositoryAnalysisResult {
   };
   vulnerabilityCount?: number;
   criticalVulnerabilityCount?: number;
+  wordpress?: import('../analyzer/detector').WordPressDetection;
 }
 
 export interface SandboxState {

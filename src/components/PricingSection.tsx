@@ -100,6 +100,9 @@ export default function PricingSection() {
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> Non-Coder Step-by-Step Workflow Guide
                   </li>
                   <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> WordPress AI & WPCS Rule Generation
+                  </li>
+                  <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> Instant 0ms Dual-Layer Fast Re-Sync Cache
                   </li>
                 </ul>
@@ -130,7 +133,7 @@ export default function PricingSection() {
                   {billingCycle === 'yearly' ? 'Billed annually at $804/year (Saved $144)' : 'Billed monthly'}
                 </p>
                 <p className="text-xs sm:text-sm text-white/60 leading-relaxed mb-4">
-                  For development agencies managing client projects and multi-repo architectures.
+                  For development agencies managing client projects, multi-repo architectures, and WordPress ecosystems.
                 </p>
                 
                 <div className="h-px bg-white/10 my-6" />
@@ -138,6 +141,9 @@ export default function PricingSection() {
                 <ul className="space-y-3.5 text-xs sm:text-sm text-white/80 font-mono leading-relaxed">
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Everything in Solo Builder
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> WordPress AI, Telex & Studio Suite
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Multi-Repo Inter-Dependent Engine

@@ -77,7 +77,7 @@ if (binaryName.includes('gitcontextgen-mcp') && process.argv.length <= 2) {
   program
     .command('rules [path]')
     .description('Outputs high-fidelity AI project rules to stdout or specified file')
-    .option('-f, --format <format>', 'Target format: claude, cursor, copilot, windsurf, universal, agents, agent_readme', 'claude')
+    .option('-f, --format <format>', 'Target format: claude, cursor, copilot, windsurf, universal, agents, agent_readme, wordpress', 'claude')
     .option('-o, --output <file>', 'File path to write generated rules')
     .action(async (targetPath, options) => {
       try {
@@ -106,12 +106,13 @@ if (binaryName.includes('gitcontextgen-mcp') && process.argv.length <= 2) {
     'after',
     `
 Examples:
-  $ gitcontextgen init                     # Run interactive onboarding in current workspace
-  $ gitcontextgen init --silent            # Non-interactive setup with defaults
-  $ gitcontextgen mcp                      # Run MCP server on stdio (Claude Desktop / Cursor)
-  $ gitcontextgen analyze                  # Print summary of current directory
-  $ gitcontextgen rules --format cursor    # Output modern .mdc rules with alwaysApply: true
-  $ gitcontextgen map --output arch.mmd    # Export architectural Mermaid diagram to file
+  $ gitcontextgen init                        # Run interactive onboarding in current workspace
+  $ gitcontextgen init --silent               # Non-interactive setup with defaults
+  $ gitcontextgen mcp                         # Run MCP server on stdio (Claude Desktop / Cursor)
+  $ gitcontextgen analyze                     # Print summary of current directory
+  $ gitcontextgen rules --format cursor       # Output modern .mdc rules with alwaysApply: true
+  $ gitcontextgen rules --format wordpress    # Output WordPress WPCS & security rules
+  $ gitcontextgen map --output arch.mmd       # Export architectural Mermaid diagram to file
 `
   );
 

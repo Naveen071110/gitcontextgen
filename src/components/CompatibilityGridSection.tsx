@@ -39,6 +39,12 @@ export default function CompatibilityGridSection() {
       description: 'JSON context specification detailing indexing rules and prompt parameters.',
       link: '/agents-md-generator',
     },
+    {
+      name: 'WordPress AI, Telex & Studio',
+      format: '.cursor/rules/wordpress.mdc',
+      description: 'Enforces WPCS, input sanitization, output escaping, nonces, $wpdb->prepare, and wp-cli execution blocks.',
+      link: '/cursor-rules-generator',
+    },
   ];
 
   return (

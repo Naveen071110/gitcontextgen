@@ -1,6 +1,7 @@
 import { CodebaseAnalysis } from './localScanner.js';
+import { getWordPressCursorRules, getWordPressClaudeRules } from './rules/presets/wordpress.js';
 
-export type RuleFormat = 'claude' | 'cursor' | 'copilot' | 'windsurf' | 'universal' | 'agents' | 'agent_readme';
+export type RuleFormat = 'claude' | 'cursor' | 'copilot' | 'windsurf' | 'universal' | 'agents' | 'agent_readme' | 'wordpress';
 
 /**
  * Generates structured context rules tailored to specific AI formats
@@ -97,7 +98,34 @@ ${analysis.directories.slice(0, 15).map((d) => `- \`/${d}\``).join('\n')}
       return { filename: 'AGENT_README.md', content: content.trim() };
     }
 
+    case 'wordpress': {
+      const wpContext = {
+        name: analysis.wordpress?.name || name,
+        type: analysis.wordpress?.type || 'unknown',
+        version: analysis.wordpress?.version,
+        textDomain: analysis.wordpress?.textDomain,
+        hasWpCli: analysis.wordpress?.hasWpCli,
+        hasTelex: analysis.wordpress?.hasTelex,
+        hasBlockJson: analysis.wordpress?.hasBlockJson,
+      };
+      const content = getWordPressCursorRules(wpContext);
+      return { filename: '.cursor/rules/wordpress.mdc', content };
+    }
+
     case 'claude': {
+      if (analysis.wordpress?.isWordPress) {
+        const wpContext = {
+          name: analysis.wordpress.name || name,
+          type: analysis.wordpress.type,
+          version: analysis.wordpress.version,
+          textDomain: analysis.wordpress.textDomain,
+          hasWpCli: analysis.wordpress.hasWpCli,
+          hasTelex: analysis.wordpress.hasTelex,
+          hasBlockJson: analysis.wordpress.hasBlockJson,
+        };
+        return { filename: 'CLAUDE.md', content: getWordPressClaudeRules(wpContext) };
+      }
+
       const content = `# CLAUDE.md - ${name} Development Guide
 
 ## Project Overview
@@ -146,6 +174,19 @@ ${isSupabase ? '- **Supabase Client**: Separate server-side auth/data operations
     }
 
     case 'cursor': {
+      if (analysis.wordpress?.isWordPress) {
+        const wpContext = {
+          name: analysis.wordpress.name || name,
+          type: analysis.wordpress.type,
+          version: analysis.wordpress.version,
+          textDomain: analysis.wordpress.textDomain,
+          hasWpCli: analysis.wordpress.hasWpCli,
+          hasTelex: analysis.wordpress.hasTelex,
+          hasBlockJson: analysis.wordpress.hasBlockJson,
+        };
+        return { filename: '.cursor/rules/wordpress.mdc', content: getWordPressCursorRules(wpContext) };
+      }
+
       const content = `---
 description: ${name} Core Project Rules, Architectural Boundaries & Invariants
 globs: *

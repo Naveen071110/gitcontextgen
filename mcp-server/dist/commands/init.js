@@ -5,6 +5,7 @@ import * as readline from 'readline/promises';
 import { analyzeLocalDirectory } from '../localScanner.js';
 import { generateRules } from '../rulesEngine.js';
 import { detectWordPress } from '../analyzer/detector.js';
+import { recordGitWorkingState, safeWriteWithVerification } from '../utils/fileLock.js';
 export async function executeInit(options = {}) {
     const isAuto = Boolean(options.silent || options.yes);
     const isForce = Boolean(options.force);
@@ -77,24 +78,26 @@ export async function executeInit(options = {}) {
         }
         if (proceedWithRules) {
             console.log('\n📦 Analyzing repository structure...');
+            const mdcSnapshot = recordGitWorkingState(mdcPath, targetDir);
+            const claudeSnapshot = recordGitWorkingState(claudePath, targetDir);
             const analysis = await analyzeLocalDirectory(targetDir);
             if (!fs.existsSync(cursorRulesDir)) {
                 fs.mkdirSync(cursorRulesDir, { recursive: true });
             }
             if (isWordPress) {
                 const cursorResult = generateRules(analysis, 'wordpress');
-                fs.writeFileSync(mdcPath, cursorResult.content, 'utf-8');
+                await safeWriteWithVerification(mdcPath, cursorResult.content, mdcSnapshot, { force: isForce });
                 console.log(`✅ Generated: .cursor/rules/wordpress.mdc (with alwaysApply: true)`);
                 const claudeResult = generateRules(analysis, 'claude');
-                fs.writeFileSync(claudePath, claudeResult.content, 'utf-8');
+                await safeWriteWithVerification(claudePath, claudeResult.content, claudeSnapshot, { force: isForce });
                 console.log(`✅ Generated: CLAUDE.md (containing wp-cli sequences & context maps)`);
             }
             else {
                 const cursorResult = generateRules(analysis, 'cursor');
-                fs.writeFileSync(mdcPath, cursorResult.content, 'utf-8');
+                await safeWriteWithVerification(mdcPath, cursorResult.content, mdcSnapshot, { force: isForce });
                 console.log(`✅ Generated: .cursor/rules/project-rules.mdc (with alwaysApply: true)`);
                 const claudeResult = generateRules(analysis, 'claude');
-                fs.writeFileSync(claudePath, claudeResult.content, 'utf-8');
+                await safeWriteWithVerification(claudePath, claudeResult.content, claudeSnapshot, { force: isForce });
                 console.log(`✅ Generated: CLAUDE.md (synchronized single source of truth)`);
             }
         }

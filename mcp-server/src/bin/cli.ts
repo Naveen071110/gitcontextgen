@@ -7,6 +7,8 @@ import { executeMcp } from '../commands/mcp.js';
 import { executeAnalyze } from '../commands/analyze.js';
 import { executeRules } from '../commands/rules.js';
 import { executeMap } from '../commands/map.js';
+import { executeLint } from '../commands/lint.js';
+import { executeDoctor } from '../commands/doctor.js';
 
 process.on('uncaughtException', (err) => {
   console.error('\n❌ Uncaught Exception:', err.message);
@@ -102,12 +104,47 @@ if (binaryName.includes('gitcontextgen-mcp') && process.argv.length <= 2) {
       }
     });
 
+  program
+    .command('lint [path]')
+    .description('Enforces CI rule standards, Cursor .mdc frontmatter validation, bidirectional sync, and secret leak scanning')
+    .option('--strict', 'Treat all warnings as errors')
+    .option('--staged-only', 'Inspect only git staged files for credential leaks')
+    .option('--json', 'Output results in structured JSON format')
+    .action(async (targetPath, options) => {
+      try {
+        const report = await executeLint(targetPath, options);
+        if (!report.passed) {
+          process.exit(1);
+        }
+      } catch (err: unknown) {
+        console.error('\n❌ Lint check failed:', (err as Error).message);
+        process.exit(1);
+      }
+    });
+
+  program
+    .command('doctor [path]')
+    .description('Client onboarding checkup: audits IDEs, registers MCP servers, and establishes symlink portability')
+    .option('-s, --silent', 'Bypass interactive prompts and apply recommended defaults')
+    .option('-y, --yes', 'Alias for --silent')
+    .option('--register-all', 'Automatically register MCP server in all detected IDEs')
+    .option('--link-rules', 'Automatically establish symlinks between CLAUDE.md and AGENTS.md')
+    .action(async (targetPath, options) => {
+      try {
+        await executeDoctor(targetPath, options);
+      } catch (err: unknown) {
+        console.error('\n❌ Doctor check failed:', (err as Error).message);
+        process.exit(1);
+      }
+    });
+
   program.addHelpText(
     'after',
     `
 Examples:
   $ gitcontextgen init                        # Run interactive onboarding in current workspace
-  $ gitcontextgen init --silent               # Non-interactive setup with defaults
+  $ gitcontextgen doctor                      # Audit IDEs, register MCP, and verify environment health
+  $ gitcontextgen lint                        # Run CI rule harmonization and secret leak validation
   $ gitcontextgen mcp                         # Run MCP server on stdio (Claude Desktop / Cursor)
   $ gitcontextgen analyze                     # Print summary of current directory
   $ gitcontextgen rules --format cursor       # Output modern .mdc rules with alwaysApply: true

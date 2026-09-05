@@ -62,6 +62,12 @@ function runPreCommitCheck() {
     }
 
     const basename = path.basename(normalized);
+
+    // Explicitly allow non-secret template files (.env.example, .env.sample, .env.template)
+    if (/^\.env\.(example|sample|template)$/i.test(basename)) {
+      continue;
+    }
+
     if (SENSITIVE_FILE_REGEX.test(basename) || SENSITIVE_FILE_REGEX.test(normalized)) {
       flaggedFiles.push(file);
     }

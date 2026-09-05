@@ -8,6 +8,7 @@ import { executeRules } from '../commands/rules.js';
 import { executeMap } from '../commands/map.js';
 import { executeLint } from '../commands/lint.js';
 import { executeDoctor } from '../commands/doctor.js';
+import { executeHandoff } from '../commands/handoff.js';
 process.on('uncaughtException', (err) => {
     console.error('\n❌ Uncaught Exception:', err.message);
     process.exit(1);
@@ -133,11 +134,30 @@ else {
             process.exit(1);
         }
     });
+    program
+        .command('handoff [path]')
+        .alias('proof-of-work')
+        .description('Generates executive client proof-of-work and deliverables handoff reports from git history')
+        .option('-c, --client <name>', 'The name of the client or company', 'Client Partner')
+        .option('-f, --format <format>', 'Output format: markdown, html, pdf', 'markdown')
+        .option('-s, --since <timeframe>', 'Timeframe filter (e.g. 7d, 30d, 2w, 2026-08-01)', '30d')
+        .option('-o, --out <file>', 'Custom output location')
+        .action(async (targetPath, options) => {
+        try {
+            await executeHandoff(targetPath, options);
+        }
+        catch (err) {
+            console.error('\n❌ Handoff report generation failed:', err.message);
+            process.exit(1);
+        }
+    });
     program.addHelpText('after', `
 Examples:
   $ gitcontextgen init                        # Run interactive onboarding in current workspace
   $ gitcontextgen doctor                      # Audit IDEs, register MCP, and verify environment health
   $ gitcontextgen lint                        # Run CI rule harmonization and secret leak validation
+  $ gitcontextgen handoff --client "Acme"     # Generate client proof-of-work markdown report
+  $ gitcontextgen handoff --format html       # Generate executive print-ready HTML handoff report
   $ gitcontextgen mcp                         # Run MCP server on stdio (Claude Desktop / Cursor)
   $ gitcontextgen analyze                     # Print summary of current directory
   $ gitcontextgen rules --format cursor       # Output modern .mdc rules with alwaysApply: true

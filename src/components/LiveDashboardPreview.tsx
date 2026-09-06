@@ -4,61 +4,82 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FolderGit2,
-  FileCode2,
-  Server,
   TrendingDown,
   FileText,
-  CheckCircle2,
   Copy,
   Check,
-  Zap,
-  ShieldCheck,
-  Download,
   Sparkles,
-  ExternalLink
+  GitBranch,
+  Unlock,
+  CheckCircle2,
+  Database,
+  ShieldCheck,
+  Layers,
 } from 'lucide-react';
 
-type TabId = 'explore' | 'sync' | 'mcp' | 'cache' | 'handoff';
+type TabId = 'codemap' | 'cache' | 'handoff';
 
 export default function LiveDashboardPreview() {
-  const [activeTab, setActiveTab] = useState<TabId>('explore');
+  const [activeTab, setActiveTab] = useState<TabId>('codemap');
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
 
   const handleCopy = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedSection(id);
-    setTimeout(() => setCopiedSection(null), 2000);
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedSection(id);
+      setTimeout(() => setCopiedSection(null), 2000);
+    }
   };
 
   const tabs: Array<{ id: TabId; label: string; icon: any }> = [
-    { id: 'explore', label: 'Explore Code', icon: FolderGit2 },
-    { id: 'sync', label: 'Sync Engine', icon: FileCode2 },
-    { id: 'mcp', label: 'MCP Tools', icon: Server },
-    { id: 'cache', label: 'Token Caching', icon: TrendingDown },
-    { id: 'handoff', label: 'Client Handoff', icon: FileText },
+    { id: 'codemap', label: 'Code Map Preview', icon: FolderGit2 },
+    { id: 'cache', label: 'L2 Caching Chart', icon: TrendingDown },
+    { id: 'handoff', label: 'Client Handoff Report', icon: FileText },
   ];
 
   return (
-    <section className="w-full max-w-5xl mx-auto px-4 py-24 text-left font-sans select-none">
+    <section className="w-full max-w-5xl mx-auto px-4 py-16 md:py-20 text-left font-sans select-none">
       {/* Section Header */}
-      <div className="text-center max-w-3xl mx-auto mb-12">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-mono text-amber-400 mb-4">
-          <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Interactive Product Walkthrough
+      <div className="text-center max-w-2xl mx-auto mb-10">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-mono text-amber-400 mb-3.5">
+          <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Interactive Feature Dashboard
         </div>
-        <h3 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-zinc-100 mb-4">
-          The B2B AI Workspace{' '}
-          <span className="font-serif italic font-normal text-amber-300">Engineers Actually Love.</span>
-        </h3>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-3 leading-tight">
+          GitHub-Familiar.{' '}
+          <span className="font-serif italic font-normal text-amber-300">Engineered for Teams.</span>
+        </h2>
         <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
-          Explore our GitHub-familiar interface. Inspect file trees, test live rule synchronization, observe local MCP latency, and track 92% token bill savings.
+          Inspect your indexed codebase map, monitor token billing savings via local L2 cache, and preview automated client delivery summaries.
         </p>
       </div>
 
-      {/* Dashboard Preview Shell */}
-      <div className="w-full rounded-2xl border border-zinc-800 bg-[#09090b] shadow-[0_20px_60px_rgba(0,0,0,0.7)] overflow-hidden">
-        {/* Navigation Tabs Header */}
-        <div className="px-4 bg-zinc-950 border-b border-zinc-800 overflow-x-auto no-scrollbar">
-          <nav role="tablist" className="flex items-center gap-1 sm:gap-2 -mb-px">
+      {/* GitHub-Inspired Workspace Card Shell */}
+      <div className="w-full rounded-2xl border border-zinc-800 bg-[#0d1117] shadow-[0_20px_60px_rgba(0,0,0,0.7)] overflow-hidden">
+        {/* GitHub Repository Header Strip */}
+        <div className="px-4 sm:px-6 py-3.5 bg-[#161b22] border-b border-[#30363d] flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+          <div className="flex items-center gap-2.5">
+            <FolderGit2 className="w-4 h-4 text-[#58a6ff]" />
+            <span className="text-[#58a6ff] font-semibold">acme-agency</span>
+            <span className="text-[#8b949e]">/</span>
+            <span className="text-[#f0f6fc] font-bold">production-saas-core</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] border border-[#30363d] bg-[#21262d] text-[#8b949e] flex items-center gap-1 ml-1">
+              <Unlock className="w-2.5 h-2.5 text-[#3fb950]" /> Public
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-1 rounded-md bg-[#21262d] border border-[#30363d] text-[#c9d1d9] flex items-center gap-1.5 text-[11px]">
+              <GitBranch className="w-3 h-3 text-[#8b949e]" /> main
+            </span>
+            <span className="px-2 py-1 rounded-md bg-[#238636]/15 border border-[#238636]/40 text-[#3fb950] text-[11px] font-bold">
+              Synced
+            </span>
+          </div>
+        </div>
+
+        {/* GitHub Navigation Tabs with Framer Motion layoutId underline */}
+        <div className="px-4 sm:px-6 bg-[#0d1117] border-b border-[#30363d] overflow-x-auto no-scrollbar">
+          <nav role="tablist" className="flex items-center gap-1 sm:gap-3 -mb-px">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -68,235 +89,250 @@ export default function LiveDashboardPreview() {
                   role="tab"
                   aria-selected={isActive}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-3.5 text-xs sm:text-sm font-medium flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${
+                  className={'relative px-3.5 py-3 text-xs sm:text-sm font-medium flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer touch-manipulation min-h-[44px] ' + (
                     isActive
-                      ? 'border-amber-400 text-zinc-100 font-semibold bg-zinc-900/30'
-                      : 'border-transparent text-zinc-500 hover:text-zinc-300 hover:border-zinc-700'
-                  }`}
+                      ? 'text-[#f0f6fc] font-semibold'
+                      : 'text-[#8b949e] hover:text-[#c9d1d9]'
+                  )}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-amber-400' : 'text-zinc-500'}`} />
+                  <Icon className={'w-4 h-4 ' + (isActive ? 'text-[#f0f6fc]' : 'text-[#8b949e]')} />
                   <span>{tab.label}</span>
+
+                  {/* Fluid Framer Motion Tab Indicator */}
+                  {isActive && (
+                    <motion.div
+                      layoutId="github-tab-underline"
+                      className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#f78166]"
+                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                    />
+                  )}
                 </button>
               );
             })}
           </nav>
         </div>
 
-        {/* Tab Body */}
-        <div className="p-6 min-h-[400px]">
+        {/* Tab Content Canvas with Explicit Height to Prevent CLS */}
+        <div className="p-5 sm:p-7 min-h-[380px] bg-[#0d1117]">
           <AnimatePresence mode="wait">
-            {/* TAB 1: Explore Code */}
-            {activeTab === 'explore' && (
+            {/* TAB 1: Code Map Preview (Animated Dark-Themed SVG Tree Diagram) */}
+            {activeTab === 'codemap' && (
               <motion.div
-                key="explore"
-                initial={{ opacity: 0, y: 8 }}
+                key="codemap"
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-4 font-mono text-xs"
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="space-y-4"
               >
-                <div className="flex items-center justify-between pb-3 border-b border-zinc-800 text-zinc-400">
-                  <span>Repository File Tree & AST Module Topology</span>
-                  <span className="text-emerald-400">0 Secrets Leaked (Regex Shield)</span>
-                </div>
-                <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-850 space-y-2 max-h-[280px] overflow-y-auto">
-                  {[
-                    { path: 'src/app/page.tsx', tag: 'Next.js App Router Page' },
-                    { path: 'src/components/HeroSection.tsx', tag: 'Interactive Client Component' },
-                    { path: 'src/lib/contextEngine.ts', tag: 'Deterministic AST Parser' },
-                    { path: 'src/lib/fileLock.ts', tag: 'Multi-Agent Write Lockfile' },
-                    { path: 'package.json', tag: 'Ecosystem Dependencies (npm)' },
-                    { path: '.cursor/rules/project-rules.mdc', tag: 'Enforced with alwaysApply: true' },
-                    { path: 'CLAUDE.md', tag: 'Synchronized Command Guidelines' },
-                  ].map((f, i) => (
-                    <div key={i} className="flex items-center justify-between py-1 px-2 rounded hover:bg-zinc-900/50">
-                      <span className="text-zinc-300 flex items-center gap-2">
-                        <span className="text-amber-400">📄</span> {f.path}
-                      </span>
-                      <span className="text-zinc-500 text-[11px]">{f.tag}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            {/* TAB 2: Sync Engine */}
-            {activeTab === 'sync' && (
-              <motion.div
-                key="sync"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono"
-              >
-                <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-850 space-y-2">
-                  <div className="flex items-center justify-between text-zinc-300 pb-2 border-b border-zinc-850">
-                    <span className="text-amber-400">.cursor/rules/project-rules.mdc</span>
-                    <span className="text-emerald-400 text-[10px]">alwaysApply: true</span>
-                  </div>
-                  <pre className="text-zinc-400 text-[11px] leading-relaxed overflow-x-auto">
-{`---
-description: Agency Architectural Guardrails
-globs: *
-alwaysApply: true
----
-# Cursor Composer Agent Rules
-- Enforce strict TypeScript types
-- Never edit build artifacts (.next/)
-- Preserve verified npm run test commands`}
-                  </pre>
-                </div>
-
-                <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-850 space-y-2">
-                  <div className="flex items-center justify-between text-zinc-300 pb-2 border-b border-zinc-850">
-                    <span className="text-cyan-400">CLAUDE.md</span>
-                    <span className="text-zinc-500 text-[10px]">Cross-Synchronized</span>
-                  </div>
-                  <pre className="text-zinc-400 text-[11px] leading-relaxed overflow-x-auto">
-{`# CLAUDE.md — Multi-Agent Guidelines
-> Paired with .cursor/rules/*.mdc
-## Verified Execution
-- Dev: npm run dev
-- Build: npm run build
-- Typecheck: npx tsc --noEmit
-## Safety
-- All API promises wrapped in try/catch`}
-                  </pre>
-                </div>
-              </motion.div>
-            )}
-
-            {/* TAB 3: MCP Tools */}
-            {activeTab === 'mcp' && (
-              <motion.div
-                key="mcp"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-4 text-xs font-mono"
-              >
-                <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-850 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
-                    <div>
-                      <p className="text-zinc-200 font-bold">Local stdio Model Context Protocol Server</p>
-                      <p className="text-zinc-500 text-[11px]">Registered in ~/.claude.json & .cursor/mcp.json</p>
-                    </div>
-                  </div>
-                  <span className="px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-emerald-400 text-xs">
-                    &lt; 12ms latency
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#30363d] text-xs font-mono">
+                  <span className="text-[#8b949e] flex items-center gap-2">
+                    <Layers className="w-3.5 h-3.5 text-[#58a6ff]" />
+                    Indexed AST Topology Diagram
+                  </span>
+                  <span className="text-[#3fb950] font-semibold flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" /> 0 Secrets Leaked (Regex Shield Active)
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-850">
-                    <strong className="text-zinc-200">gitcontextgen_get_rules</strong>
-                    <p className="text-zinc-500 text-[11px] mt-1">Fetches synchronized rules without full file tree re-reads.</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-850">
-                    <strong className="text-zinc-200">gitcontextgen_lint</strong>
-                    <p className="text-zinc-500 text-[11px] mt-1">Verifies frontmatter compliance & secret protections.</p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
+                {/* SVG Code Map Tree Diagram */}
+                <div className="w-full h-64 rounded-xl bg-[#161b22] border border-[#30363d] p-4 relative overflow-hidden flex items-center justify-center">
+                  <svg className="w-full h-full" viewBox="0 0 600 220" fill="none">
+                    {/* Connecting Branch Lines */}
+                    <path d="M 60 110 H 130" stroke="#30363d" strokeWidth="2" strokeDasharray="4 4" />
+                    <path d="M 130 110 V 45 H 200" stroke="#30363d" strokeWidth="2" />
+                    <path d="M 130 110 H 200" stroke="#30363d" strokeWidth="2" />
+                    <path d="M 130 110 V 175 H 200" stroke="#30363d" strokeWidth="2" />
 
-            {/* TAB 4: Token Caching (Interactive SVG Area Chart) */}
-            {activeTab === 'cache' && (
-              <motion.div
-                key="cache"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-4"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono">
-                  <span className="text-zinc-300">Cumulative Token Consumption (10 Agent Queries)</span>
-                  <div className="flex items-center gap-4 text-xs">
-                    <span className="flex items-center gap-1.5 text-red-400">
-                      <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" /> Without Cache (125k tokens)
-                    </span>
-                    <span className="flex items-center gap-1.5 text-emerald-400">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" /> With L2 Cache (10k tokens - 92% Saved)
-                    </span>
-                  </div>
-                </div>
+                    <path d="M 330 45 H 390" stroke="#58a6ff" strokeWidth="1.5" strokeOpacity="0.6" />
+                    <path d="M 330 110 H 390" stroke="#f78166" strokeWidth="1.5" strokeOpacity="0.6" />
+                    <path d="M 330 175 H 390" stroke="#3fb950" strokeWidth="1.5" strokeOpacity="0.6" />
 
-                {/* SVG Area Chart */}
-                <div className="w-full h-48 rounded-xl bg-zinc-950 border border-zinc-850 p-3 flex items-center justify-center relative">
-                  <svg className="w-full h-full" viewBox="0 0 500 150" preserveAspectRatio="none">
-                    <defs>
-                      <linearGradient id="redGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#ef4444" stopOpacity="0.25" />
-                        <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
-                      </linearGradient>
-                      <linearGradient id="greenGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
-                        <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
+                    {/* Root Node: Repository */}
+                    <g transform="translate(10, 88)">
+                      <rect width="95" height="44" rx="8" fill="#21262d" stroke="#58a6ff" strokeWidth="1.5" />
+                      <text x="47" y="22" textAnchor="middle" fill="#f0f6fc" fontSize="11" fontFamily="monospace" fontWeight="bold">root /</text>
+                      <text x="47" y="34" textAnchor="middle" fill="#8b949e" fontSize="9" fontFamily="monospace">142 files</text>
+                    </g>
 
-                    {/* Red Area (Without cache) */}
-                    <path
-                      d="M 0 140 L 50 120 L 100 95 L 150 80 L 200 65 L 250 50 L 300 40 L 350 30 L 400 20 L 450 15 L 500 10 L 500 150 L 0 150 Z"
-                      fill="url(#redGrad)"
-                    />
-                    <path
-                      d="M 0 140 L 50 120 L 100 95 L 150 80 L 200 65 L 250 50 L 300 40 L 350 30 L 400 20 L 450 15 L 500 10"
-                      fill="none"
-                      stroke="#ef4444"
-                      strokeWidth="2"
-                    />
+                    {/* Branch Node 1: src/app */}
+                    <g transform="translate(200, 23)">
+                      <rect width="130" height="44" rx="8" fill="#21262d" stroke="#30363d" strokeWidth="1" />
+                      <text x="65" y="21" textAnchor="middle" fill="#58a6ff" fontSize="11" fontFamily="monospace" fontWeight="bold">📁 src/app/</text>
+                      <text x="65" y="33" textAnchor="middle" fill="#8b949e" fontSize="9" fontFamily="monospace">23 routes</text>
+                    </g>
 
-                    {/* Green Area (With L2 cache) */}
-                    <path
-                      d="M 0 145 L 50 140 L 100 138 L 150 137 L 200 136 L 250 135 L 300 134 L 350 134 L 400 133 L 450 133 L 500 132 L 500 150 L 0 150 Z"
-                      fill="url(#greenGrad)"
-                    />
-                    <path
-                      d="M 0 145 L 50 140 L 100 138 L 150 137 L 200 136 L 250 135 L 300 134 L 350 134 L 400 133 L 450 133 L 500 132"
-                      fill="none"
-                      stroke="#10b981"
-                      strokeWidth="2.5"
-                    />
+                    {/* Branch Node 2: .cursor/rules */}
+                    <g transform="translate(200, 88)">
+                      <rect width="130" height="44" rx="8" fill="#21262d" stroke="#f78166" strokeWidth="1.5" />
+                      <text x="65" y="21" textAnchor="middle" fill="#f78166" fontSize="11" fontFamily="monospace" fontWeight="bold">📄 .cursor/rules</text>
+                      <text x="65" y="33" textAnchor="middle" fill="#8b949e" fontSize="9" fontFamily="monospace">alwaysApply: true</text>
+                    </g>
+
+                    {/* Branch Node 3: CLAUDE.md */}
+                    <g transform="translate(200, 153)">
+                      <rect width="130" height="44" rx="8" fill="#21262d" stroke="#30363d" strokeWidth="1" />
+                      <text x="65" y="21" textAnchor="middle" fill="#3fb950" fontSize="11" fontFamily="monospace" fontWeight="bold">📄 CLAUDE.md</text>
+                      <text x="65" y="33" textAnchor="middle" fill="#8b949e" fontSize="9" fontFamily="monospace">Synced commands</text>
+                    </g>
+
+                    {/* Target End Leaf: Claude Code MCP */}
+                    <g transform="translate(390, 23)">
+                      <rect width="180" height="44" rx="8" fill="#1f242c" stroke="#58a6ff" strokeWidth="1" strokeDasharray="3 3" />
+                      <text x="90" y="21" textAnchor="middle" fill="#f0f6fc" fontSize="10" fontFamily="monospace">Claude Code CLI</text>
+                      <text x="90" y="33" textAnchor="middle" fill="#58a6ff" fontSize="9" fontFamily="monospace">&lt; 12ms stdio hook</text>
+                    </g>
+
+                    {/* Target End Leaf: Cursor Composer */}
+                    <g transform="translate(390, 88)">
+                      <rect width="180" height="44" rx="8" fill="#1f242c" stroke="#f78166" strokeWidth="1" strokeDasharray="3 3" />
+                      <text x="90" y="21" textAnchor="middle" fill="#f0f6fc" fontSize="10" fontFamily="monospace">Cursor Composer</text>
+                      <text x="90" y="33" textAnchor="middle" fill="#f78166" fontSize="9" fontFamily="monospace">Strict Type Guardrails</text>
+                    </g>
+
+                    {/* Target End Leaf: Multi-Agent Lock */}
+                    <g transform="translate(390, 153)">
+                      <rect width="180" height="44" rx="8" fill="#1f242c" stroke="#3fb950" strokeWidth="1" strokeDasharray="3 3" />
+                      <text x="90" y="21" textAnchor="middle" fill="#f0f6fc" fontSize="10" fontFamily="monospace">Write-Lock Engine</text>
+                      <text x="90" y="33" textAnchor="middle" fill="#3fb950" fontSize="9" fontFamily="monospace">Zero Race Conditions</text>
+                    </g>
                   </svg>
                 </div>
               </motion.div>
             )}
 
-            {/* TAB 5: Client Handoff */}
+            {/* TAB 2: L2 Caching Chart (Visual Bar Chart Illustrating 92% Drop in Token Waste) */}
+            {activeTab === 'cache' && (
+              <motion.div
+                key="cache"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="space-y-5"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#30363d] text-xs font-mono">
+                  <span className="text-[#8b949e] flex items-center gap-2">
+                    <Database className="w-3.5 h-3.5 text-amber-400" />
+                    Token Consumption Benchmark (10 Continuous Agent Tasks)
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 font-bold">
+                    92% Drop in Token Costs
+                  </span>
+                </div>
+
+                {/* Animated Comparison Bar Chart */}
+                <div className="space-y-5 font-mono text-xs">
+                  {/* Row 1: Uncached Raw Dump */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-zinc-300">
+                      <span className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#f85149]" />
+                        Without GitContextGen (Raw Full-Tree Re-Reads)
+                      </span>
+                      <span className="text-[#f85149] font-bold">125,000 tokens ($0.375 / query)</span>
+                    </div>
+                    <div className="w-full h-8 rounded-lg bg-[#161b22] border border-[#30363d] p-1 overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: '100%' }}
+                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                        className="h-full rounded-md bg-gradient-to-r from-red-600 to-rose-500 flex items-center justify-end pr-3 text-[11px] font-bold text-white shadow-sm"
+                      >
+                        100% Volume
+                      </motion.div>
+                    </div>
+                  </div>
+
+                  {/* Row 2: With GitContextGen L2 Cache */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-zinc-300">
+                      <span className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#3fb950]" />
+                        With GitContextGen L2 Cache (AST Boundary Pulls)
+                      </span>
+                      <span className="text-[#3fb950] font-bold">10,000 tokens ($0.030 / query)</span>
+                    </div>
+                    <div className="w-full h-8 rounded-lg bg-[#161b22] border border-[#30363d] p-1 overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: '8%' }}
+                        transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
+                        className="h-full min-w-[50px] rounded-md bg-gradient-to-r from-emerald-500 to-teal-400 flex items-center justify-center text-[10px] font-bold text-zinc-950 shadow-sm"
+                      >
+                        8% (-92%)
+                      </motion.div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Metric Summary Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs font-mono">
+                  <div className="p-3.5 rounded-xl bg-[#161b22] border border-[#30363d]">
+                    <span className="text-[#8b949e] text-[11px] block">Agency Monthly Savings</span>
+                    <strong className="text-xl font-bold text-[#f0f6fc]">$345.00+ / mo</strong>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-[#161b22] border border-[#30363d]">
+                    <span className="text-[#8b949e] text-[11px] block">Average Cache Hit Latency</span>
+                    <strong className="text-xl font-bold text-[#3fb950]">&lt; 12ms</strong>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-[#161b22] border border-[#30363d]">
+                    <span className="text-[#8b949e] text-[11px] block">Context Window Headroom</span>
+                    <strong className="text-xl font-bold text-[#58a6ff]">190k+ Free Tokens</strong>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* TAB 3: Client Handoff Report (Jargon-Free Delivery Summary) */}
             {activeTab === 'handoff' && (
               <motion.div
                 key="handoff"
-                initial={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="p-5 rounded-xl bg-zinc-950 border border-zinc-850 space-y-4 text-xs font-mono"
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="space-y-4 font-mono text-xs"
               >
-                <div className="flex items-center justify-between pb-3 border-b border-zinc-850">
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#30363d]">
                   <div>
-                    <h4 className="text-zinc-100 font-bold text-sm">Automated Agency Client Handoff Report</h4>
-                    <p className="text-zinc-500 text-[11px]">Jargon-free delivery certification for non-technical clients</p>
+                    <h4 className="text-[#f0f6fc] font-bold text-sm">Sprint Delivery Certification</h4>
+                    <p className="text-[#8b949e] text-[11px]">Jargon-free client progress verification & AI handoff</p>
                   </div>
+
                   <button
                     type="button"
-                    onClick={() => handleCopy('Delivered & Verified via GitContextGen', 'handoff')}
-                    className="px-3 py-1.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white flex items-center gap-1.5 transition"
+                    onClick={() => handleCopy('GitContextGen Agency Client Verification: All sprint deliverables audited with 0 CVE vulnerabilities and synchronized AI rules.', 'handoff-report')}
+                    className="px-3.5 py-1.5 min-h-[36px] rounded-md bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-[#c9d1d9] flex items-center gap-1.5 transition cursor-pointer touch-manipulation"
                   >
-                    {copiedSection === 'handoff' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedSection === 'handoff' ? 'Copied' : 'Export PDF / Markdown'}</span>
+                    {copiedSection === 'handoff-report' ? <Check className="w-3.5 h-3.5 text-[#3fb950]" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedSection === 'handoff-report' ? 'Copied' : 'Export Report'}</span>
                   </button>
                 </div>
 
-                <div className="space-y-2 text-zinc-400 leading-relaxed text-[11px]">
-                  <p>✓ All modules delivered and verified under clean TypeScript boundaries.</p>
-                  <p>✓ 0 open CVE vulnerabilities flagged via OSV.dev package index.</p>
-                  <p>✓ Open-source license compatibility certified (MIT / SPDX compliant).</p>
-                  <p>✓ AI rules initialized to protect future agency maintenance sprints.</p>
+                <div className="p-4 rounded-xl bg-[#161b22] border border-[#30363d] space-y-3 font-sans">
+                  <div className="flex items-center gap-2 text-[#3fb950] font-mono text-xs font-semibold">
+                    <CheckCircle2 className="w-4 h-4" /> Ready for Production Client Delivery
+                  </div>
+
+                  <div className="space-y-2 text-xs text-[#c9d1d9] leading-relaxed">
+                    <div className="flex items-start gap-2">
+                      <span className="text-[#3fb950] font-bold">✓</span>
+                      <span><strong>TypeScript Architecture:</strong> 100% strict type compliance across 23 dynamic routes with zero runtime exceptions.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-[#3fb950] font-bold">✓</span>
+                      <span><strong>Security & Vulnerabilities:</strong> 0 open CVE alerts detected via automated OSV.dev dependency audit.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-[#3fb950] font-bold">✓</span>
+                      <span><strong>Open-Source Licensing:</strong> Verified MIT/SPDX guardrails prevent IP contamination for commercial use.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-[#3fb950] font-bold">✓</span>
+                      <span><strong>Future Maintenance AI Rules:</strong> Synchronized .cursor/rules/*.mdc & CLAUDE.md prevent context rot during future agency retainers.</span>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             )}

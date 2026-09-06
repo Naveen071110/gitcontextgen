@@ -92,14 +92,14 @@ export default function PricingSection() {
           </p>
         </div>
 
-        {/* Step 3: Dedicated Toggle Wrapper with Framer Motion layoutId and touch-manipulation */}
-        <div className="flex flex-col items-center justify-center my-6 mb-14 relative w-full">
+        {/* Step 3: Pricing Switch Toggle Box with solid grid isolation */}
+        <div className="relative flex justify-center items-center mb-12 z-20 w-full">
           <div className="relative inline-flex items-center h-11 p-1 rounded-full bg-zinc-900 border border-zinc-800 shadow-xl font-mono text-xs select-none touch-manipulation">
             {/* Monthly Button */}
             <button
               type="button"
               onClick={() => setIsAnnual(false)}
-              className={`relative z-10 h-9 px-5 rounded-full font-bold transition-colors duration-200 cursor-pointer touch-manipulation flex items-center justify-center min-h-[36px] ${
+              className={`relative z-10 h-9 w-36 rounded-full font-bold transition-colors duration-200 cursor-pointer touch-manipulation flex items-center justify-center min-h-[36px] ${
                 !isAnnual ? 'text-zinc-950' : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
@@ -110,14 +110,14 @@ export default function PricingSection() {
                   transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                 />
               )}
-              <span className="relative z-10">Monthly</span>
+              <span className="relative z-10">Billed Monthly</span>
             </button>
 
             {/* Billed Annually Button */}
             <button
               type="button"
               onClick={() => setIsAnnual(true)}
-              className={`relative z-10 h-9 px-5 rounded-full font-bold transition-colors duration-200 cursor-pointer touch-manipulation flex items-center justify-center min-h-[36px] ${
+              className={`relative z-10 h-9 w-40 rounded-full font-bold transition-colors duration-200 cursor-pointer touch-manipulation flex items-center justify-center gap-1.5 min-h-[36px] ${
                 isAnnual ? 'text-zinc-950' : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
@@ -129,14 +129,12 @@ export default function PricingSection() {
                 />
               )}
               <span className="relative z-10">Billed Annually</span>
-            </button>
-
-            {/* Percentage-Based Savings Badge: positioned absolutely outside clickable target boundaries to prevent touch overlapping */}
-            <div className="absolute -top-3.5 -right-6 sm:-right-8 translate-x-1 rotate-6 pointer-events-none z-20">
-              <span className="px-2 py-0.5 rounded-full text-[10px] uppercase font-mono font-extrabold tracking-wider bg-amber-400 text-zinc-950 shadow-md border border-amber-300">
-                Save 33%
+              <span className={`relative z-10 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase transition-colors ${
+                isAnnual ? 'bg-amber-400 text-zinc-950' : 'bg-amber-400/20 text-amber-300'
+              }`}>
+                -33%
               </span>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -207,13 +205,8 @@ export default function PricingSection() {
               </button>
             </div>
 
-            {/* Card 2: Pro Builder (For Elite Freelancers & Power Users) — Most Popular */}
-            <div className="p-8 sm:p-9 rounded-3xl bg-gradient-to-b from-zinc-900/90 via-zinc-950 to-black flex flex-col justify-between space-y-8 shadow-[0_0_50px_rgba(245,158,11,0.12)] border-2 border-amber-400/80 hover:border-amber-400 relative transition-all duration-300 scale-[1.02]">
-              {/* Most Popular Floating Pill */}
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-300 text-zinc-950 text-[11px] font-mono font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
-                <Sparkles className="w-3.5 h-3.5 text-zinc-950 fill-zinc-950" /> Most Popular
-              </div>
-
+            {/* Card 2: Pro Builder (For Elite Freelancers & Power Users) — Refined Razor-Thin Highlight */}
+            <div className="p-8 sm:p-9 rounded-3xl bg-gradient-to-b from-amber-500/[0.04] via-zinc-900/40 to-black flex flex-col justify-between space-y-8 border border-amber-500/30 hover:border-amber-400/60 shadow-[0_0_40px_rgba(245,158,11,0.06)] relative transition-all duration-300">
               <div>
                 <div className="flex items-center justify-between gap-2 mb-4">
                   <h3 className="text-xl sm:text-2xl font-bold text-white font-mono">Pro Builder</h3>

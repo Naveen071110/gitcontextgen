@@ -228,13 +228,13 @@ export default function HeroSection() {
   };
 
   return (
-    <section id="hero" ref={sectionRef} className="relative w-full min-h-[100dvh] flex flex-col items-center justify-start pt-16 sm:pt-20 pb-12 md:pb-16 overflow-hidden bg-black text-white">
+    <section id="hero" ref={sectionRef} className="relative w-full flex flex-col items-center justify-start pt-12 sm:pt-14 pb-10 md:pb-14 overflow-hidden bg-black text-white">
       
       {/* Sleek Floating Glassmorphism Navbar */}
       <Navbar />
 
       {/* Structural Top Navbar Offset Spacer */}
-      <div className="w-full h-8 sm:h-12 shrink-0 pointer-events-none" />
+      <div className="w-full h-4 sm:h-6 shrink-0 pointer-events-none" />
 
       {/* FULL-BLEED BACKGROUND VIDEO */}
       <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden">
@@ -256,10 +256,10 @@ export default function HeroSection() {
       {/* Hero Main Typography Group */}
       <motion.div
         style={{ y: heroGroupY, opacity: heroGroupOpacity }}
-        className="w-full max-w-4xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center z-10 pt-2 sm:pt-4 pb-6"
+        className="w-full max-w-4xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center z-10 pt-2 pb-4"
       >
         {/* Liquid Glass Tag Pill */}
-        <div className="w-full flex justify-center mb-5">
+        <div className="w-full flex justify-center mb-4">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -281,7 +281,7 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-3xl sm:text-5xl md:text-6xl font-semibold tracking-tight sm:tracking-tighter leading-[1.1] mb-5 text-white text-center w-full max-w-4xl mx-auto"
+          className="text-2xl sm:text-3xl md:text-5xl lg:text-5xl font-semibold tracking-tight text-white leading-[1.1] mb-4 text-center w-full max-w-4xl mx-auto"
         >
           Stop AI models from burning your context.{' '}
           <span className="font-serif italic font-normal text-cyan-300">
@@ -294,7 +294,7 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-base md:text-lg text-zinc-400 font-normal leading-relaxed mb-8 max-w-2xl text-center w-full mx-auto"
+          className="text-base md:text-lg text-zinc-400 font-normal max-w-2xl mx-auto mt-4 mb-6 leading-relaxed text-center w-full"
         >
           GitContextGen acts as hallucination insurance—saving agencies up to 92% on token bills by using a persistent L2 caching layer and keeping parallel sub-agents from overwriting files via multi-agent write locks.
         </motion.p>
@@ -304,7 +304,7 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="w-full max-w-2xl mx-auto mb-3 flex flex-col items-center justify-center"
+          className="w-full max-w-2xl mx-auto mb-2 flex flex-col items-center justify-center"
         >
           <form onSubmit={handleAnalyze} className="relative w-full max-w-full">
             <div className="bg-black/90 backdrop-blur-xl rounded-2xl p-2 sm:p-2.5 border border-white/20 flex flex-col sm:flex-row items-center justify-between gap-2 shadow-2xl w-full">
@@ -344,14 +344,8 @@ export default function HeroSection() {
             </div>
           </form>
 
-          {/* Tooltip notice for No-Code Builders */}
-          <div className="mt-2 text-[11px] text-cyan-300/90 font-mono flex items-center gap-1.5 bg-cyan-950/40 px-3 py-1 rounded-full border border-cyan-500/30">
-            <Sparkles className="w-3 h-3 text-cyan-400 shrink-0" />
-            <span>Perfect for No-Code Builders — just paste your repo and let AI do the rest.</span>
-          </div>
-
           {/* Quick Demo Badges */}
-          <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2 text-xs text-white/70 font-mono w-full">
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs text-white/70 font-mono w-full">
             <span className="text-white/50 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" /> Try interactive demo repos:
             </span>
@@ -375,81 +369,77 @@ export default function HeroSection() {
               </button>
             ))}
           </div>
-
-          <p className="mt-3 text-xs text-white/50 font-mono">
-            Zero setup. No credit card required for public audits. Instant billable recovery.
-          </p>
-
-          {/* Professional Monochrome Integration Trust Badges */}
-          <div className="mt-6 pt-5 border-t border-white/10 flex flex-col items-center gap-2.5 w-full max-w-3xl">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-white/40">
-              Engineered for Modern Enterprise AI Developer Ecosystems
-            </span>
-            <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-7 text-white/60">
-              <div className="flex items-center gap-2 hover:text-white transition">
-                <GitHubBrandIcon className="w-4 h-4 text-white/70" />
-                <span className="text-xs font-mono">GitHub</span>
-              </div>
-              <div className="flex items-center gap-2 hover:text-white transition">
-                <ClaudeCodeIcon className="w-4 h-4 text-white/70" />
-                <span className="text-xs font-mono">Claude Code</span>
-              </div>
-              <div className="flex items-center gap-2 hover:text-white transition">
-                <CursorIcon className="w-4 h-4 text-white/70" />
-                <span className="text-xs font-mono">Cursor</span>
-              </div>
-              <div className="flex items-center gap-2 hover:text-white transition">
-                <WindsurfIcon className="w-4 h-4 text-white/70" />
-                <span className="text-xs font-mono">Windsurf</span>
-              </div>
-              <div className="flex items-center gap-2 hover:text-white transition">
-                <WordPressStudioIcon className="w-4 h-4 text-white/70" />
-                <span className="text-xs font-mono">WordPress Studio</span>
-              </div>
-              <div className="flex items-center gap-2 hover:text-white transition">
-                <DodoPaymentsIcon className="w-4 h-4 text-white/70" />
-                <span className="text-xs font-mono">Dodo Payments</span>
-              </div>
-            </div>
-          </div>
-
-          {/* $299 Done-For-You (DFY) Integration Service Callout */}
-          <div className="mt-4 w-full max-w-2xl px-4 py-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] border border-cyan-500/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-left transition shadow-lg">
-            <div className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shrink-0">
-                <Sparkles className="w-3.5 h-3.5" />
-              </div>
-              <div>
-                <p className="text-xs text-white font-medium">
-                  Busy agency team? Skip manual configuration.
-                </p>
-                <p className="text-[11px] text-white/60 font-mono">
-                  Book our premium <span className="text-cyan-300 font-bold">$299 Done-For-You (DFY) Team Onboarding Pack</span>.
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/pricing#dfy-setup"
-              className="px-3 py-1.5 min-h-[36px] flex items-center rounded-lg bg-cyan-500 text-black text-xs font-bold font-mono hover:bg-cyan-400 transition whitespace-nowrap shrink-0 cursor-pointer touch-manipulation"
-            >
-              Get DFY Setup →
-            </Link>
-          </div>
         </motion.div>
 
         {error && (
-          <div className="mt-4 max-w-2xl w-full mx-auto p-4 rounded-xl bg-red-950/80 border border-red-800/80 text-red-200 text-xs flex items-center gap-3 text-left backdrop-blur-md">
+          <div className="mt-3 max-w-2xl w-full mx-auto p-4 rounded-xl bg-red-950/80 border border-red-800/80 text-red-200 text-xs flex items-center gap-3 text-left backdrop-blur-md">
             <ShieldAlert className="w-5 h-5 text-red-400 shrink-0" />
             <p>{error}</p>
           </div>
         )}
 
-        {/* Animated "hub ➔ contextgen" Viral Redirection Browser Container */}
+        {/* Animated "hub ➔ contextgen" Viral Redirection Browser Container - Positioned above-the-fold */}
         {!result && (
-          <div className="w-full mt-8 z-10 px-2 sm:px-4">
+          <div className="w-full mt-4 mb-4 z-10 px-2 sm:px-4">
             <BrowserRedirectLoop />
           </div>
         )}
+
+        {/* Professional Monochrome Integration Trust Badges */}
+        <div className="mt-4 pt-4 border-t border-white/10 flex flex-col items-center gap-2.5 w-full max-w-3xl">
+          <span className="text-[11px] font-mono uppercase tracking-widest text-white/40">
+            Engineered for Modern Enterprise AI Developer Ecosystems
+          </span>
+          <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-7 text-white/60">
+            <div className="flex items-center gap-2 hover:text-white transition">
+              <GitHubBrandIcon className="w-4 h-4 text-white/70" />
+              <span className="text-xs font-mono">GitHub</span>
+            </div>
+            <div className="flex items-center gap-2 hover:text-white transition">
+              <ClaudeCodeIcon className="w-4 h-4 text-white/70" />
+              <span className="text-xs font-mono">Claude Code</span>
+            </div>
+            <div className="flex items-center gap-2 hover:text-white transition">
+              <CursorIcon className="w-4 h-4 text-white/70" />
+              <span className="text-xs font-mono">Cursor</span>
+            </div>
+            <div className="flex items-center gap-2 hover:text-white transition">
+              <WindsurfIcon className="w-4 h-4 text-white/70" />
+              <span className="text-xs font-mono">Windsurf</span>
+            </div>
+            <div className="flex items-center gap-2 hover:text-white transition">
+              <WordPressStudioIcon className="w-4 h-4 text-white/70" />
+              <span className="text-xs font-mono">WordPress Studio</span>
+            </div>
+            <div className="flex items-center gap-2 hover:text-white transition">
+              <DodoPaymentsIcon className="w-4 h-4 text-white/70" />
+              <span className="text-xs font-mono">Dodo Payments</span>
+            </div>
+          </div>
+        </div>
+
+        {/* $299 Done-For-You (DFY) Integration Service Callout */}
+        <div className="mt-3.5 w-full max-w-2xl px-4 py-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] border border-cyan-500/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-left transition shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shrink-0">
+              <Sparkles className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <p className="text-xs text-white font-medium">
+                Busy agency team? Skip manual configuration.
+              </p>
+              <p className="text-[11px] text-white/60 font-mono">
+                Book our premium <span className="text-cyan-300 font-bold">$299 Done-For-You (DFY) Team Onboarding Pack</span>.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/pricing#dfy-setup"
+            className="px-3 py-1.5 min-h-[36px] flex items-center rounded-lg bg-cyan-500 text-black text-xs font-bold font-mono hover:bg-cyan-400 transition whitespace-nowrap shrink-0 cursor-pointer touch-manipulation"
+          >
+            Get DFY Setup →
+          </Link>
+        </div>
       </motion.div>
 
       {/* DEDICATED PREMIUM AGENCY AUDIT SUITE WORKSPACE */}

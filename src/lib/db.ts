@@ -267,14 +267,14 @@ export async function getUserSubscriptionDb(userId: string): Promise<UserSubscri
       .eq('user_id', userId)
       .single();
 
-    if (error || !data) {
-      return null;
+    if (!error && data) {
+      return data as UserSubscription;
     }
-    return data as UserSubscription;
-  } catch (err) {
-    console.warn('getUserSubscriptionDb error (falling back):', err);
-    return null;
+  } catch (err: any) {
+    console.warn('[Database] getUserSubscriptionDb exception, checking fallback store:', err?.message);
   }
+
+  return MockStore.getUserSubscription(userId);
 }
 
 export async function upsertUserSubscriptionDb(payload: {
@@ -285,6 +285,9 @@ export async function upsertUserSubscriptionDb(payload: {
   subscription_id?: string;
   current_period_end?: string;
 }): Promise<UserSubscription | null> {
+  // Always mirror in MockStore
+  const localSub = MockStore.upsertUserSubscription(payload);
+
   try {
     const supabase = createAdminClient();
     const { data, error } = await supabase
@@ -301,15 +304,15 @@ export async function upsertUserSubscriptionDb(payload: {
       .select()
       .single();
 
-    if (error) {
-      console.error('upsertUserSubscriptionDb error:', error);
-      return null;
+    if (!error && data) {
+      return data as UserSubscription;
     }
-    return data as UserSubscription;
-  } catch (err) {
-    console.error('upsertUserSubscriptionDb exception:', err);
-    return null;
+    console.warn('[Database] Supabase upsertUserSubscriptionDb warning (using fallback):', error?.message);
+  } catch (err: any) {
+    console.warn('[Database] upsertUserSubscriptionDb exception, using fallback:', err?.message);
   }
+
+  return localSub;
 }
 
 export async function countUserProjects(userId: string): Promise<number> {
@@ -339,6 +342,9 @@ export async function addDfyOnboardingDb(payload: {
   customer_email?: string;
   customer_name?: string;
 }): Promise<DfyOnboarding | null> {
+  // Always mirror in MockStore
+  const localDfy = MockStore.addDfyOnboarding(payload);
+
   try {
     const supabase = createAdminClient();
     const { data, error } = await supabase
@@ -353,15 +359,14 @@ export async function addDfyOnboardingDb(payload: {
       .select()
       .single();
 
-
-    if (error) {
-      console.error('addDfyOnboardingDb error:', error);
-      return null;
+    if (!error && data) {
+      return data as DfyOnboarding;
     }
-    return data as DfyOnboarding;
-  } catch (err) {
-    console.error('addDfyOnboardingDb exception:', err);
-    return null;
+    console.warn('[Database] Supabase addDfyOnboardingDb warning (using fallback):', error?.message);
+  } catch (err: any) {
+    console.warn('[Database] addDfyOnboardingDb exception, using fallback:', err?.message);
   }
+
+  return localDfy;
 }
 

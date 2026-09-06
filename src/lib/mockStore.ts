@@ -1,4 +1,4 @@
-import { Project, DocAsset, Release, Subscriber } from './types';
+import { Project, DocAsset, Release, Subscriber, UserSubscription, DfyOnboarding } from './types';
 
 // In-memory global store with globalThis persistence
 const globalObj = globalThis as unknown as {
@@ -6,12 +6,16 @@ const globalObj = globalThis as unknown as {
   __memoryDocAssets?: Map<string, DocAsset[]>;
   __memoryReleases?: Map<string, Release[]>;
   __memorySubscribers?: Map<string, Subscriber[]>;
+  __memorySubscriptions?: Map<string, UserSubscription>;
+  __memoryDfyOnboardings?: Map<string, DfyOnboarding>;
 };
 
 const memoryProjects: Map<string, Project> = globalObj.__memoryProjects || (globalObj.__memoryProjects = new Map());
 const memoryDocAssets: Map<string, DocAsset[]> = globalObj.__memoryDocAssets || (globalObj.__memoryDocAssets = new Map());
 const memoryReleases: Map<string, Release[]> = globalObj.__memoryReleases || (globalObj.__memoryReleases = new Map());
 const memorySubscribers: Map<string, Subscriber[]> = globalObj.__memorySubscribers || (globalObj.__memorySubscribers = new Map());
+const memorySubscriptions: Map<string, UserSubscription> = globalObj.__memorySubscriptions || (globalObj.__memorySubscriptions = new Map());
+const memoryDfyOnboardings: Map<string, DfyOnboarding> = globalObj.__memoryDfyOnboardings || (globalObj.__memoryDfyOnboardings = new Map());
 
 // Seed mock project for immediate demo/testing
 const sampleId = 'demo-project-123';
@@ -218,5 +222,54 @@ export const MockStore = {
       return sub;
     }
     return list.find(s => s.email.toLowerCase() === email.toLowerCase())!;
+  },
+
+  getUserSubscription(userId: string): UserSubscription | null {
+    return memorySubscriptions.get(userId) || null;
+  },
+
+  upsertUserSubscription(payload: Partial<UserSubscription> & { user_id: string; tier: UserSubscription['tier'] }): UserSubscription {
+    const existing = memorySubscriptions.get(payload.user_id);
+    const updated: UserSubscription = {
+      id: existing?.id || 'sub_' + crypto.randomUUID().slice(0, 8),
+      user_id: payload.user_id,
+      customer_id: payload.customer_id || existing?.customer_id,
+      subscription_id: payload.subscription_id || existing?.subscription_id,
+      tier: payload.tier,
+      status: payload.status || existing?.status || 'active',
+      current_period_end: payload.current_period_end || existing?.current_period_end,
+      created_at: existing?.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    memorySubscriptions.set(payload.user_id, updated);
+    return updated;
+  },
+
+  addDfyOnboarding(payload: Partial<DfyOnboarding> & { payment_id: string }): DfyOnboarding {
+    const dfy: DfyOnboarding = {
+      id: 'dfy_' + crypto.randomUUID().slice(0, 8),
+      user_id: payload.user_id,
+      payment_id: payload.payment_id,
+      customer_email: payload.customer_email,
+      customer_name: payload.customer_name,
+      status: payload.status || 'pending_scheduling',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    memoryDfyOnboardings.set(payload.payment_id, dfy);
+    return dfy;
+  },
+
+  getDfyOnboardings(): DfyOnboarding[] {
+    return Array.from(memoryDfyOnboardings.values());
+  },
+
+  clearAll() {
+    memoryProjects.clear();
+    memoryDocAssets.clear();
+    memoryReleases.clear();
+    memorySubscribers.clear();
+    memorySubscriptions.clear();
+    memoryDfyOnboardings.clear();
   }
 };

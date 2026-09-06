@@ -56,9 +56,8 @@ export default function Navbar() {
     { id: 'faq', label: 'FAQ', href: '/#faq', icon: HelpCircle, color: 'text-amber-400' },
     { id: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, color: 'text-cyan-300' },
   ];
-
   return (
-    <header className="fixed top-0 left-0 right-0 w-full z-50 flex justify-center pointer-events-none">
+    <header className={`fixed top-0 left-0 right-0 w-full z-50 flex justify-center pointer-events-none transition-colors duration-300 ${scrolled ? '' : 'bg-black/80 backdrop-blur-md border-b border-white/5'}`}>
       {/* 2026 Layout-Morphing Capsule Pill Container */}
       <motion.div
         layout

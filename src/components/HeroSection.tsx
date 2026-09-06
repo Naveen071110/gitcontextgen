@@ -51,8 +51,6 @@ export default function HeroSection() {
     offset: ['start start', 'end start'],
   });
 
-  const heroGroupY = useTransform(scrollYProgress, [0, 0.5], [0, -40]);
-  const heroGroupOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
   const dashboardY = useTransform(scrollYProgress, [0, 1], [0, -220]);
 
   // PLG Sandbox state
@@ -228,83 +226,62 @@ export default function HeroSection() {
   };
 
   return (
-    <section id="hero" ref={sectionRef} className="relative w-full flex flex-col items-center justify-start pt-24 sm:pt-28 pb-10 md:pb-14 overflow-hidden bg-black text-white">
+    <section id="hero" ref={sectionRef} className="relative w-full flex flex-col items-center justify-start overflow-hidden bg-black text-white">
       
       {/* Sleek Floating Glassmorphism Navbar */}
       <Navbar />
 
-      {/* Navbar spacer no longer needed — section pt-24 handles clearance */}
+      {/* Structural Top Navbar Offset Spacer — GUARANTEES full clearance below the fixed navbar */}
+      <div className="w-full h-24 sm:h-28 md:h-32 shrink-0 pointer-events-none" />
 
-      {/* FULL-BLEED BACKGROUND VIDEO */}
+      {/* FULL-BLEED BACKGROUND VIDEO (Subdued Ambient Atmosphere) */}
       <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden">
         <video
           autoPlay
           muted
           loop
           playsInline
-          className="w-full h-full object-cover opacity-90 scale-105"
+          className="w-full h-full object-cover opacity-20 scale-105"
         >
           <source
             src="https://res.cloudinary.com/bcpfhdgi/video/upload/v1785348415/Pure_adrenaline_translated_into_sound_waves_at_128_BPM_1_pv4jom.mp4"
             type="video/mp4"
           />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/80 to-[#030303]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(6,182,212,0.12),transparent_70%)]" />
       </div>
 
       {/* Hero Main Typography Group */}
-      <motion.div
-        style={{ y: heroGroupY, opacity: heroGroupOpacity }}
-        className="w-full max-w-4xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center z-10 pt-2 pb-4"
-      >
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center z-10 pt-2 pb-6">
         {/* Liquid Glass Tag Pill */}
-        <div className="w-full flex justify-center mb-4">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0 }}
-            className="liquid-glass px-3.5 py-1.5 rounded-lg inline-flex items-center justify-center gap-2.5 border border-white/20 shadow-xl text-center w-fit"
-          >
-            <span className="bg-white text-black rounded-md text-[11px] font-bold px-2 py-0.5 font-mono shrink-0">
+        <div className="w-full flex justify-center mb-5">
+          <div className="liquid-glass px-4 py-2 rounded-xl inline-flex items-center justify-center gap-2.5 border border-white/20 shadow-xl text-center w-fit">
+            <span className="bg-white text-black rounded-md text-[11px] font-bold px-2.5 py-0.5 font-mono shrink-0">
               AGENCIES, SOLOPRENEURS & NO-CODE BUILDERS
             </span>
-            <span className="text-xs font-medium text-white/80 flex items-center gap-1.5 font-mono">
+            <span className="text-xs font-medium text-white/90 flex items-center gap-1.5 font-mono">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse shrink-0" />
               Stop Fighting Your AI Co-Pilot
             </span>
-          </motion.div>
+          </div>
         </div>
 
         {/* Prominent Symmetrical H1 Title */}
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-2xl sm:text-3xl md:text-5xl lg:text-5xl font-semibold tracking-tight text-white leading-[1.1] mb-4 text-center w-full max-w-4xl mx-auto"
-        >
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.1] mb-5 text-center w-full max-w-4xl mx-auto drop-shadow-sm">
           Stop AI models from burning your context.{' '}
           <span className="font-serif italic font-normal text-cyan-300">
             Automatically sync Cursor rules & Claude Code configurations across your entire team.
           </span>
-        </motion.h1>
+        </h1>
 
         {/* Subtitle Statement */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-base md:text-lg text-zinc-400 font-normal max-w-2xl mx-auto mt-4 mb-6 leading-relaxed text-center w-full"
-        >
+        <p className="text-base md:text-lg text-zinc-300 font-normal max-w-2xl mx-auto mb-8 leading-relaxed text-center w-full">
           GitContextGen acts as hallucination insurance—saving agencies up to 92% on token bills by using a persistent L2 caching layer and keeping parallel sub-agents from overwriting files via multi-agent write locks.
-        </motion.p>
+        </p>
 
         {/* PLG Sandbox Input CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="w-full max-w-2xl mx-auto mb-2 flex flex-col items-center justify-center"
-        >
+        <div className="w-full max-w-2xl mx-auto mb-2 flex flex-col items-center justify-center">
           <form onSubmit={handleAnalyze} className="relative w-full max-w-full">
             <div className="bg-black/90 backdrop-blur-xl rounded-2xl p-2 sm:p-2.5 border border-white/20 flex flex-col sm:flex-row items-center justify-between gap-2 shadow-2xl w-full">
               <div className="flex items-center gap-2.5 sm:gap-3 pl-2 sm:pl-3 w-full sm:w-auto flex-1 min-w-0">
@@ -368,7 +345,7 @@ export default function HeroSection() {
               </button>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {error && (
           <div className="mt-3 max-w-2xl w-full mx-auto p-4 rounded-xl bg-red-950/80 border border-red-800/80 text-red-200 text-xs flex items-center gap-3 text-left backdrop-blur-md">
@@ -439,7 +416,7 @@ export default function HeroSection() {
             Get DFY Setup →
           </Link>
         </div>
-      </motion.div>
+      </div>
 
       {/* DEDICATED PREMIUM AGENCY AUDIT SUITE WORKSPACE */}
       <div ref={auditResultsRef} className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-6 py-12">

@@ -6,7 +6,7 @@ import { DodoPayments } from 'dodopayments-checkout';
 import { DODO_PRODUCTS } from '@/lib/products';
 
 export default function PricingSection() {
-  // Step 3: Default toggle state is Annual (true) on load to maximize cash flow
+  // Default toggle state is Annual (true) on load to maximize cash flow
   const [isAnnual, setIsAnnual] = useState<boolean>(true);
   const [loadingProductId, setLoadingProductId] = useState<string | null>(null);
 
@@ -72,32 +72,32 @@ export default function PricingSection() {
   };
 
   return (
-    <section id="pricing" className="flex flex-col items-center justify-center w-full max-w-7xl mx-auto px-4 sm:px-6 py-28 md:py-36 bg-black text-white selection:bg-cyan-500 selection:text-black">
+    <section id="pricing" className="flex flex-col items-center justify-center w-full max-w-7xl mx-auto px-4 sm:px-6 py-28 md:py-36 bg-[#030303] text-zinc-100 selection:bg-amber-400 selection:text-black">
       <div className="w-full flex flex-col items-center justify-center">
         
         {/* Section Header */}
-        <div className="w-full max-w-3xl mx-auto flex flex-col items-center text-center mb-10">
-          <div className="w-full flex justify-center mb-6">
-            <div className="w-fit inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white/[0.04] text-xs font-mono text-cyan-400 border border-cyan-500/20 shadow-[0_0_20px_rgba(6,182,212,0.15)]">
-              <Zap className="w-3.5 h-3.5 text-cyan-400" /> Dodo Payments (Merchant of Record)
+        <div className="w-full max-w-3xl mx-auto flex flex-col items-center text-center mb-12">
+          <div className="w-full flex justify-center mb-5">
+            <div className="w-fit inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/90 text-xs font-mono text-amber-400 border border-zinc-800 shadow-[0_0_20px_rgba(245,158,11,0.08)]">
+              <Zap className="w-3.5 h-3.5 text-amber-400" /> Dodo Payments (Merchant of Record)
             </div>
           </div>
-          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-6 text-white leading-tight text-center">
+          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-5 text-white leading-tight text-center">
             Simple, Transparent Plans.{' '}
-            <span className="font-serif italic font-normal text-cyan-300">Build Faster.</span>
+            <span className="font-serif italic font-normal text-amber-300">Build Faster.</span>
           </h2>
-          <p className="text-white/60 text-base sm:text-lg leading-relaxed text-center">
+          <p className="text-zinc-400 text-sm sm:text-base leading-relaxed text-center max-w-2xl">
             Zero token waste. Eliminate context debt with instant local MCP servers and unified AI rule orchestration.
           </p>
         </div>
 
-        {/* Step 3: Interactive Monthly / Annual Toggle with Sliding Pill Transition */}
-        <div className="flex items-center p-1.5 rounded-full bg-neutral-900 border border-white/10 mb-16 shadow-2xl relative font-mono text-xs select-none">
+        {/* Step 3: Tactile Sliding Capsule Toggle with touch-manipulation */}
+        <div className="flex items-center p-1.5 rounded-full bg-zinc-900 border border-zinc-800 mb-16 shadow-2xl relative font-mono text-xs select-none touch-manipulation">
           <button
             type="button"
             onClick={() => setIsAnnual(false)}
-            className={`relative z-10 px-6 py-2.5 rounded-full font-bold transition-all duration-200 cursor-pointer ${
-              !isAnnual ? 'text-black font-extrabold' : 'text-white/60 hover:text-white'
+            className={`relative z-10 px-6 py-2.5 rounded-full font-bold transition-all duration-200 cursor-pointer touch-manipulation ${
+              !isAnnual ? 'text-zinc-950 font-extrabold' : 'text-zinc-400 hover:text-zinc-100'
             }`}
           >
             Monthly
@@ -106,22 +106,22 @@ export default function PricingSection() {
           <button
             type="button"
             onClick={() => setIsAnnual(true)}
-            className={`relative z-10 px-6 py-2.5 rounded-full font-bold transition-all duration-200 cursor-pointer flex items-center gap-2.5 ${
-              isAnnual ? 'text-black font-extrabold' : 'text-white/60 hover:text-white'
+            className={`relative z-10 px-6 py-2.5 rounded-full font-bold transition-all duration-200 cursor-pointer touch-manipulation flex items-center gap-2.5 ${
+              isAnnual ? 'text-zinc-950 font-extrabold' : 'text-zinc-400 hover:text-zinc-100'
             }`}
           >
             <span>Billed Annually</span>
             <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-extrabold tracking-wider transition-colors ${
-              isAnnual ? 'bg-black text-cyan-300' : 'bg-cyan-500/20 text-cyan-300'
+              isAnnual ? 'bg-zinc-950 text-amber-400' : 'bg-amber-400/15 text-amber-300 border border-amber-400/30'
             }`}>
-              Save 20% - 33%
+              Save 33%
             </span>
           </button>
 
           {/* Animated sliding pill */}
           <div
-            className={`absolute top-1.5 bottom-1.5 rounded-full bg-cyan-400 shadow-md transition-all duration-300 ease-out ${
-              isAnnual ? 'left-[108px] w-[215px]' : 'left-1.5 w-[98px]'
+            className={`absolute top-1.5 bottom-1.5 rounded-full bg-zinc-100 shadow-md transition-all duration-300 ease-out ${
+              isAnnual ? 'left-[106px] w-[215px]' : 'left-1.5 w-[96px]'
             }`}
           />
         </div>
@@ -131,11 +131,11 @@ export default function PricingSection() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch justify-center w-full text-left">
             
             {/* Card 1: Starter Pass (For Solo Hobbyists) */}
-            <div className="p-8 sm:p-9 rounded-3xl bg-white/[0.02] flex flex-col justify-between space-y-8 shadow-2xl border border-white/10 hover:border-white/20 transition-all duration-300">
+            <div className="p-8 sm:p-9 rounded-3xl bg-zinc-900/30 flex flex-col justify-between space-y-8 border border-zinc-800/80 hover:border-zinc-700 hover:shadow-[0_0_50px_rgba(255,255,255,0.02)] transition-all duration-300">
               <div>
                 <div className="flex items-center justify-between gap-2 mb-4">
                   <h3 className="text-xl sm:text-2xl font-bold text-white font-mono">Starter Pass</h3>
-                  <span className="px-3 py-1 rounded-md bg-white/5 text-white/70 text-xs font-mono font-medium shrink-0 border border-white/10">
+                  <span className="px-3 py-1 rounded-md bg-zinc-800/60 text-zinc-300 text-xs font-mono font-medium shrink-0 border border-zinc-700/60">
                     Solo Hobbyists
                   </span>
                 </div>
@@ -144,33 +144,33 @@ export default function PricingSection() {
                   <span className="text-4xl sm:text-5xl font-extrabold text-white">
                     ${isAnnual ? starterAnnualMonthly : starterMonthly}
                   </span>
-                  <span className="text-xs sm:text-sm font-normal text-white/60">/month</span>
+                  <span className="text-xs sm:text-sm font-normal text-zinc-400">/month</span>
                 </div>
                 
-                <p className="text-xs font-mono text-cyan-300 mb-4 min-h-[1.25rem]">
+                <p className="text-xs font-mono text-amber-400/90 mb-4 min-h-[1.25rem]">
                   {isAnnual ? `Billed $${starterAnnualBilled} annually (Save $36)` : 'Billed monthly, cancel anytime'}
                 </p>
-                <p className="text-xs sm:text-sm text-white/70 leading-relaxed mb-4">
+                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed mb-4">
                   For solo developers and side-project builders wanting clean, structured context files on demand.
                 </p>
                 
-                <div className="h-px bg-white/10 my-6" />
+                <div className="h-px bg-zinc-800/80 my-6" />
                 
-                <ul className="space-y-3.5 text-xs sm:text-sm text-white/85 font-mono leading-relaxed">
+                <ul className="space-y-3.5 text-xs sm:text-sm text-zinc-300 font-mono leading-relaxed">
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> 50 Repository Scans / month
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> 50 Repository Scans / month
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> Unified CLAUDE.md & .cursorrules
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Unified CLAUDE.md & .cursorrules
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> Automatic AST Tech Stack Detection
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Automatic AST Tech Stack Detection
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> Basic Mermaid.js Architecture Diagrams
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Basic Mermaid.js Architecture Diagrams
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> Non-Coder Step-by-Step Workflow Guide
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Non-Coder Step-by-Step Workflow Guide
                   </li>
                 </ul>
               </div>
@@ -179,7 +179,7 @@ export default function PricingSection() {
                 type="button"
                 onClick={() => handleCheckout(isAnnual ? DODO_PRODUCTS.STARTER.annual : DODO_PRODUCTS.STARTER.monthly)}
                 disabled={loadingProductId !== null}
-                className="w-full py-4 rounded-xl bg-white text-black text-center font-mono text-xs sm:text-sm font-bold hover:bg-slate-200 active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-4 rounded-xl bg-zinc-100 hover:bg-white active:scale-[0.99] text-zinc-950 text-center font-mono text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loadingProductId === (isAnnual ? DODO_PRODUCTS.STARTER.annual : DODO_PRODUCTS.STARTER.monthly) ? (
                   <>
@@ -193,17 +193,17 @@ export default function PricingSection() {
               </button>
             </div>
 
-            {/* Card 2: Pro Builder (For Elite Freelancers & Power Users) — Most Popular Badge */}
-            <div className="p-8 sm:p-9 rounded-3xl bg-gradient-to-b from-cyan-950/40 via-neutral-950 to-black flex flex-col justify-between space-y-8 shadow-[0_0_50px_rgba(6,182,212,0.2)] border-2 border-cyan-400 relative hover:border-cyan-300 transition-all duration-300 scale-[1.02]">
+            {/* Card 2: Pro Builder (For Elite Freelancers & Power Users) — Most Popular */}
+            <div className="p-8 sm:p-9 rounded-3xl bg-gradient-to-b from-zinc-900/90 via-zinc-950 to-black flex flex-col justify-between space-y-8 shadow-[0_0_50px_rgba(245,158,11,0.12)] border-2 border-amber-400/80 hover:border-amber-400 relative transition-all duration-300 scale-[1.02]">
               {/* Most Popular Floating Pill */}
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black text-[11px] font-mono font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
-                <Sparkles className="w-3.5 h-3.5 text-black fill-black" /> Most Popular
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-300 text-zinc-950 text-[11px] font-mono font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
+                <Sparkles className="w-3.5 h-3.5 text-zinc-950 fill-zinc-950" /> Most Popular
               </div>
 
               <div>
                 <div className="flex items-center justify-between gap-2 mb-4">
                   <h3 className="text-xl sm:text-2xl font-bold text-white font-mono">Pro Builder</h3>
-                  <span className="px-3 py-1 rounded-md bg-cyan-950 text-cyan-300 text-xs font-mono font-bold shrink-0 border border-cyan-500/30">
+                  <span className="px-3 py-1 rounded-md bg-amber-400/10 text-amber-300 text-xs font-mono font-bold shrink-0 border border-amber-400/30">
                     Elite Freelancers
                   </span>
                 </div>
@@ -212,39 +212,39 @@ export default function PricingSection() {
                   <span className="text-4xl sm:text-5xl font-extrabold text-white">
                     ${isAnnual ? proAnnualMonthly : proMonthly}
                   </span>
-                  <span className="text-xs sm:text-sm font-normal text-white/60">/month</span>
+                  <span className="text-xs sm:text-sm font-normal text-zinc-400">/month</span>
                 </div>
                 
-                <p className="text-xs font-mono text-cyan-300 mb-4 min-h-[1.25rem]">
+                <p className="text-xs font-mono text-amber-400/90 mb-4 min-h-[1.25rem]">
                   {isAnnual ? `Billed $${proAnnualBilled} annually (Save $60)` : 'Billed monthly, cancel anytime'}
                 </p>
-                <p className="text-xs sm:text-sm text-white/70 leading-relaxed mb-4">
+                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed mb-4">
                   For professional developers using Cursor Composer, Claude Code CLI, and Windsurf on production apps.
                 </p>
                 
-                <div className="h-px bg-white/10 my-6" />
+                <div className="h-px bg-zinc-800/80 my-6" />
                 
-                <ul className="space-y-3.5 text-xs sm:text-sm text-white/95 font-mono leading-relaxed">
+                <ul className="space-y-3.5 text-xs sm:text-sm text-zinc-200 font-mono leading-relaxed">
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> Everything in Starter Pass
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Everything in Starter Pass
                   </li>
                   <li className="flex items-center gap-3 font-semibold text-white">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> Standalone Zero-Dependency Binaries
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Standalone Zero-Dependency Binaries
                   </li>
                   <li className="flex items-center gap-3 font-semibold text-white">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> Bidirectional CLAUDE.md & .mdc Sync
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Bidirectional CLAUDE.md & .mdc Sync
                   </li>
                   <li className="flex items-center gap-3 font-semibold text-white">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> Local stdio Model Context Protocol (MCP)
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Local stdio Model Context Protocol (MCP)
                   </li>
                   <li className="flex items-center gap-3 font-semibold text-white">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> L2 Persistent Disk Cache (Saves 92% Tokens)
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> Automated OSV.dev Vulnerability Audits
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> L2 Persistent Disk Cache (Saves 92% Tokens)
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> Kroki Vector SVG Architecture Exports
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Automated OSV.dev Vulnerability Audits
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Kroki Vector SVG Architecture Exports
                   </li>
                 </ul>
               </div>
@@ -253,7 +253,7 @@ export default function PricingSection() {
                 type="button"
                 onClick={() => handleCheckout(isAnnual ? DODO_PRODUCTS.PRO.annual : DODO_PRODUCTS.PRO.monthly)}
                 disabled={loadingProductId !== null}
-                className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 active:scale-[0.99] text-black text-center font-mono text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/25 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-400 to-amber-300 hover:from-amber-300 hover:to-amber-200 active:scale-[0.99] text-zinc-950 text-center font-mono text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loadingProductId === (isAnnual ? DODO_PRODUCTS.PRO.annual : DODO_PRODUCTS.PRO.monthly) ? (
                   <>
@@ -267,12 +267,12 @@ export default function PricingSection() {
               </button>
             </div>
 
-            {/* Card 3: Agency Team (For Dev Agencies & WordPress Shops) — New Premium Tier */}
-            <div className="p-8 sm:p-9 rounded-3xl bg-white/[0.02] flex flex-col justify-between space-y-8 shadow-2xl border border-white/10 hover:border-white/20 transition-all duration-300">
+            {/* Card 3: Agency Team (For Dev Agencies & WordPress Shops) */}
+            <div className="p-8 sm:p-9 rounded-3xl bg-zinc-900/30 flex flex-col justify-between space-y-8 border border-zinc-800/80 hover:border-zinc-700 hover:shadow-[0_0_50px_rgba(255,255,255,0.02)] transition-all duration-300">
               <div>
                 <div className="flex items-center justify-between gap-2 mb-4">
                   <h3 className="text-xl sm:text-2xl font-bold text-white font-mono">Agency Team</h3>
-                  <span className="px-3 py-1 rounded-md bg-emerald-950 text-emerald-300 text-xs font-mono font-bold shrink-0 border border-emerald-500/30">
+                  <span className="px-3 py-1 rounded-md bg-emerald-500/10 text-emerald-300 text-xs font-mono font-bold shrink-0 border border-emerald-500/30">
                     WordPress & Agencies
                   </span>
                 </div>
@@ -281,19 +281,19 @@ export default function PricingSection() {
                   <span className="text-4xl sm:text-5xl font-extrabold text-white">
                     ${isAnnual ? agencyAnnualMonthly : agencyMonthly}
                   </span>
-                  <span className="text-xs sm:text-sm font-normal text-white/60">/month</span>
+                  <span className="text-xs sm:text-sm font-normal text-zinc-400">/month</span>
                 </div>
                 
-                <p className="text-xs font-mono text-emerald-300 mb-4 min-h-[1.25rem]">
+                <p className="text-xs font-mono text-emerald-400/90 mb-4 min-h-[1.25rem]">
                   {isAnnual ? `Billed $${agencyAnnualBilled} annually (Save $240)` : 'Billed monthly, cancel anytime'}
                 </p>
-                <p className="text-xs sm:text-sm text-white/70 leading-relaxed mb-4">
+                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed mb-4">
                   For software agencies managing dozens of client projects, microservices, and WordPress architectures.
                 </p>
                 
-                <div className="h-px bg-white/10 my-6" />
+                <div className="h-px bg-zinc-800/80 my-6" />
                 
-                <ul className="space-y-3.5 text-xs sm:text-sm text-white/90 font-mono leading-relaxed">
+                <ul className="space-y-3.5 text-xs sm:text-sm text-zinc-300 font-mono leading-relaxed">
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Everything in Pro Builder
                   </li>
@@ -325,7 +325,7 @@ export default function PricingSection() {
                 type="button"
                 onClick={() => handleCheckout(isAnnual ? DODO_PRODUCTS.AGENCY.annual : DODO_PRODUCTS.AGENCY.monthly)}
                 disabled={loadingProductId !== null}
-                className="w-full py-4 rounded-xl bg-white/10 hover:bg-white/20 active:scale-[0.99] border border-white/20 text-center font-mono text-xs sm:text-sm text-white font-bold transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-4 rounded-xl bg-zinc-800/80 hover:bg-zinc-800 active:scale-[0.99] border border-zinc-700 text-center font-mono text-xs sm:text-sm text-white font-bold transition-all flex items-center justify-center gap-2 cursor-pointer touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loadingProductId === (isAnnual ? DODO_PRODUCTS.AGENCY.annual : DODO_PRODUCTS.AGENCY.monthly) ? (
                   <>
@@ -343,15 +343,15 @@ export default function PricingSection() {
         </div>
 
         {/* Step 5: Done-For-You (DFY) Setup Add-On (High-Margin Upsell) */}
-        <div className="w-full max-w-4xl mx-auto rounded-3xl bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 border-2 border-cyan-500/40 p-8 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-8 text-left shadow-[0_0_40px_rgba(6,182,212,0.12)] mb-14 relative overflow-hidden">
+        <div className="w-full max-w-4xl mx-auto rounded-3xl bg-zinc-900/50 border border-zinc-800 hover:border-amber-500/30 p-8 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-8 text-left shadow-2xl mb-14 relative overflow-hidden transition-all duration-300">
           <div className="space-y-3 max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/60 text-cyan-300 text-[11px] font-mono font-bold border border-cyan-500/30">
-              <Users className="w-3.5 h-3.5 text-cyan-400" /> Done-For-You Team Integration Pack
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 text-amber-300 text-[11px] font-mono font-bold border border-amber-400/30">
+              <Users className="w-3.5 h-3.5 text-amber-400" /> Done-For-You Team Integration Pack
             </div>
             <h3 className="text-xl sm:text-2xl font-extrabold text-white font-mono">
               Need Us to Configure Everything For You?
             </h3>
-            <p className="text-xs sm:text-sm text-white/70 leading-relaxed font-sans">
+            <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed font-sans">
               Our core engineering team will hop on a 1-on-1 implementation call with your developers to audit your major repositories, optimize your custom context rules, and configure your local MCP servers for maximum token efficiency.
             </p>
           </div>
@@ -361,14 +361,14 @@ export default function PricingSection() {
               <div className="text-3xl sm:text-4xl font-black text-white font-mono">
                 $299
               </div>
-              <span className="text-[11px] text-white/50 font-mono">One-Time Implementation Add-On</span>
+              <span className="text-[11px] text-zinc-500 font-mono">One-Time Implementation Add-On</span>
             </div>
             
             <button
               type="button"
               onClick={() => handleCheckout(DODO_PRODUCTS.DFY_SETUP.oneTime)}
               disabled={loadingProductId !== null}
-              className="w-full md:w-auto px-7 py-3.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 active:scale-[0.99] text-black text-xs sm:text-sm font-bold font-mono transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full md:w-auto px-7 py-3.5 rounded-xl bg-amber-400 hover:bg-amber-300 active:scale-[0.99] text-zinc-950 text-xs sm:text-sm font-bold font-mono transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loadingProductId === DODO_PRODUCTS.DFY_SETUP.oneTime ? (
                 <>
@@ -384,17 +384,17 @@ export default function PricingSection() {
         </div>
 
         {/* 100% Zero-Risk Guarantee */}
-        <div className="w-full max-w-4xl mx-auto rounded-2xl bg-neutral-950 border border-white/10 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 text-left shadow-2xl">
+        <div className="w-full max-w-4xl mx-auto rounded-2xl bg-zinc-950 border border-zinc-800/80 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 text-left shadow-2xl">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-cyan-950/60 border border-cyan-500/40 shrink-0">
-              <ShieldCheck className="w-6 h-6 text-cyan-400" />
+            <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 shrink-0">
+              <ShieldCheck className="w-6 h-6 text-amber-400" />
             </div>
             <div>
               <h4 className="text-sm font-bold text-white font-mono uppercase tracking-wider flex items-center gap-2">
                 100% Zero-Risk Merchant of Record Guarantee
               </h4>
-              <p className="text-xs text-white/70 font-mono mt-1 leading-relaxed">
-                Processed securely via Dodo Payments. If your AI coding assistant (Cursor, Claude, or Copilot) doesn&apos;t produce measurably cleaner code on your first project audit, cancel anytime with a single click.
+              <p className="text-xs text-zinc-400 font-mono mt-1 leading-relaxed">
+                Processed securely via Dodo Payments. If your AI coding assistant (Cursor, Claude, or Copilot) doesn't produce measurably cleaner code on your first project audit, cancel anytime with a single click.
               </p>
             </div>
           </div>

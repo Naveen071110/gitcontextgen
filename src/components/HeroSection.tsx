@@ -20,6 +20,7 @@ import MermaidDiagram from '@/components/MermaidDiagram';
 import CodeViewer from '@/components/CodeViewer';
 import LoadingSkeleton from '@/components/LoadingSkeleton';
 import AgentReadinessScore from '@/components/AgentReadinessScore';
+import BrowserRedirectLoop from '@/components/BrowserRedirectLoop';
 import { calculateReadinessScore, ReadinessScoreResult, ExportFormat } from '@/lib/ai-engine';
 import {
   Zap,
@@ -440,6 +441,13 @@ export default function HeroSection() {
           <div className="mt-4 max-w-2xl w-full mx-auto p-4 rounded-xl bg-red-950/80 border border-red-800/80 text-red-200 text-xs flex items-center gap-3 text-left backdrop-blur-md">
             <ShieldAlert className="w-5 h-5 text-red-400 shrink-0" />
             <p>{error}</p>
+          </div>
+        )}
+
+        {/* Animated "hub ➔ contextgen" Viral Redirection Browser Container */}
+        {!result && (
+          <div className="w-full mt-12 z-10 px-2 sm:px-4">
+            <BrowserRedirectLoop />
           </div>
         )}
       </motion.div>

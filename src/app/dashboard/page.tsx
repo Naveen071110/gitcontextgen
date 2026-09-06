@@ -4,37 +4,23 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import { MockStore } from '@/lib/mockStore';
-import { Project } from '@/lib/types';
 import { createClient } from '@/lib/supabase/client';
-import { analyzeRepositoryAction, saveProjectAction, deleteProjectAction } from '@/lib/actions';
+import { analyzeRepositoryAction, saveProjectAction, getUserProjectsAction, deleteProjectAction } from '@/lib/actions';
 import { GithubIcon } from '@/components/icons/Github';
+import { Project } from '@/lib/types';
 import {
   Plus,
   FolderGit2,
-  GitBranch,
   ArrowRight,
   ExternalLink,
-  Terminal,
-  Sparkles,
-  CheckCircle2,
-  Zap,
-  ShieldCheck,
   LogOut,
-  User as UserIcon,
   Trash2,
   Loader2,
-  Activity,
-  Layers,
   Search,
-  Code2,
-  Copy,
-  Check,
-  Cpu,
+  User as UserIcon,
   BookOpen,
-  CheckSquare,
-  FileCode
+  Unlock,
+  Lock,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -45,15 +31,12 @@ export default function DashboardPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [loadingStep, setLoadingStep] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
-  const [copiedMasterPrompt, setCopiedMasterPrompt] = useState(false);
-
-  // User Authentication State
   const [user, setUser] = useState<any>(null);
   const [userToken, setUserToken] = useState<string | undefined>(undefined);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const init = async () => {
       try {
         const supabase = createClient();
         const { data } = await supabase.auth.getUser();
@@ -61,21 +44,26 @@ export default function DashboardPage() {
           router.push('/auth/login?error=Please+sign+in+to+access+your+dashboard');
           return;
         }
-
         setUser(data.user);
-        // Tenant Isolation: Only show projects belonging to the logged-in user
-        setProjects(MockStore.getProjects().filter(p => p.user_id === data.user.id));
 
         const { data: sessionData } = await supabase.auth.getSession();
         if (sessionData?.session?.provider_token) {
           setUserToken(sessionData.session.provider_token);
         }
+
+        // Load projects from Supabase
+        const res = await getUserProjectsAction();
+        if (res.success && res.data) {
+          setProjects(res.data as Project[]);
+        }
       } catch (e) {
         console.warn('Auth check error:', e);
         router.push('/auth/login');
+      } finally {
+        setIsLoadingProjects(false);
       }
     };
-    fetchUser();
+    init();
   }, [router]);
 
   const handleSignOut = async () => {
@@ -83,7 +71,6 @@ export default function DashboardPage() {
       const supabase = createClient();
       await supabase.auth.signOut();
       setUser(null);
-      setUserToken(undefined);
       router.push('/auth/login');
     } catch (e) {
       console.error(e);
@@ -96,34 +83,30 @@ export default function DashboardPage() {
 
     setIsCreating(true);
     setError(null);
-    setLoadingStep('1/3 Extracting Codebase Knowledge & Architectural Truth...');
+    setLoadingStep('Analyzing repository structure...');
 
     try {
       const analysisRes = await analyzeRepositoryAction(newRepoUrl, userToken);
       if (!analysisRes.success || !analysisRes.data) {
-        setError(analysisRes.error || 'Failed to analyze repository. Please verify URL.');
-        setIsCreating(false);
-        setLoadingStep('');
+        setError(analysisRes.error || 'Failed to analyze repository.');
         return;
       }
 
-      setLoadingStep('2/3 Generating AGENTS.md & Knowledge Maps...');
+      setLoadingStep('Saving workspace to database...');
       const res = await saveProjectAction({
         repoUrl: newRepoUrl,
         contextMarkdown: analysisRes.data.contextMarkdown,
         mermaidArchitecture: analysisRes.data.mermaidArchitecture,
       });
 
-      if (res.success) {
-        setNewRepoUrl('');
-        if (user) {
-          setProjects(MockStore.getProjects().filter(p => p.user_id === user.id));
-        }
+      if (res.success && res.projectId) {
+        // Navigate directly to the new project
+        router.push(`/dashboard/${res.projectId}`);
       } else {
         setError(res.error || 'Failed to save project.');
       }
     } catch (err: any) {
-      setError(err?.message || 'Error creating repository context stream.');
+      setError(err?.message || 'Error creating repository workspace.');
     } finally {
       setIsCreating(false);
       setLoadingStep('');
@@ -131,8 +114,9 @@ export default function DashboardPage() {
   };
 
   const handleDeleteProject = async (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
-    if (!confirm('Remove this repository stream from your workspace?')) return;
+    if (!confirm('Remove this repository from your workspace?')) return;
     try {
       const res = await deleteProjectAction(id);
       if (res.success) {
@@ -145,343 +129,185 @@ export default function DashboardPage() {
     }
   };
 
-  const handleCopySpec = (projectId: string, content: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(content);
-    setCopiedIndex(projectId);
-    setTimeout(() => setCopiedIndex(null), 2000);
-  };
-
-  const handleCopyMasterPrompt = () => {
-    const prompt = `# CLAUDE.md / AGENTS.md Master Architectural Context Prompt
-- Stack: Next.js 16 App Router, TypeScript, Tailwind CSS v4, Supabase Auth
-- Build Commands: npm run build | npm run dev | npm test
-- Rules: Never swallow exceptions; preserve types; enforce strict JSON validation on API endpoints.`;
-    navigator.clipboard.writeText(prompt);
-    setCopiedMasterPrompt(true);
-    setTimeout(() => setCopiedMasterPrompt(false), 2000);
-  };
-
-  const filteredProjects = projects.filter(p => 
+  const filteredProjects = projects.filter(p =>
     p.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.repo_url.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  return (
-    <div className="min-h-screen bg-[#0B0E14] text-slate-100 flex flex-col font-sans antialiased">
-      <Navbar />
+  const extractRepoName = (url: string) => {
+    return url.replace('https://github.com/', '').replace('.git', '');
+  };
 
-      {/* Structural Spacer */}
+  const timeAgo = (dateStr?: string) => {
+    if (!dateStr) return '';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days}d ago`;
+  };
+
+  return (
+    <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] flex flex-col font-sans">
+      <Navbar />
       <div className="w-full h-20 sm:h-24 shrink-0 pointer-events-none" />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-4 sm:pt-6 pb-16 space-y-8">
-        
-        {/* Stripe Header & Breadcrumb Navigation Bar */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-white/[0.08]">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2.5 text-xs font-mono text-slate-400">
-              <span className="text-slate-200 font-semibold">Workspace</span>
-              <span>/</span>
-              <span className="text-cyan-400 font-semibold">Repository Knowledge Hub</span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-[10px] ml-2 font-mono">
-                <BookOpen className="w-3 h-3 text-cyan-400" /> Architectural Intelligence
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              {user ? (user.user_metadata?.full_name || user.email?.split('@')[0]) : 'Personal Developer Workspace'}
+      <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 w-full pt-6 pb-16">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-4 pb-6 border-b border-[#30363d]">
+          <div className="flex items-center gap-3">
+            <BookOpen className="w-5 h-5 text-[#8b949e]" />
+            <h1 className="text-xl font-semibold text-[#f0f6fc]">
+              Your Repositories
             </h1>
+            <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-[#21262d] border border-[#30363d] text-[#8b949e]">
+              {projects.length}
+            </span>
           </div>
 
-          {/* User Profile Controls */}
-          <div className="flex items-center gap-3 shrink-0 font-mono text-xs">
-            <div className="flex items-center gap-3 px-3.5 py-2 rounded-xl bg-[#121620] border border-white/[0.08] text-slate-300">
-              {user?.user_metadata?.avatar_url ? (
-                <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-6 h-6 rounded-full object-cover" />
-              ) : (
-                <UserIcon className="w-4 h-4 text-cyan-400" />
-              )}
-              <span className="font-medium max-w-[160px] truncate">{user ? user.email : 'Guest Session'}</span>
-            </div>
-
-            {user ? (
-              <button
-                onClick={handleSignOut}
-                className="px-3.5 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-slate-300 hover:text-white transition flex items-center gap-2 cursor-pointer"
-              >
-                <LogOut className="w-3.5 h-3.5 text-rose-400" /> Sign Out
-              </button>
-            ) : (
-              <Link
-                href="/auth/login"
-                className="px-4 py-2 rounded-xl bg-white text-black font-bold hover:bg-slate-200 transition flex items-center gap-2 cursor-pointer shadow-md"
-              >
-                Sign In <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+          <div className="flex items-center gap-3 text-xs">
+            {user && (
+              <>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#21262d] border border-[#30363d] text-[#c9d1d9]">
+                  {user.user_metadata?.avatar_url ? (
+                    <img src={user.user_metadata.avatar_url} alt="" className="w-5 h-5 rounded-full" />
+                  ) : (
+                    <UserIcon className="w-4 h-4 text-[#8b949e]" />
+                  )}
+                  <span className="font-medium max-w-[140px] truncate">{user.user_metadata?.full_name || user.email?.split('@')[0]}</span>
+                </div>
+                <button
+                  onClick={handleSignOut}
+                  className="px-3 py-1.5 rounded-md bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-[#c9d1d9] transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5 text-[#f85149]" /> Sign Out
+                </button>
+              </>
             )}
           </div>
         </div>
 
-        {/* Actionable Knowledge Metrics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-5 rounded-2xl bg-[#121620]/90 border border-white/[0.08] space-y-2 shadow-xl hover:border-white/20 transition">
-            <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
-              <span>Codebases Monitored</span>
-              <FolderGit2 className="w-4 h-4 text-cyan-400" />
-            </div>
-            <div className="text-2xl font-bold text-white font-mono">{projects.length} Repositories</div>
-            <p className="text-[11px] text-emerald-400 font-mono flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> <span>Zero Context Drift</span>
-            </p>
+        {/* Search + New Repo */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 py-5">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-[#8b949e] absolute left-3 top-2.5" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Find a repository..."
+              className="w-full bg-[#0d1117] border border-[#30363d] rounded-md text-sm text-[#c9d1d9] pl-9 pr-3 py-2 placeholder:text-[#484f58] focus:outline-none focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff] transition"
+            />
           </div>
 
-          <div className="p-5 rounded-2xl bg-[#121620]/90 border border-white/[0.08] space-y-2 shadow-xl hover:border-white/20 transition">
-            <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
-              <span>Verified Build Commands</span>
-              <Terminal className="w-4 h-4 text-indigo-400" />
-            </div>
-            <div className="text-2xl font-bold text-white font-mono">pnpm / npm / yarn</div>
-            <p className="text-[11px] text-cyan-400 font-mono">Auto-discovered from package.json</p>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-[#121620]/90 border border-white/[0.08] space-y-2 shadow-xl hover:border-white/20 transition">
-            <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
-              <span>Generated Specs</span>
-              <FileCode className="w-4 h-4 text-emerald-400" />
-            </div>
-            <div className="text-2xl font-bold text-white font-mono">AGENTS.md & Rules</div>
-            <p className="text-[11px] text-slate-400 font-mono">Formatted for Claude, Cursor & Copilot</p>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-[#121620]/90 border border-white/[0.08] space-y-2 shadow-xl hover:border-white/20 transition">
-            <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
-              <span>GitHub API Quota</span>
-              <GithubIcon className="w-4 h-4 text-amber-400" />
-            </div>
-            <div className="text-2xl font-bold text-white font-mono">5,000 / hr</div>
-            <p className="text-[11px] text-slate-400 font-mono">OAuth Delegated Rate Limit Active</p>
-          </div>
-        </div>
-
-        {/* Knowledge Feature: 3-Line High-Fidelity Architectural Truth Box */}
-        <div className="p-6 sm:p-7 rounded-2xl bg-[#121620] border border-cyan-500/30 shadow-2xl space-y-5">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.08]">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-cyan-950/80 text-cyan-400 border border-cyan-500/30">
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-base font-bold text-white flex items-center gap-2 font-mono">
-                  Master Codebase Architectural Intelligence
-                </h2>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">
-                  High-fidelity ground truth extracted directly from project trees, build manifests, and entry points.
-                </p>
-              </div>
-            </div>
-
+          <form onSubmit={handleCreateProject} className="flex items-center gap-2">
+            <input
+              type="text"
+              value={newRepoUrl}
+              onChange={(e) => setNewRepoUrl(e.target.value)}
+              placeholder="https://github.com/owner/repo"
+              disabled={isCreating}
+              className="w-full sm:w-72 bg-[#0d1117] border border-[#30363d] rounded-md text-sm font-mono text-[#c9d1d9] px-3 py-2 placeholder:text-[#484f58] focus:outline-none focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff] transition disabled:opacity-50"
+            />
             <button
-              onClick={handleCopyMasterPrompt}
-              className="px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 font-mono text-xs rounded-xl transition flex items-center gap-2 shrink-0 cursor-pointer shadow-md"
+              type="submit"
+              disabled={isCreating || !newRepoUrl}
+              className="px-4 py-2 rounded-md bg-[#238636] hover:bg-[#2ea043] text-white text-sm font-medium flex items-center gap-1.5 shrink-0 cursor-pointer transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {copiedMasterPrompt ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              {copiedMasterPrompt ? 'Prompt Copied!' : 'Copy Master Prompt'}
+              {isCreating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4" />
+              )}
+              New
             </button>
-          </div>
-
-          <div className="p-5 rounded-xl bg-[#0B0E14] font-mono text-xs sm:text-sm text-slate-200 space-y-3 leading-relaxed border border-white/[0.06]">
-            <p className="text-cyan-400 font-bold">// Ground Truth Knowledge Digest:</p>
-            <p className="text-slate-200">
-              <span className="text-cyan-300 font-bold">1. Stack & Architecture:</span> Next.js 16 App Router • TypeScript • Tailwind CSS • Supabase Auth & PostgreSQL DB
-            </p>
-            <p className="text-slate-200">
-              <span className="text-indigo-300 font-bold">2. Discovered Execution Scripts:</span> <code className="text-emerald-300">pnpm run dev</code> (dev server) • <code className="text-emerald-300">pnpm run build</code> (production build) • <code className="text-emerald-300">pnpm test</code>
-            </p>
-            <p className="text-slate-200">
-              <span className="text-emerald-300 font-bold">3. Boundaries & Control Flow:</span> Protected secrets in <code className="text-slate-400">/src/lib/secrets</code>; Strict API route JSON payload validation active.
-            </p>
-          </div>
+          </form>
         </div>
 
-        {/* Connect Repository Section (Stripe Minimalist Search & Add Bar) */}
-        <div className="p-6 sm:p-7 rounded-2xl bg-[#121620] border border-white/[0.08] shadow-2xl space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.06]">
-            <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Zap className="w-4 h-4 text-cyan-400" /> Analyze & Add New Repository
-              </h2>
-              <p className="text-xs text-slate-400 font-mono mt-0.5">
-                Automatically extract codebase structure, verified build commands, and AGENTS.md specs for any repository.
-              </p>
-            </div>
+        {/* Loading / Error Banners */}
+        {loadingStep && (
+          <div className="mb-4 px-4 py-3 rounded-md bg-[#161b22] border border-[#30363d] text-sm text-[#58a6ff] font-mono flex items-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin text-[#58a6ff] shrink-0" />
+            {loadingStep}
+          </div>
+        )}
 
-            <span className="text-[11px] font-mono text-cyan-300 bg-cyan-950/60 px-3 py-1 rounded-lg border border-cyan-500/30 shrink-0">
-              Zero Decision Engine
+        {error && (
+          <div className="mb-4 px-4 py-3 rounded-md bg-[#1c1214] border border-[#f8514930] text-sm text-[#f85149]">
+            {error}
+          </div>
+        )}
+
+        {/* Repository List */}
+        <div className="border border-[#30363d] rounded-lg overflow-hidden bg-[#0d1117]">
+          {/* List Header */}
+          <div className="px-4 py-3 bg-[#161b22] border-b border-[#30363d] flex items-center justify-between">
+            <span className="text-sm font-semibold text-[#f0f6fc]">
+              {filteredProjects.length} {filteredProjects.length === 1 ? 'repository' : 'repositories'}
             </span>
           </div>
 
-          <form onSubmit={handleCreateProject} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="relative flex-1">
-              <Code2 className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
-              <input
-                type="text"
-                value={newRepoUrl}
-                onChange={(e) => setNewRepoUrl(e.target.value)}
-                placeholder="https://github.com/owner/repository"
-                className="w-full bg-[#0B0E14] border border-white/[0.1] rounded-xl text-xs font-mono text-white pl-10 pr-4 py-3 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/80 transition"
-              />
+          {/* List Body */}
+          {isLoadingProjects ? (
+            <div className="px-4 py-12 text-center">
+              <Loader2 className="w-6 h-6 animate-spin text-[#8b949e] mx-auto mb-3" />
+              <p className="text-sm text-[#8b949e]">Loading repositories...</p>
             </div>
-            <button
-              type="submit"
-              disabled={isCreating}
-              className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-400 hover:to-cyan-400 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2 shrink-0 cursor-pointer font-mono disabled:opacity-60"
-            >
-              {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              {isCreating ? 'Extracting Knowledge...' : 'Analyze & Connect'}
-            </button>
-          </form>
-
-          {loadingStep && (
-            <div className="p-3.5 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-cyan-300 text-xs font-mono flex items-center gap-2.5">
-              <Loader2 className="w-4 h-4 animate-spin text-cyan-400 shrink-0" />
-              <span>{loadingStep}</span>
-            </div>
-          )}
-
-          {error && (
-            <div className="p-3.5 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-300 text-xs font-mono">
-              {error}
-            </div>
-          )}
-        </div>
-
-        {/* Repository Knowledge Streams Table */}
-        <div className="space-y-4 pt-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-bold text-white tracking-tight">Monitored Codebase Knowledge Streams</h3>
-              <span className="text-xs font-mono text-slate-400 bg-white/[0.05] px-2.5 py-0.5 rounded-full border border-white/[0.08]">
-                {filteredProjects.length}
-              </span>
-            </div>
-
-            {/* Quick Search */}
-            <div className="relative w-full sm:w-64">
-              <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-3" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Filter repositories..."
-                className="w-full bg-[#121620] border border-white/[0.08] rounded-xl text-xs font-mono text-white pl-9 pr-3 py-2 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition"
-              />
-            </div>
-          </div>
-
-          {/* Knowledge Cards Grid */}
-          {filteredProjects.length === 0 ? (
-            <div className="p-12 rounded-2xl bg-[#121620] border border-white/[0.08] text-center space-y-3 font-mono">
-              <FolderGit2 className="w-10 h-10 text-slate-600 mx-auto" />
-              <h4 className="text-sm font-bold text-slate-300">No matching repositories found</h4>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Connect a new GitHub repository above to start monitoring and generating AI context streams.
+          ) : filteredProjects.length === 0 ? (
+            <div className="px-4 py-12 text-center">
+              <FolderGit2 className="w-10 h-10 text-[#30363d] mx-auto mb-3" />
+              <h4 className="text-base font-semibold text-[#c9d1d9] mb-1">No repositories yet</h4>
+              <p className="text-sm text-[#8b949e] max-w-md mx-auto">
+                Paste a GitHub repository URL above and click <strong>New</strong> to analyze and add your first repo.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filteredProjects.map((project) => {
-                const releases = MockStore.getReleases(project.id);
-                const assets = MockStore.getDocAssets(project.id);
-                const contextContent = assets.find(a => a.type === 'context')?.content || `# AGENTS.md - ${project.slug}\n\n## Verified Commands\n- npm run build\n- npm run dev`;
-
-                return (
-                  <div
-                    key={project.id}
-                    className="p-6 rounded-2xl bg-[#121620] border border-white/[0.08] hover:border-indigo-500/40 hover:bg-[#161B26] transition-all duration-200 group shadow-xl flex flex-col justify-between cursor-pointer space-y-5"
+            <ul className="divide-y divide-[#21262d]">
+              {filteredProjects.map((project) => (
+                <li key={project.id} className="group">
+                  <Link
+                    href={`/dashboard/${project.id}`}
+                    className="flex items-center justify-between gap-4 px-4 py-4 hover:bg-[#161b22] transition"
                   >
-                    <div className="space-y-4">
-                      {/* Top Bar */}
-                      <div className="flex items-center justify-between">
-                        <div className="w-9 h-9 rounded-xl bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-slate-300 group-hover:text-cyan-400 group-hover:bg-cyan-950/40 transition-colors">
-                          <FolderGit2 className="w-4 h-4" />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-mono flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                            Synced
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                      <FolderGit2 className="w-4 h-4 text-[#8b949e] mt-1 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-semibold text-[#58a6ff] hover:underline truncate">
+                            {extractRepoName(project.repo_url) || project.slug}
                           </span>
-                          <button
-                            onClick={(e) => handleDeleteProject(project.id, e)}
-                            title="Remove Repository Stream"
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono border border-[#30363d] bg-[#21262d] text-[#8b949e] flex items-center gap-0.5 shrink-0">
+                            <Unlock className="w-2.5 h-2.5" /> Public
+                          </span>
                         </div>
-                      </div>
-
-                      {/* Repository Name & External Link */}
-                      <div>
-                        <h4 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors truncate">
-                          {project.slug}
-                        </h4>
-                        <a
-                          href={project.repo_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-xs text-slate-400 hover:text-white font-mono truncate flex items-center gap-1 mt-1 cursor-pointer"
-                        >
-                          {project.repo_url.replace('https://github.com/', '')}
-                          <ExternalLink className="w-3 h-3 text-slate-500" />
-                        </a>
-                      </div>
-
-                      {/* Tech Stack Pills Knowledge Tagging */}
-                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                        <span className="px-2 py-0.5 rounded bg-white/[0.05] border border-white/[0.08] text-[10px] font-mono text-cyan-300">
-                          Next.js 16
-                        </span>
-                        <span className="px-2 py-0.5 rounded bg-white/[0.05] border border-white/[0.08] text-[10px] font-mono text-indigo-300">
-                          TypeScript
-                        </span>
-                        <span className="px-2 py-0.5 rounded bg-white/[0.05] border border-white/[0.08] text-[10px] font-mono text-emerald-300">
-                          Supabase
-                        </span>
-                      </div>
-
-                      {/* Truth Summary Card */}
-                      <div className="p-3.5 rounded-xl bg-[#0B0E14] text-[11px] font-mono text-slate-300 space-y-1.5 border border-white/[0.06]">
-                        <p className="text-cyan-400 font-bold text-[10px] uppercase tracking-wider">// Codebase Intelligence</p>
-                        <p className="truncate text-slate-300">✓ AGENTS.md & .cursorrules Synced</p>
-                        <p className="truncate text-slate-400">✓ Verified Build Script: pnpm run build</p>
+                        <p className="text-xs text-[#8b949e] mt-0.5 truncate">
+                          {project.repo_url}
+                        </p>
                       </div>
                     </div>
 
-                    {/* Bottom CTA Buttons */}
-                    <div className="space-y-2 pt-2">
-                      <Link
-                        href={`/dashboard/${project.id}`}
-                        className="w-full py-2.5 rounded-xl bg-white hover:bg-slate-200 text-black font-bold text-xs transition flex items-center justify-center gap-2 shadow-md cursor-pointer font-mono"
-                      >
-                        Open Knowledge Stream <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
-
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-[11px] text-[#8b949e] font-mono hidden sm:block">
+                        {timeAgo(project.created_at)}
+                      </span>
                       <button
-                        onClick={(e) => handleCopySpec(project.id, contextContent, e)}
-                        className="w-full py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-slate-300 font-mono text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                        onClick={(e) => handleDeleteProject(project.id, e)}
+                        title="Remove repository"
+                        className="p-1.5 rounded-md text-[#8b949e] hover:text-[#f85149] hover:bg-[#1c1214] transition cursor-pointer opacity-0 group-hover:opacity-100"
                       >
-                        {copiedIndex === project.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
-                        {copiedIndex === project.id ? 'AGENTS.md Copied!' : 'Copy AGENTS.md Spec'}
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
+                      <ArrowRight className="w-4 h-4 text-[#30363d] group-hover:text-[#8b949e] transition" />
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

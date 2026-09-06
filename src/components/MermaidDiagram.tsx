@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Copy, Check, Code, RefreshCw, AlertTriangle, Download, ExternalLink } from 'lucide-react';
 import { generateKrokiDiagramUrls } from '@/lib/integrations/kroki';
+import { initializeStrictMermaid } from '@/lib/mermaid';
 
 interface MermaidDiagramProps {
   chart: string;
@@ -39,26 +40,15 @@ export default function MermaidDiagram({ chart, className = '', onReanalyze, kro
       }
 
       try {
-        const mermaid = (await import('mermaid')).default;
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: 'dark',
-          securityLevel: 'strict',
-          fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-          themeVariables: {
-            darkMode: true,
-            background: '#0a0a0a',
-            primaryColor: '#6366f1',
-            primaryTextColor: '#f8fafc',
-            primaryBorderColor: '#818cf8',
-            lineColor: '#38bdf8',
-            secondaryColor: '#06b6d4',
-            tertiaryColor: '#10b981',
-          },
-        });
+        const mermaid = await initializeStrictMermaid();
+        if (!mermaid) {
+          if (isMounted) setIsRendering(false);
+          return;
+        }
 
         const id = 'mermaid-svg-' + Math.random().toString(36).substring(2, 9);
         const { svg } = await mermaid.render(id, chart);
+
 
         if (isMounted) {
           setSvgContent(svg);

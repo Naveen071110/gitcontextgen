@@ -22,6 +22,7 @@ import { auditEcosystemFrameworks } from './integrations/registries';
 import { generateReadinessRadarChartUrl } from './integrations/quickchart';
 import { getLicenseGuardrail } from './integrations/licenses';
 import { createClient } from './supabase/server';
+import { validateRepoCreationLimit, getUserEntitlements } from './entitlements';
 
 // Global in-memory cache for analyzed repositories (24-hour TTL with max size limit)
 const analysisCache = new Map<string, { data: RepositoryAnalysisResult; timestamp: number }>();
@@ -198,6 +199,12 @@ export async function saveProjectAction(payload: {
       return { success: false, error: 'Unauthorized: You must be signed in with GitHub to save a workspace.' };
     }
 
+    // Enforce tier repository creation limits (Starter: 1, Pro: 5, Agency: Unlimited)
+    const limitCheck = await validateRepoCreationLimit(user.id);
+    if (!limitCheck.allowed) {
+      return { success: false, error: limitCheck.error || 'Plan limit exceeded. Please upgrade your plan.' };
+    }
+
     const parsed = parseGitHubUrl(payload.repoUrl);
     const repoName = parsed ? parsed.repo : 'my-repo';
     const slug = (repoName + '-' + Math.random().toString(36).substring(2, 6)).toLowerCase();
@@ -218,6 +225,25 @@ export async function saveProjectAction(payload: {
     return { success: false, error: (err as any)?.message || 'Failed to securely save project workspace.' };
   }
 }
+
+export async function getUserEntitlementsAction(): Promise<{
+  success: boolean;
+  data?: any;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: true, data: { tier: 'FREE', maxRepos: 1, currentRepoCount: 0, canCreateRepo: true } };
+    }
+    const entitlements = await getUserEntitlements(user.id);
+    return { success: true, data: entitlements };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to load user entitlements.' };
+  }
+}
+
 
 export async function deleteProjectAction(projectId: string): Promise<{ success: boolean; error?: string }> {
   try {

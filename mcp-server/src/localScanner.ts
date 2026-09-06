@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { WordPressDetection, detectWordPress } from './analyzer/detector.js';
+import { WordPressDetection, detectWordPress, ComprehensiveFrameworkDetection, detectFrameworks } from './analyzer/detector.js';
 
 export interface CodebaseAnalysis {
   path: string;
@@ -10,7 +10,7 @@ export interface CodebaseAnalysis {
   directories: string[];
   entryPoints: string[];
   manifest: {
-    ecosystem: 'npm' | 'PyPI' | 'crates.io' | 'Go' | 'wordpress' | 'unknown';
+    ecosystem: 'npm' | 'PyPI' | 'crates.io' | 'Go' | 'wordpress' | 'Laravel' | 'unknown';
     dependencies: string[];
     devDependencies: string[];
     scripts: Record<string, string>;
@@ -20,7 +20,9 @@ export interface CodebaseAnalysis {
   readmeContent?: string;
   licenseSpdx?: string;
   wordpress?: WordPressDetection;
+  frameworks?: ComprehensiveFrameworkDetection;
 }
+
 
 const DEFAULT_IGNORES = new Set([
   'node_modules',
@@ -130,8 +132,9 @@ export async function analyzeLocalDirectory(
   walk(resolvedPath, '', 0);
 
   // Extract Manifest Data
-  let ecosystem: 'npm' | 'PyPI' | 'crates.io' | 'Go' | 'wordpress' | 'unknown' = 'unknown';
+  let ecosystem: 'npm' | 'PyPI' | 'crates.io' | 'Go' | 'wordpress' | 'Laravel' | 'unknown' = 'unknown';
   const dependencies: string[] = [];
+
   const devDependencies: string[] = [];
   const scripts: Record<string, string> = {};
   let manifestContent = '';
@@ -206,16 +209,25 @@ export async function analyzeLocalDirectory(
     } catch {}
   }
 
-  // Detect WordPress Project Structure & Metadata
-  const wpDetection = detectWordPress(resolvedPath, indexedFiles);
+  // Detect Auto-Technology Frameworks (WordPress, Laravel, React/Next.js)
+  const frameworks = detectFrameworks(resolvedPath, indexedFiles);
+  const wpDetection = frameworks.wordpress;
+
   if (wpDetection.isWordPress) {
     if (ecosystem === 'unknown' || ecosystem === 'npm') {
       ecosystem = 'wordpress';
+    }
+  } else if (frameworks.laravel.isLaravel) {
+    if (ecosystem === 'unknown') {
+      ecosystem = 'Laravel';
     }
   }
 
   // Detect Entry Points
   const entryPoints: string[] = [];
+  if (frameworks.laravel.hasArtisan) {
+    entryPoints.push('artisan');
+  }
   const commonEntries = [
     'src/index.ts',
     'src/index.js',
@@ -236,12 +248,9 @@ export async function analyzeLocalDirectory(
     'style.css',
     'block.json',
   ];
-  if (wpDetection.mainFile && !commonEntries.includes(wpDetection.mainFile)) {
-    commonEntries.unshift(wpDetection.mainFile);
-  }
-  for (const entry of commonEntries) {
-    if (indexedFiles.includes(entry)) {
-      entryPoints.push(entry);
+  for (const e of commonEntries) {
+    if (fs.existsSync(path.join(resolvedPath, e))) {
+      entryPoints.push(e);
     }
   }
 
@@ -266,5 +275,6 @@ export async function analyzeLocalDirectory(
     readmeContent: readmeContent.slice(0, 3000),
     licenseSpdx,
     wordpress: wpDetection.isWordPress ? wpDetection : undefined,
+    frameworks,
   };
 }

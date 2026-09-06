@@ -22,7 +22,9 @@
     "security:check-staged": "node scripts/pre-commit-check.mjs",
     "test:cli": "node scripts/test-cli-distribution.mjs",
     "test:webhook": "npx tsx scripts/test-dodo-webhook.mjs",
+    "build:binaries": "node scripts/build-binaries.mjs",
     "release:mcp": "powershell -ExecutionPolicy Bypass -File scripts/npm-publish.ps1"
+
   },
   "dependencies": {
     "@fontsource/instrument-serif": "^5.3.0",

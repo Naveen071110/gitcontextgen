@@ -207,6 +207,29 @@ ${analysis.directories.slice(0, 10).map((d) => `- \`/${d}\``).join('\n')}
 `;
             return { filename: '.cursor/rules/project-rules.mdc', content: content.trim() };
         }
+        case 'cursorrules':
+        case 'legacy_cursor': {
+            const content = `# .cursorrules — ${name} Project Rules & Directives
+
+You are an expert AI developer working on ${name}. Adhere strictly to these project constraints:
+
+## 1. Tech Stack & Verified Commands
+- Ecosystem: ${ecosystem}
+- Build: \`${buildCmd}\`
+- Dev: \`${devCmd}\`
+- Test: \`${testCmd}\`
+
+## 2. Strict Architectural Invariants
+${isNext ? '- [Next.js App Router] Always write Server Components by default. Mark interactive UI with "use client" at top of file.' : ''}
+${isTailwind ? '- [Tailwind CSS] Use clean semantic class ordering. Avoid inline styles where Tailwind classes exist.' : ''}
+- [Security] Protect API tokens, credentials, and private environment variables.
+- [Code Integrity] Do not introduce breaking API changes without explicit instructions.
+
+## 3. Directory Layout & Boundaries
+${analysis.directories.slice(0, 10).map((d) => `- /${d}`).join('\n')}
+`;
+            return { filename: '.cursorrules', content: content.trim() };
+        }
         case 'copilot': {
             const content = `# GitHub Copilot Instructions - ${name}
 

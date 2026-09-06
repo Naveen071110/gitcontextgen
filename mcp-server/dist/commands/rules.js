@@ -6,7 +6,7 @@ import { generateRules } from '../rulesEngine.js';
 export async function executeRules(targetPath, options = {}) {
     const resolvedPath = targetPath ? targetPath.trim() : process.cwd();
     const rawFormat = (options.format || 'claude').toLowerCase();
-    const validFormats = ['claude', 'cursor', 'copilot', 'windsurf', 'universal', 'agents', 'agent_readme', 'wordpress'];
+    const validFormats = ['claude', 'cursor', 'cursorrules', 'legacy_cursor', 'copilot', 'windsurf', 'universal', 'agents', 'agent_readme', 'wordpress'];
     if (!validFormats.includes(rawFormat)) {
         console.error(`❌ Invalid format: "${rawFormat}". Allowed formats: ${validFormats.join(', ')}`);
         process.exit(1);

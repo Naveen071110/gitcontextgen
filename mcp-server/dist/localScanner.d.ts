@@ -1,4 +1,4 @@
-import { WordPressDetection } from './analyzer/detector.js';
+import { WordPressDetection, ComprehensiveFrameworkDetection } from './analyzer/detector.js';
 export interface CodebaseAnalysis {
     path: string;
     isRemote: boolean;
@@ -7,7 +7,7 @@ export interface CodebaseAnalysis {
     directories: string[];
     entryPoints: string[];
     manifest: {
-        ecosystem: 'npm' | 'PyPI' | 'crates.io' | 'Go' | 'wordpress' | 'unknown';
+        ecosystem: 'npm' | 'PyPI' | 'crates.io' | 'Go' | 'wordpress' | 'Laravel' | 'unknown';
         dependencies: string[];
         devDependencies: string[];
         scripts: Record<string, string>;
@@ -17,6 +17,7 @@ export interface CodebaseAnalysis {
     readmeContent?: string;
     licenseSpdx?: string;
     wordpress?: WordPressDetection;
+    frameworks?: ComprehensiveFrameworkDetection;
 }
 /**
  * Scans a local directory and creates a comprehensive codebase analysis

@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { detectWordPress } from './analyzer/detector.js';
+import { detectFrameworks } from './analyzer/detector.js';
 const DEFAULT_IGNORES = new Set([
     'node_modules',
     '.git',
@@ -186,15 +186,24 @@ export async function analyzeLocalDirectory(targetPath, customExcludes = []) {
         }
         catch { }
     }
-    // Detect WordPress Project Structure & Metadata
-    const wpDetection = detectWordPress(resolvedPath, indexedFiles);
+    // Detect Auto-Technology Frameworks (WordPress, Laravel, React/Next.js)
+    const frameworks = detectFrameworks(resolvedPath, indexedFiles);
+    const wpDetection = frameworks.wordpress;
     if (wpDetection.isWordPress) {
         if (ecosystem === 'unknown' || ecosystem === 'npm') {
             ecosystem = 'wordpress';
         }
     }
+    else if (frameworks.laravel.isLaravel) {
+        if (ecosystem === 'unknown') {
+            ecosystem = 'Laravel';
+        }
+    }
     // Detect Entry Points
     const entryPoints = [];
+    if (frameworks.laravel.hasArtisan) {
+        entryPoints.push('artisan');
+    }
     const commonEntries = [
         'src/index.ts',
         'src/index.js',
@@ -215,12 +224,9 @@ export async function analyzeLocalDirectory(targetPath, customExcludes = []) {
         'style.css',
         'block.json',
     ];
-    if (wpDetection.mainFile && !commonEntries.includes(wpDetection.mainFile)) {
-        commonEntries.unshift(wpDetection.mainFile);
-    }
-    for (const entry of commonEntries) {
-        if (indexedFiles.includes(entry)) {
-            entryPoints.push(entry);
+    for (const e of commonEntries) {
+        if (fs.existsSync(path.join(resolvedPath, e))) {
+            entryPoints.push(e);
         }
     }
     // Build tree summary (capped to top 150 files for token efficiency)
@@ -243,5 +249,6 @@ export async function analyzeLocalDirectory(targetPath, customExcludes = []) {
         readmeContent: readmeContent.slice(0, 3000),
         licenseSpdx,
         wordpress: wpDetection.isWordPress ? wpDetection : undefined,
+        frameworks,
     };
 }

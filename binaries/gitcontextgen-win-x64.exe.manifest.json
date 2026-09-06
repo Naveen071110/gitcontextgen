@@ -1,0 +1,16 @@
+{
+  "name": "gitcontextgen",
+  "version": "1.0.1",
+  "target": "node18-win-x64",
+  "platform": "windows",
+  "builtAt": "2026-09-06T14:42:21.406Z",
+  "entryPoint": "dist/bin/cli.js",
+  "stdioProtocol": "Model Context Protocol (v1.6.1)",
+  "features": [
+    "offline-scanning",
+    "ast-topologies",
+    "stdio-mcp",
+    "l2-cache",
+    "rules-sync"
+  ]
+}

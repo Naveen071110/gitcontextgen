@@ -162,3 +162,57 @@ CREATE POLICY "Owners can view subscribers"
         AND projects.user_id = auth.uid()
     )
   );
+
+-- ==============================================================================
+-- 5. User Subscriptions Table (Dodo Payments Entitlements & Tiers)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.user_subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  customer_id TEXT,
+  subscription_id TEXT UNIQUE,
+  tier TEXT NOT NULL DEFAULT 'FREE' CHECK (tier IN ('FREE', 'STARTER', 'PRO', 'AGENCY')),
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'on_hold', 'cancelled', 'expired')),
+  current_period_end TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  CONSTRAINT unique_user_subscription UNIQUE (user_id)
+);
+
+-- ==============================================================================
+-- 6. Done-For-You (DFY) Team Onboarding Table ($299 Upsell)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.dfy_onboardings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  payment_id TEXT UNIQUE,
+  customer_email TEXT,
+  customer_name TEXT,
+  status TEXT NOT NULL DEFAULT 'pending_scheduling' CHECK (status IN ('pending_scheduling', 'scheduled', 'completed', 'refunded')),
+  meeting_url TEXT,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_id ON public.user_subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_subscriptions_tier ON public.user_subscriptions(tier);
+CREATE INDEX IF NOT EXISTS idx_dfy_onboardings_user_id ON public.dfy_onboardings(user_id);
+
+ALTER TABLE public.user_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.dfy_onboardings ENABLE ROW LEVEL SECURITY;
+
+-- Subscriptions Policies
+CREATE POLICY "Users can view their own subscription"
+  ON public.user_subscriptions
+  FOR SELECT
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+-- DFY Onboardings Policies
+CREATE POLICY "Users can view their own DFY onboarding status"
+  ON public.dfy_onboardings
+  FOR SELECT
+  TO authenticated
+  USING (auth.uid() = user_id);
+

@@ -1,7 +1,7 @@
 'use server';
 
-import { createClient } from './supabase/server';
-import { Project, DocAsset, Release, Subscriber } from './types';
+import { createClient, createAdminClient } from './supabase/server';
+import { Project, DocAsset, Release, Subscriber, UserSubscription, SubscriptionTier, SubscriptionStatus, DfyOnboarding } from './types';
 
 // ---------------------------------------------------------------------------
 // Projects
@@ -202,3 +202,116 @@ export async function addSubscriberDb(projectId: string, email: string): Promise
   if (error) { console.error('addSubscriber error:', error); return null; }
   return data as Subscriber;
 }
+
+// ---------------------------------------------------------------------------
+// User Subscriptions (Dodo Payments Tiers & Entitlements)
+// ---------------------------------------------------------------------------
+
+export async function getUserSubscriptionDb(userId: string): Promise<UserSubscription | null> {
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from('user_subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+    return data as UserSubscription;
+  } catch (err) {
+    console.warn('getUserSubscriptionDb error (falling back):', err);
+    return null;
+  }
+}
+
+export async function upsertUserSubscriptionDb(payload: {
+  user_id: string;
+  tier: SubscriptionTier;
+  status?: SubscriptionStatus;
+  customer_id?: string;
+  subscription_id?: string;
+  current_period_end?: string;
+}): Promise<UserSubscription | null> {
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from('user_subscriptions')
+      .upsert({
+        user_id: payload.user_id,
+        tier: payload.tier,
+        status: payload.status || 'active',
+        customer_id: payload.customer_id,
+        subscription_id: payload.subscription_id,
+        current_period_end: payload.current_period_end,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('upsertUserSubscriptionDb error:', error);
+      return null;
+    }
+    return data as UserSubscription;
+  } catch (err) {
+    console.error('upsertUserSubscriptionDb exception:', err);
+    return null;
+  }
+}
+
+export async function countUserProjects(userId: string): Promise<number> {
+  try {
+    const supabase = createAdminClient();
+    const { count, error } = await supabase
+      .from('projects')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('countUserProjects error:', error);
+      return 0;
+    }
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Done-For-You (DFY) Team Onboardings
+// ---------------------------------------------------------------------------
+
+export async function addDfyOnboardingDb(payload: {
+  user_id?: string;
+  payment_id: string;
+  customer_email?: string;
+  customer_name?: string;
+}): Promise<DfyOnboarding | null> {
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from('dfy_onboardings')
+      .insert({
+        user_id: payload.user_id,
+        payment_id: payload.payment_id,
+        customer_email: payload.customer_email,
+        customer_name: payload.customer_name,
+        status: 'pending_scheduling',
+      })
+      .select()
+      .single();
+
+
+    if (error) {
+      console.error('addDfyOnboardingDb error:', error);
+      return null;
+    }
+    return data as DfyOnboarding;
+  } catch (err) {
+    console.error('addDfyOnboardingDb exception:', err);
+    return null;
+  }
+}
+

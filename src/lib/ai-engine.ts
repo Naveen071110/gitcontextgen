@@ -1,7 +1,7 @@
 import { deepseek } from './deepseek';
 import { getWordPressCursorRules } from '../rules/presets/wordpress';
 
-export type ExportFormat = 'agents' | 'claude' | 'copilot' | 'cursor' | 'replit' | 'windsurf' | 'agent_readme' | 'wordpress';
+export type ExportFormat = 'agents' | 'claude' | 'copilot' | 'cursor' | 'cursorrules' | 'legacy_cursor' | 'replit' | 'windsurf' | 'agent_readme' | 'wordpress';
 export type ReleaseTone = 'technical' | 'marketing';
 
 export interface ReadinessScoreResult {
@@ -713,7 +713,16 @@ function generateDeepAgencyAuditReport(
     return getWordPressCursorRules({ name: repoName });
   }
 
-  const fileName = format === 'agents' ? 'AGENTS.md' : format === 'copilot' ? '.github/copilot-instructions.md' : format === 'cursor' ? '.cursor/rules/project-rules.mdc' : 'CLAUDE.md';
+  const fileName =
+    format === 'agents'
+      ? 'AGENTS.md'
+      : format === 'copilot'
+      ? '.github/copilot-instructions.md'
+      : format === 'cursor'
+      ? '.cursor/rules/project-rules.mdc'
+      : format === 'cursorrules' || format === 'legacy_cursor'
+      ? '.cursorrules'
+      : 'CLAUDE.md';
 
   const cursorFrontmatter = format === 'cursor' ? `---
 description: ${repoName} High-Fidelity Agency Specification & Architectural Guardrails
@@ -722,6 +731,7 @@ alwaysApply: true
 ---
 
 ` : '';
+
 
   return `${cursorFrontmatter}# ${fileName} - ${repoName} High-Fidelity Agency Specification & Architectural Audit
 

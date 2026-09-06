@@ -70,3 +70,32 @@ export interface SandboxState {
   isLoading: boolean;
   error: string | null;
 }
+
+export type SubscriptionTier = 'FREE' | 'STARTER' | 'PRO' | 'AGENCY';
+export type SubscriptionStatus = 'active' | 'on_hold' | 'cancelled' | 'expired';
+
+export interface UserSubscription {
+  id: string;
+  user_id: string;
+  customer_id?: string;
+  subscription_id?: string;
+  tier: SubscriptionTier;
+  status: SubscriptionStatus;
+  current_period_end?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface DfyOnboarding {
+  id: string;
+  user_id?: string;
+  payment_id: string;
+  customer_email?: string;
+  customer_name?: string;
+  status: 'pending_scheduling' | 'scheduled' | 'completed' | 'refunded';
+  meeting_url?: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+

@@ -13,7 +13,7 @@ export async function executeRules(targetPath?: string, options: RulesOptions = 
   const resolvedPath = targetPath ? targetPath.trim() : process.cwd();
   const rawFormat = (options.format || 'claude').toLowerCase();
 
-  const validFormats: RuleFormat[] = ['claude', 'cursor', 'copilot', 'windsurf', 'universal', 'agents', 'agent_readme', 'wordpress'];
+  const validFormats: RuleFormat[] = ['claude', 'cursor', 'cursorrules', 'legacy_cursor', 'copilot', 'windsurf', 'universal', 'agents', 'agent_readme', 'wordpress'];
   if (!validFormats.includes(rawFormat as RuleFormat)) {
     console.error(`❌ Invalid format: "${rawFormat}". Allowed formats: ${validFormats.join(', ')}`);
     process.exit(1);

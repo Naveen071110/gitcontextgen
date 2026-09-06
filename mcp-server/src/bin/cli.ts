@@ -10,6 +10,7 @@ import { executeMap } from '../commands/map.js';
 import { executeLint } from '../commands/lint.js';
 import { executeDoctor } from '../commands/doctor.js';
 import { executeHandoff } from '../commands/handoff.js';
+import { executeSync } from '../commands/sync.js';
 
 process.on('uncaughtException', (err) => {
   console.error('\n❌ Uncaught Exception:', err.message);
@@ -156,10 +157,27 @@ if (binaryName.includes('gitcontextgen-mcp') && process.argv.length <= 2) {
       }
     });
 
+  program
+    .command('sync [path]')
+
+    .description('Synchronizes rules bidirectionally between CLAUDE.md and .cursor/rules/*.mdc (preserving alwaysApply: true)')
+    .option('-w, --watch', 'Watch workspace for real-time rule changes')
+    .action(async (targetPath, options) => {
+      try {
+        await executeSync(targetPath, options);
+      } catch (err: unknown) {
+        console.error('\n❌ Rules synchronization failed:', (err as Error).message);
+        process.exit(1);
+      }
+    });
+
   program.addHelpText(
     'after',
     `
 Examples:
+  $ gitcontextgen sync                        # Synchronize CLAUDE.md and .cursor/rules/*.mdc
+  $ gitcontextgen sync --watch                # Real-time bidirectional rules sync watcher
+
   $ gitcontextgen init                        # Run interactive onboarding in current workspace
   $ gitcontextgen doctor                      # Audit IDEs, register MCP, and verify environment health
   $ gitcontextgen lint                        # Run CI rule harmonization and secret leak validation

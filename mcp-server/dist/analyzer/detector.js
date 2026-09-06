@@ -151,3 +151,118 @@ export function detectWordPress(targetDir, knownFiles) {
     }
     return result;
 }
+/**
+ * Scans for Laravel framework markers (artisan, composer.json, routes/web.php)
+ */
+export function detectLaravel(targetDir, knownFiles) {
+    const result = {
+        isLaravel: false,
+        hasArtisan: false,
+        hasComposerJson: false,
+        hasRoutesWeb: false,
+        hasRoutesApi: false,
+        confidence: 0,
+    };
+    if (!fs.existsSync(targetDir))
+        return result;
+    const artisanPath = path.join(targetDir, 'artisan');
+    if (fs.existsSync(artisanPath)) {
+        result.hasArtisan = true;
+        result.isLaravel = true;
+        result.confidence = Math.max(result.confidence, 95);
+    }
+    const composerPath = path.join(targetDir, 'composer.json');
+    if (fs.existsSync(composerPath)) {
+        result.hasComposerJson = true;
+        try {
+            const composer = JSON.parse(fs.readFileSync(composerPath, 'utf-8'));
+            const reqs = { ...(composer.require || {}), ...(composer['require-dev'] || {}) };
+            if (reqs['laravel/framework']) {
+                result.isLaravel = true;
+                result.version = reqs['laravel/framework'];
+                result.confidence = 100;
+            }
+        }
+        catch { }
+    }
+    const routesWeb = path.join(targetDir, 'routes', 'web.php');
+    if (fs.existsSync(routesWeb)) {
+        result.hasRoutesWeb = true;
+        result.confidence = Math.max(result.confidence, 80);
+    }
+    const routesApi = path.join(targetDir, 'routes', 'api.php');
+    if (fs.existsSync(routesApi)) {
+        result.hasRoutesApi = true;
+        result.confidence = Math.max(result.confidence, 80);
+    }
+    return result;
+}
+/**
+ * Scans for Next.js and React architecture and router models
+ */
+export function detectReactNext(targetDir, knownFiles) {
+    const result = {
+        isNext: false,
+        isReact: false,
+        confidence: 0,
+    };
+    if (!fs.existsSync(targetDir))
+        return result;
+    const pkgPath = path.join(targetDir, 'package.json');
+    if (fs.existsSync(pkgPath)) {
+        try {
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+            const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
+            if (deps['react']) {
+                result.isReact = true;
+                result.version = deps['react'];
+                result.confidence = Math.max(result.confidence, 85);
+            }
+            if (deps['next']) {
+                result.isNext = true;
+                result.version = deps['next'];
+                result.confidence = 100;
+            }
+        }
+        catch { }
+    }
+    const hasAppRouter = fs.existsSync(path.join(targetDir, 'src', 'app')) || fs.existsSync(path.join(targetDir, 'app'));
+    const hasPagesRouter = fs.existsSync(path.join(targetDir, 'src', 'pages')) || fs.existsSync(path.join(targetDir, 'pages'));
+    if (hasAppRouter && hasPagesRouter) {
+        result.routerType = 'mixed';
+    }
+    else if (hasAppRouter) {
+        result.routerType = 'app';
+    }
+    else if (hasPagesRouter) {
+        result.routerType = 'pages';
+    }
+    return result;
+}
+/**
+ * Unified Auto-Technology Framework Detection (Agency tier deliverable)
+ */
+export function detectFrameworks(targetDir, knownFiles) {
+    const wordpress = detectWordPress(targetDir, knownFiles);
+    const laravel = detectLaravel(targetDir, knownFiles);
+    const reactNext = detectReactNext(targetDir, knownFiles);
+    let primary = 'generic';
+    if (wordpress.isWordPress && wordpress.confidence >= 80) {
+        primary = 'wordpress';
+    }
+    else if (laravel.isLaravel && laravel.confidence >= 80) {
+        primary = 'laravel';
+    }
+    else if (reactNext.isNext) {
+        primary = 'nextjs';
+    }
+    else if (reactNext.isReact) {
+        primary = 'react';
+    }
+    return {
+        wordpress,
+        laravel,
+        reactNext,
+        primary,
+    };
+}

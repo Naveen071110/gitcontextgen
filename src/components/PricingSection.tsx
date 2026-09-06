@@ -10,6 +10,7 @@ export default function PricingSection() {
   // Default toggle state is Annual (true) on load to maximize cash flow
   const [isAnnual, setIsAnnual] = useState<boolean>(true);
   const [loadingProductId, setLoadingProductId] = useState<string | null>(null);
+  const [bundleDfy, setBundleDfy] = useState<boolean>(false);
 
   useEffect(() => {
     try {
@@ -37,17 +38,26 @@ export default function PricingSection() {
   const agencyAnnualMonthly = 59;
   const agencyAnnualBilled = 708;
 
-  const handleCheckout = async (productId: string) => {
+  const handleCheckout = async (productId: string, includeDfy: boolean = false) => {
     try {
       setLoadingProductId(productId);
+
+      let payload: any = { productId };
+      if (includeDfy && productId !== DODO_PRODUCTS.DFY_SETUP.oneTime) {
+        payload = {
+          productCart: [
+            { product_id: productId, quantity: 1 },
+            { product_id: DODO_PRODUCTS.DFY_SETUP.oneTime, quantity: 1 },
+          ],
+        };
+      }
 
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productId,
-        }),
+        body: JSON.stringify(payload),
       });
+
 
       const data = await res.json();
 
@@ -254,11 +264,24 @@ export default function PricingSection() {
                     <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Kroki Vector SVG Architecture Exports
                   </li>
                 </ul>
+
+                {/* DFY Bundle Add-On Checkbox */}
+                <label className="flex items-center gap-2.5 mt-5 pt-3.5 border-t border-zinc-800/80 cursor-pointer text-xs font-mono select-none">
+                  <input
+                    type="checkbox"
+                    checked={bundleDfy}
+                    onChange={(e) => setBundleDfy(e.target.checked)}
+                    className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-amber-400 focus:ring-amber-400 cursor-pointer"
+                  />
+                  <span className="text-zinc-300">
+                    Include DFY Team Setup <span className="text-amber-400 font-bold">(+$299)</span>
+                  </span>
+                </label>
               </div>
 
               <button
                 type="button"
-                onClick={() => handleCheckout(isAnnual ? DODO_PRODUCTS.PRO.annual : DODO_PRODUCTS.PRO.monthly)}
+                onClick={() => handleCheckout(isAnnual ? DODO_PRODUCTS.PRO.annual : DODO_PRODUCTS.PRO.monthly, bundleDfy)}
                 disabled={loadingProductId !== null}
                 className="w-full min-h-[44px] py-3.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-300 hover:from-amber-300 hover:to-amber-200 active:scale-[0.99] text-zinc-950 text-center font-mono text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -268,7 +291,7 @@ export default function PricingSection() {
                   </>
                 ) : (
                   <>
-                    Go Pro Builder <ArrowRight className="w-4 h-4" />
+                    {bundleDfy ? 'Go Pro + DFY Onboarding' : 'Go Pro Builder'} <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
@@ -326,11 +349,24 @@ export default function PricingSection() {
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Shareable Branded Client Audit Reports
                   </li>
                 </ul>
+
+                {/* DFY Bundle Add-On Checkbox for Agency */}
+                <label className="flex items-center gap-2.5 mt-5 pt-3.5 border-t border-zinc-800/80 cursor-pointer text-xs font-mono select-none">
+                  <input
+                    type="checkbox"
+                    checked={bundleDfy}
+                    onChange={(e) => setBundleDfy(e.target.checked)}
+                    className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-emerald-400 focus:ring-emerald-400 cursor-pointer"
+                  />
+                  <span className="text-zinc-300">
+                    Include DFY Team Setup <span className="text-emerald-400 font-bold">(+$299)</span>
+                  </span>
+                </label>
               </div>
 
               <button
                 type="button"
-                onClick={() => handleCheckout(isAnnual ? DODO_PRODUCTS.AGENCY.annual : DODO_PRODUCTS.AGENCY.monthly)}
+                onClick={() => handleCheckout(isAnnual ? DODO_PRODUCTS.AGENCY.annual : DODO_PRODUCTS.AGENCY.monthly, bundleDfy)}
                 disabled={loadingProductId !== null}
                 className="w-full min-h-[44px] py-3.5 rounded-xl bg-zinc-800/80 hover:bg-zinc-800 active:scale-[0.99] border border-zinc-700 text-center font-mono text-xs sm:text-sm text-white font-bold transition-all flex items-center justify-center gap-2 cursor-pointer touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -340,11 +376,12 @@ export default function PricingSection() {
                   </>
                 ) : (
                   <>
-                    Deploy Agency Workspace <ArrowRight className="w-4 h-4" />
+                    {bundleDfy ? 'Deploy Agency + DFY Onboarding' : 'Deploy Agency Workspace'} <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
             </div>
+
 
           </div>
         </div>

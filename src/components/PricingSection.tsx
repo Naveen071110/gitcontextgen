@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { CheckCircle2, ArrowRight, Zap, ShieldCheck, Sparkles, Loader2, Users } from 'lucide-react';
 import { DodoPayments } from 'dodopayments-checkout';
 import { DODO_PRODUCTS } from '@/lib/products';
@@ -72,63 +73,76 @@ export default function PricingSection() {
   };
 
   return (
-    <section id="pricing" className="flex flex-col items-center justify-center w-full max-w-7xl mx-auto px-4 sm:px-6 py-28 md:py-36 bg-[#030303] text-zinc-100 selection:bg-amber-400 selection:text-black">
+    <section id="pricing" className="flex flex-col items-center justify-center w-full max-w-7xl mx-auto px-4 sm:px-6 py-20 md:py-28 bg-[#030303] text-zinc-100 selection:bg-amber-400 selection:text-black">
       <div className="w-full flex flex-col items-center justify-center">
         
         {/* Section Header */}
-        <div className="w-full max-w-3xl mx-auto flex flex-col items-center text-center mb-12">
-          <div className="w-full flex justify-center mb-5">
+        <div className="w-full max-w-3xl mx-auto flex flex-col items-center text-center mb-10">
+          <div className="w-full flex justify-center mb-4">
             <div className="w-fit inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/90 text-xs font-mono text-amber-400 border border-zinc-800 shadow-[0_0_20px_rgba(245,158,11,0.08)]">
               <Zap className="w-3.5 h-3.5 text-amber-400" /> Dodo Payments (Merchant of Record)
             </div>
           </div>
-          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-5 text-white leading-tight text-center">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-4 text-white leading-tight text-center">
             Simple, Transparent Plans.{' '}
             <span className="font-serif italic font-normal text-amber-300">Build Faster.</span>
           </h2>
-          <p className="text-zinc-400 text-sm sm:text-base leading-relaxed text-center max-w-2xl">
+          <p className="text-zinc-400 text-sm sm:text-base leading-relaxed text-center max-w-xl mx-auto">
             Zero token waste. Eliminate context debt with instant local MCP servers and unified AI rule orchestration.
           </p>
         </div>
 
-        {/* Step 3: Tactile Sliding Capsule Toggle with touch-manipulation */}
-        <div className="flex items-center p-1.5 rounded-full bg-zinc-900 border border-zinc-800 mb-16 shadow-2xl relative font-mono text-xs select-none touch-manipulation">
-          <button
-            type="button"
-            onClick={() => setIsAnnual(false)}
-            className={`relative z-10 px-6 py-2.5 rounded-full font-bold transition-all duration-200 cursor-pointer touch-manipulation ${
-              !isAnnual ? 'text-zinc-950 font-extrabold' : 'text-zinc-400 hover:text-zinc-100'
-            }`}
-          >
-            Monthly
-          </button>
-          
-          <button
-            type="button"
-            onClick={() => setIsAnnual(true)}
-            className={`relative z-10 px-6 py-2.5 rounded-full font-bold transition-all duration-200 cursor-pointer touch-manipulation flex items-center gap-2.5 ${
-              isAnnual ? 'text-zinc-950 font-extrabold' : 'text-zinc-400 hover:text-zinc-100'
-            }`}
-          >
-            <span>Billed Annually</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-extrabold tracking-wider transition-colors ${
-              isAnnual ? 'bg-zinc-950 text-amber-400' : 'bg-amber-400/15 text-amber-300 border border-amber-400/30'
-            }`}>
-              Save 33%
-            </span>
-          </button>
+        {/* Step 3: Dedicated Toggle Wrapper with Framer Motion layoutId and touch-manipulation */}
+        <div className="flex flex-col items-center justify-center my-6 mb-14 relative w-full">
+          <div className="relative inline-flex items-center h-11 p-1 rounded-full bg-zinc-900 border border-zinc-800 shadow-xl font-mono text-xs select-none touch-manipulation">
+            {/* Monthly Button */}
+            <button
+              type="button"
+              onClick={() => setIsAnnual(false)}
+              className={`relative z-10 h-9 px-5 rounded-full font-bold transition-colors duration-200 cursor-pointer touch-manipulation flex items-center justify-center min-h-[36px] ${
+                !isAnnual ? 'text-zinc-950' : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              {!isAnnual && (
+                <motion.div
+                  layoutId="pricing-active-pill"
+                  className="absolute inset-0 rounded-full bg-zinc-100 shadow-md"
+                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                />
+              )}
+              <span className="relative z-10">Monthly</span>
+            </button>
 
-          {/* Animated sliding pill */}
-          <div
-            className={`absolute top-1.5 bottom-1.5 rounded-full bg-zinc-100 shadow-md transition-all duration-300 ease-out ${
-              isAnnual ? 'left-[106px] w-[215px]' : 'left-1.5 w-[96px]'
-            }`}
-          />
+            {/* Billed Annually Button */}
+            <button
+              type="button"
+              onClick={() => setIsAnnual(true)}
+              className={`relative z-10 h-9 px-5 rounded-full font-bold transition-colors duration-200 cursor-pointer touch-manipulation flex items-center justify-center min-h-[36px] ${
+                isAnnual ? 'text-zinc-950' : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              {isAnnual && (
+                <motion.div
+                  layoutId="pricing-active-pill"
+                  className="absolute inset-0 rounded-full bg-zinc-100 shadow-md"
+                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                />
+              )}
+              <span className="relative z-10">Billed Annually</span>
+            </button>
+
+            {/* Percentage-Based Savings Badge: positioned absolutely outside clickable target boundaries to prevent touch overlapping */}
+            <div className="absolute -top-3.5 -right-6 sm:-right-8 translate-x-1 rotate-6 pointer-events-none z-20">
+              <span className="px-2 py-0.5 rounded-full text-[10px] uppercase font-mono font-extrabold tracking-wider bg-amber-400 text-zinc-950 shadow-md border border-amber-300">
+                Save 33%
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Step 4: Three High-Converting B2B Pricing Cards */}
         <div className="w-full max-w-6xl mx-auto mb-16">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch justify-center w-full text-left">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch justify-center w-full text-left">
             
             {/* Card 1: Starter Pass (For Solo Hobbyists) */}
             <div className="p-8 sm:p-9 rounded-3xl bg-zinc-900/30 flex flex-col justify-between space-y-8 border border-zinc-800/80 hover:border-zinc-700 hover:shadow-[0_0_50px_rgba(255,255,255,0.02)] transition-all duration-300">
@@ -179,7 +193,7 @@ export default function PricingSection() {
                 type="button"
                 onClick={() => handleCheckout(isAnnual ? DODO_PRODUCTS.STARTER.annual : DODO_PRODUCTS.STARTER.monthly)}
                 disabled={loadingProductId !== null}
-                className="w-full py-4 rounded-xl bg-zinc-100 hover:bg-white active:scale-[0.99] text-zinc-950 text-center font-mono text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full min-h-[44px] py-3.5 rounded-xl bg-zinc-100 hover:bg-white active:scale-[0.99] text-zinc-950 text-center font-mono text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loadingProductId === (isAnnual ? DODO_PRODUCTS.STARTER.annual : DODO_PRODUCTS.STARTER.monthly) ? (
                   <>
@@ -253,7 +267,7 @@ export default function PricingSection() {
                 type="button"
                 onClick={() => handleCheckout(isAnnual ? DODO_PRODUCTS.PRO.annual : DODO_PRODUCTS.PRO.monthly)}
                 disabled={loadingProductId !== null}
-                className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-400 to-amber-300 hover:from-amber-300 hover:to-amber-200 active:scale-[0.99] text-zinc-950 text-center font-mono text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full min-h-[44px] py-3.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-300 hover:from-amber-300 hover:to-amber-200 active:scale-[0.99] text-zinc-950 text-center font-mono text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loadingProductId === (isAnnual ? DODO_PRODUCTS.PRO.annual : DODO_PRODUCTS.PRO.monthly) ? (
                   <>
@@ -325,7 +339,7 @@ export default function PricingSection() {
                 type="button"
                 onClick={() => handleCheckout(isAnnual ? DODO_PRODUCTS.AGENCY.annual : DODO_PRODUCTS.AGENCY.monthly)}
                 disabled={loadingProductId !== null}
-                className="w-full py-4 rounded-xl bg-zinc-800/80 hover:bg-zinc-800 active:scale-[0.99] border border-zinc-700 text-center font-mono text-xs sm:text-sm text-white font-bold transition-all flex items-center justify-center gap-2 cursor-pointer touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full min-h-[44px] py-3.5 rounded-xl bg-zinc-800/80 hover:bg-zinc-800 active:scale-[0.99] border border-zinc-700 text-center font-mono text-xs sm:text-sm text-white font-bold transition-all flex items-center justify-center gap-2 cursor-pointer touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loadingProductId === (isAnnual ? DODO_PRODUCTS.AGENCY.annual : DODO_PRODUCTS.AGENCY.monthly) ? (
                   <>
@@ -368,7 +382,7 @@ export default function PricingSection() {
               type="button"
               onClick={() => handleCheckout(DODO_PRODUCTS.DFY_SETUP.oneTime)}
               disabled={loadingProductId !== null}
-              className="w-full md:w-auto px-7 py-3.5 rounded-xl bg-amber-400 hover:bg-amber-300 active:scale-[0.99] text-zinc-950 text-xs sm:text-sm font-bold font-mono transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full md:w-auto min-h-[44px] px-7 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 active:scale-[0.99] text-zinc-950 text-xs sm:text-sm font-bold font-mono transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loadingProductId === DODO_PRODUCTS.DFY_SETUP.oneTime ? (
                 <>

@@ -52,7 +52,7 @@ export default function CodeViewer({ content, filename = 'CLAUDE.md', className 
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
           <button
             onClick={handleDownload}
-            className="inline-flex items-center gap-1.5 shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg border border-white/10 bg-neutral-900 hover:bg-neutral-800 text-white/80 transition-all whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 shrink-0 px-3 py-1.5 min-h-[36px] text-xs font-medium rounded-lg border border-white/10 bg-neutral-900 hover:bg-neutral-800 text-white/80 transition-all whitespace-nowrap cursor-pointer touch-manipulation"
             title="Download file"
           >
             <Download className="w-3.5 h-3.5 text-white/60 shrink-0" />
@@ -60,7 +60,7 @@ export default function CodeViewer({ content, filename = 'CLAUDE.md', className 
           </button>
           <button
             onClick={handleCopy}
-            className="inline-flex items-center gap-1.5 shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-white text-black hover:opacity-90 transition-all whitespace-nowrap shadow-sm"
+            className="inline-flex items-center gap-1.5 shrink-0 px-3 py-1.5 min-h-[36px] text-xs font-medium rounded-lg bg-white text-black hover:opacity-90 transition-all whitespace-nowrap shadow-sm cursor-pointer touch-manipulation"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
             {copied ? 'Copied!' : 'Copy File'}
@@ -74,7 +74,7 @@ export default function CodeViewer({ content, filename = 'CLAUDE.md', className 
           <tbody>
             {lines.map((line, idx) => (
               <tr key={idx} className="hover:bg-white/5 group">
-                <td className="w-12 line-number text-right pr-4 text-white/30 group-hover:text-white/50 font-mono text-[11px]">
+                <td className="w-12 line-number select-none text-right pr-4 text-white/30 group-hover:text-white/50 font-mono text-[11px]">
                   {idx + 1}
                 </td>
                 <td className="selectable-code text-white/80 whitespace-pre-wrap font-mono break-all sm:break-normal">

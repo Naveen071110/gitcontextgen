@@ -210,8 +210,9 @@ export default function AgencyDashboardPage() {
   return (
     <div className="min-h-screen bg-black text-white selection:bg-cyan-500 selection:text-black flex flex-col font-sans">
       <Navbar />
+      <div className="w-full h-20 sm:h-24 shrink-0 pointer-events-none" />
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         {/* Breadcrumb & Top Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-2 text-xs font-mono text-white/50">

@@ -228,13 +228,12 @@ export default function HeroSection() {
   };
 
   return (
-    <section id="hero" ref={sectionRef} className="relative w-full flex flex-col items-center justify-start pt-12 sm:pt-14 pb-10 md:pb-14 overflow-hidden bg-black text-white">
+    <section id="hero" ref={sectionRef} className="relative w-full flex flex-col items-center justify-start pt-24 sm:pt-28 pb-10 md:pb-14 overflow-hidden bg-black text-white">
       
       {/* Sleek Floating Glassmorphism Navbar */}
       <Navbar />
 
-      {/* Structural Top Navbar Offset Spacer */}
-      <div className="w-full h-4 sm:h-6 shrink-0 pointer-events-none" />
+      {/* Navbar spacer no longer needed — section pt-24 handles clearance */}
 
       {/* FULL-BLEED BACKGROUND VIDEO */}
       <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden">

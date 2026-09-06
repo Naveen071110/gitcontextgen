@@ -1,24 +1,33 @@
 import { Project, DocAsset, Release, Subscriber } from './types';
 
-// In-memory global store fallback for local dev when DB is disconnected
-const memoryProjects: Map<string, Project> = new Map();
-const memoryDocAssets: Map<string, DocAsset[]> = new Map();
-const memoryReleases: Map<string, Release[]> = new Map();
-const memorySubscribers: Map<string, Subscriber[]> = new Map();
+// In-memory global store with globalThis persistence
+const globalObj = globalThis as unknown as {
+  __memoryProjects?: Map<string, Project>;
+  __memoryDocAssets?: Map<string, DocAsset[]>;
+  __memoryReleases?: Map<string, Release[]>;
+  __memorySubscribers?: Map<string, Subscriber[]>;
+};
+
+const memoryProjects: Map<string, Project> = globalObj.__memoryProjects || (globalObj.__memoryProjects = new Map());
+const memoryDocAssets: Map<string, DocAsset[]> = globalObj.__memoryDocAssets || (globalObj.__memoryDocAssets = new Map());
+const memoryReleases: Map<string, Release[]> = globalObj.__memoryReleases || (globalObj.__memoryReleases = new Map());
+const memorySubscribers: Map<string, Subscriber[]> = globalObj.__memorySubscribers || (globalObj.__memorySubscribers = new Map());
 
 // Seed mock project for immediate demo/testing
 const sampleId = 'demo-project-123';
 const sampleSlug = 'repopulse-ai-demo';
 
-memoryProjects.set(sampleId, {
-  id: sampleId,
-  user_id: 'demo-user-1',
-  repo_url: 'https://github.com/repopulse/repopulse-ai',
-  slug: sampleSlug,
-  webhook_secret: 'whsec_repopulse_demo_secret_2026',
-  branding_color: '#6366f1',
-  created_at: new Date().toISOString(),
-});
+if (!memoryProjects.has(sampleId)) {
+  memoryProjects.set(sampleId, {
+    id: sampleId,
+    user_id: 'demo-user-1',
+    repo_url: 'https://github.com/repopulse/repopulse-ai',
+    slug: sampleSlug,
+    webhook_secret: 'whsec_repopulse_demo_secret_2026',
+    branding_color: '#6366f1',
+    created_at: new Date().toISOString(),
+  });
+}
 
 memoryDocAssets.set(sampleId, [
   {
@@ -102,8 +111,12 @@ memorySubscribers.set(sampleId, [
 ]);
 
 export const MockStore = {
-  getProjects() {
-    return Array.from(memoryProjects.values());
+  getProjects(userId?: string) {
+    const list = Array.from(memoryProjects.values());
+    if (userId) {
+      return list.filter(p => p.user_id === userId);
+    }
+    return list;
   },
 
   getProjectById(id: string) {

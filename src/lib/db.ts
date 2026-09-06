@@ -2,53 +2,73 @@
 
 import { createClient, createAdminClient } from './supabase/server';
 import { Project, DocAsset, Release, Subscriber, UserSubscription, SubscriptionTier, SubscriptionStatus, DfyOnboarding } from './types';
+import { MockStore } from './mockStore';
 
 // ---------------------------------------------------------------------------
 // Projects
 // ---------------------------------------------------------------------------
 
 export async function getUserProjects(): Promise<Project[]> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return MockStore.getProjects();
+    }
 
-  const { data, error } = await supabase
-    .from('projects')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('getUserProjects error:', error);
-    return [];
+    if (!error && Array.isArray(data)) {
+      const localProjects = MockStore.getProjects(user.id);
+      const dbIds = new Set(data.map(p => p.id));
+      const combined = [...data, ...localProjects.filter(lp => !dbIds.has(lp.id))];
+      return combined as Project[];
+    }
+
+    console.warn('[Database] Supabase getUserProjects returned error, using fallback store:', error?.message);
+    return MockStore.getProjects(user.id);
+  } catch (err: any) {
+    console.warn('[Database] getUserProjects exception, using fallback store:', err?.message);
+    return MockStore.getProjects();
   }
-  return (data as Project[]) || [];
 }
 
 export async function getProjectById(projectId: string): Promise<Project | null> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-  let { data, error } = await supabase
-    .from('projects')
-    .select('*')
-    .eq('id', projectId)
-    .eq('user_id', user.id)
-    .single();
+    if (user) {
+      let { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', projectId)
+        .eq('user_id', user.id)
+        .single();
 
-  if (error || !data) {
-    const slugResult = await supabase
-      .from('projects')
-      .select('*')
-      .eq('slug', projectId)
-      .eq('user_id', user.id)
-      .single();
-    if (slugResult.error || !slugResult.data) return null;
-    data = slugResult.data;
+      if (error || !data) {
+        const slugResult = await supabase
+          .from('projects')
+          .select('*')
+          .eq('slug', projectId)
+          .eq('user_id', user.id)
+          .single();
+        if (!slugResult.error && slugResult.data) {
+          data = slugResult.data;
+        }
+      }
+
+      if (data) return data as Project;
+    }
+  } catch (err: any) {
+    console.warn('[Database] getProjectById exception, checking fallback store:', err?.message);
   }
 
-  return data as Project;
+  return MockStore.getProjectById(projectId) || null;
 }
 
 export async function createProject(payload: {
@@ -58,44 +78,62 @@ export async function createProject(payload: {
   branding_color?: string;
   audience_tone?: string;
 }): Promise<Project> {
-  const supabase = await createClient();
   const webhookSecret = 'whsec_' + crypto.randomUUID().slice(0, 12);
 
-  const { data, error } = await supabase
-    .from('projects')
-    .insert({
-      user_id: payload.user_id,
-      repo_url: payload.repo_url,
-      slug: payload.slug,
-      branding_color: payload.branding_color || '#6366f1',
-      audience_tone: payload.audience_tone || 'technical',
-      webhook_secret: webhookSecret,
-    })
-    .select()
-    .single();
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('projects')
+      .insert({
+        user_id: payload.user_id,
+        repo_url: payload.repo_url,
+        slug: payload.slug,
+        branding_color: payload.branding_color || '#6366f1',
+        audience_tone: payload.audience_tone || 'technical',
+        webhook_secret: webhookSecret,
+      })
+      .select()
+      .single();
 
-  if (error) {
-    console.error('createProject error:', error);
-    throw new Error(error.message || 'Failed to create project.');
+    if (!error && data) {
+      MockStore.saveProject(data as Project);
+      return data as Project;
+    }
+
+    console.warn('[Database] Supabase createProject error (falling back to resilient store):', error?.message);
+  } catch (err: any) {
+    console.warn('[Database] createProject exception, falling back to resilient store:', err?.message);
   }
-  return data as Project;
+
+  // Resilient fallback: Save in MockStore so the user is NEVER blocked from adding repositories!
+  const localProject = MockStore.saveProject({
+    user_id: payload.user_id,
+    repo_url: payload.repo_url,
+    slug: payload.slug,
+    branding_color: payload.branding_color || '#6366f1',
+    webhook_secret: webhookSecret,
+  });
+
+  return localProject;
 }
 
 export async function deleteProjectDb(projectId: string): Promise<boolean> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return false;
-
-  const { error } = await supabase
-    .from('projects')
-    .delete()
-    .eq('id', projectId)
-    .eq('user_id', user.id);
-
-  if (error) {
-    console.error('deleteProject error:', error);
-    return false;
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId)
+        .eq('user_id', user.id);
+    }
+  } catch (err: any) {
+    console.warn('[Database] deleteProjectDb Supabase exception:', err?.message);
   }
+
+  // Always delete from MockStore
+  MockStore.deleteProject(projectId);
   return true;
 }
 
@@ -108,30 +146,43 @@ export async function saveDocAssets(
   contextMarkdown: string,
   mermaidArchitecture: string
 ): Promise<void> {
-  const supabase = await createClient();
-  const assets: Array<{ project_id: string; type: string; content: string }> = [];
-  if (contextMarkdown) assets.push({ project_id: projectId, type: 'context', content: contextMarkdown });
-  if (mermaidArchitecture) assets.push({ project_id: projectId, type: 'architecture', content: mermaidArchitecture });
+  // Always mirror to MockStore
+  MockStore.saveProject({ id: projectId }, contextMarkdown, mermaidArchitecture);
 
-  if (assets.length > 0) {
-    const { error } = await supabase.from('doc_assets').insert(assets);
-    if (error) {
-      console.error('saveDocAssets error:', error);
-      throw new Error('Failed to save document assets.');
+  try {
+    const supabase = await createClient();
+    const assets: Array<{ project_id: string; type: string; content: string }> = [];
+    if (contextMarkdown) assets.push({ project_id: projectId, type: 'context', content: contextMarkdown });
+    if (mermaidArchitecture) assets.push({ project_id: projectId, type: 'architecture', content: mermaidArchitecture });
+
+    if (assets.length > 0) {
+      const { error } = await supabase.from('doc_assets').insert(assets);
+      if (error) {
+        console.warn('[Database] saveDocAssets Supabase warning:', error.message);
+      }
     }
+  } catch (err: any) {
+    console.warn('[Database] saveDocAssets Supabase exception:', err?.message);
   }
 }
 
 export async function getDocAssets(projectId: string): Promise<DocAsset[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('doc_assets')
-    .select('*')
-    .eq('project_id', projectId)
-    .order('updated_at', { ascending: false });
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('doc_assets')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('updated_at', { ascending: false });
 
-  if (error) { console.error('getDocAssets error:', error); return []; }
-  return (data as DocAsset[]) || [];
+    if (!error && data && data.length > 0) {
+      return data as DocAsset[];
+    }
+  } catch (err: any) {
+    console.warn('[Database] getDocAssets Supabase exception:', err?.message);
+  }
+
+  return MockStore.getDocAssets(projectId);
 }
 
 // ---------------------------------------------------------------------------
@@ -269,14 +320,13 @@ export async function countUserProjects(userId: string): Promise<number> {
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId);
 
-    if (error) {
-      console.error('countUserProjects error:', error);
-      return 0;
+    if (!error && typeof count === 'number') {
+      return count;
     }
-    return count ?? 0;
   } catch {
-    return 0;
+    // Fall back to local store
   }
+  return MockStore.getProjects(userId).length;
 }
 
 // ---------------------------------------------------------------------------

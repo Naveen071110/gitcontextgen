@@ -410,7 +410,7 @@ export default function OutputPreviewSection() {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.25 }}
                 >
-                  <pre className="p-6 sm:p-8 overflow-x-auto overflow-y-auto max-h-[520px] text-sm sm:text-[13px] leading-relaxed font-mono text-white/70 whitespace-pre-wrap break-words scrollbar-thin">
+                  <pre className="p-6 sm:p-8 pb-28 overflow-x-auto overflow-y-auto max-h-[520px] text-sm sm:text-[13px] leading-relaxed font-mono text-white/70 whitespace-pre-wrap break-words scrollbar-thin">
                     {sampleOutputs[activeTab]}
                   </pre>
                 </motion.div>

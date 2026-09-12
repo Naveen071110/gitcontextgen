@@ -31,7 +31,7 @@ export async function GET(req: Request) {
 
     const result = await withTimeout(
       analyzeRepositoryAction(targetUrl),
-      20_000,
+      35_000,
       'GitHub took too long to respond. Please try the analysis again.'
     );
 
@@ -83,7 +83,7 @@ export async function POST(req: Request) {
     const token = body.token || body.userToken;
     const result = await withTimeout(
       analyzeRepositoryAction(targetUrl, token),
-      20_000,
+      35_000,
       'GitHub took too long to respond. Please try the analysis again.'
     );
 

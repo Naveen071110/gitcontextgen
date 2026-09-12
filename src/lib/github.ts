@@ -201,115 +201,139 @@ export async function fetchGitHubRepoDetails(
     treeSummaryLines.push(`... and ${filteredTree.length - 300} more files`);
   }
 
-  // 3. Fetch README if present
+  // 3, 4, 5. Fetch README, Manifest, and Commits in parallel
   let readmeContent = '';
-  try {
-    const readmeRes = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}/readme`, {
-      headers: { ...headers, 'Accept': 'application/vnd.github.v3.raw' },
-      next: { revalidate: 3600 }
-    });
-    if (readmeRes.ok) {
-      readmeContent = await readmeRes.text();
-    }
-  } catch {
-    // README fetch optional
-  }
-
-  // 4. Fetch manifest (package.json, requirements.txt, Cargo.toml, go.mod)
   let manifestContent = '';
   let parsedDependencies: Record<string, string> = {};
   let ecosystem: 'npm' | 'PyPI' | 'crates.io' | 'Go' = 'npm';
+  let recentCommits: Array<{ message: string; author?: string; sha?: string; date?: string }> = [];
 
-  try {
-    const hasPkgJson = filteredTree.some(item => item.path === 'package.json');
-    const hasReqs = filteredTree.some(item => item.path === 'requirements.txt' || item.path === 'pyproject.toml');
-    const hasCargo = filteredTree.some(item => item.path === 'Cargo.toml');
-    const hasGoMod = filteredTree.some(item => item.path === 'go.mod');
+  const hasPkgJson = filteredTree.some(item => item.path === 'package.json');
+  const hasReqs = filteredTree.some(item => item.path === 'requirements.txt' || item.path === 'pyproject.toml');
+  const hasCargo = filteredTree.some(item => item.path === 'Cargo.toml');
+  const hasGoMod = filteredTree.some(item => item.path === 'go.mod');
 
-    if (hasPkgJson) {
-      const pkgRes = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}/contents/package.json`, {
-        headers: { ...headers, 'Accept': 'application/vnd.github.v3.raw' },
-        next: { revalidate: 3600 }
-      });
-      if (pkgRes.ok) {
-        manifestContent = await pkgRes.text();
-        try {
-          const pkgJson = JSON.parse(manifestContent);
-          parsedDependencies = {
-            ...(pkgJson.dependencies || {}),
-            ...(pkgJson.devDependencies || {}),
-          };
-          ecosystem = 'npm';
-        } catch {
-          // ignore invalid json
-        }
-      }
-    } else if (hasReqs) {
-      ecosystem = 'PyPI';
-      const reqRes = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}/contents/requirements.txt`, {
-        headers: { ...headers, 'Accept': 'application/vnd.github.v3.raw' },
-        next: { revalidate: 3600 }
-      });
-      if (reqRes.ok) {
-        manifestContent = await reqRes.text();
-        const lines = manifestContent.split('\n');
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed && !trimmed.startsWith('#')) {
-            const depName = trimmed.split(/[=<>~]/)[0].trim();
-            if (depName) parsedDependencies[depName] = '*';
+  const [readmeResult, manifestResult, commitsResult] = await Promise.allSettled([
+    // A: README
+    (async () => {
+      try {
+        const readmeRes = await fetchWithTimeout(
+          `https://api.github.com/repos/${owner}/${repo}/readme`,
+          { headers: { ...headers, Accept: 'application/vnd.github.v3.raw' }, next: { revalidate: 3600 } },
+          6000
+        );
+        if (readmeRes.ok) return await readmeRes.text();
+      } catch {}
+      return '';
+    })(),
+
+    // B: Manifest
+    (async () => {
+      let content = '';
+      let deps: Record<string, string> = {};
+      let eco: 'npm' | 'PyPI' | 'crates.io' | 'Go' = 'npm';
+
+      try {
+        if (hasPkgJson) {
+          const pkgRes = await fetchWithTimeout(
+            `https://api.github.com/repos/${owner}/${repo}/contents/package.json`,
+            { headers: { ...headers, Accept: 'application/vnd.github.v3.raw' }, next: { revalidate: 3600 } },
+            6000
+          );
+          if (pkgRes.ok) {
+            content = await pkgRes.text();
+            try {
+              const pkgJson = JSON.parse(content);
+              deps = {
+                ...(pkgJson.dependencies || {}),
+                ...(pkgJson.devDependencies || {}),
+              };
+              eco = 'npm';
+            } catch {}
+          }
+        } else if (hasReqs) {
+          eco = 'PyPI';
+          const reqRes = await fetchWithTimeout(
+            `https://api.github.com/repos/${owner}/${repo}/contents/requirements.txt`,
+            { headers: { ...headers, Accept: 'application/vnd.github.v3.raw' }, next: { revalidate: 3600 } },
+            6000
+          );
+          if (reqRes.ok) {
+            content = await reqRes.text();
+            const lines = content.split('\n');
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (trimmed && !trimmed.startsWith('#')) {
+                const depName = trimmed.split(/[=<>~]/)[0].trim();
+                if (depName) deps[depName] = '*';
+              }
+            }
+          }
+        } else if (hasCargo) {
+          eco = 'crates.io';
+          const cargoRes = await fetchWithTimeout(
+            `https://api.github.com/repos/${owner}/${repo}/contents/Cargo.toml`,
+            { headers: { ...headers, Accept: 'application/vnd.github.v3.raw' }, next: { revalidate: 3600 } },
+            6000
+          );
+          if (cargoRes.ok) {
+            content = await cargoRes.text();
+          }
+        } else if (hasGoMod) {
+          eco = 'Go';
+          const goRes = await fetchWithTimeout(
+            `https://api.github.com/repos/${owner}/${repo}/contents/go.mod`,
+            { headers: { ...headers, Accept: 'application/vnd.github.v3.raw' }, next: { revalidate: 3600 } },
+            6000
+          );
+          if (goRes.ok) {
+            content = await goRes.text();
           }
         }
-      }
-    } else if (hasCargo) {
-      ecosystem = 'crates.io';
-      const cargoRes = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}/contents/Cargo.toml`, {
-        headers: { ...headers, 'Accept': 'application/vnd.github.v3.raw' },
-        next: { revalidate: 3600 }
-      });
-      if (cargoRes.ok) {
-        manifestContent = await cargoRes.text();
-      }
-    } else if (hasGoMod) {
-      ecosystem = 'Go';
-      const goRes = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}/contents/go.mod`, {
-        headers: { ...headers, 'Accept': 'application/vnd.github.v3.raw' },
-        next: { revalidate: 3600 }
-      });
-      if (goRes.ok) {
-        manifestContent = await goRes.text();
-      }
-    }
-  } catch {
-    // Optional
+      } catch {}
+
+      return { content, deps, eco };
+    })(),
+
+    // C: Recent Commits
+    (async () => {
+      try {
+        const commitsRes = await fetchWithTimeout(
+          `https://api.github.com/repos/${owner}/${repo}/commits?per_page=10`,
+          { headers, next: { revalidate: 3600 } },
+          5000
+        );
+        if (commitsRes.ok) {
+          const commitsData = await commitsRes.json();
+          if (Array.isArray(commitsData)) {
+            return commitsData.map((c: any) => ({
+              message: c.commit?.message || '',
+              author: c.commit?.author?.name,
+              sha: c.sha ? c.sha.slice(0, 7) : undefined,
+              date: c.commit?.author?.date,
+            }));
+          }
+        }
+      } catch {}
+      return [];
+    })(),
+  ]);
+
+  if (readmeResult.status === 'fulfilled' && readmeResult.value) {
+    readmeContent = readmeResult.value;
+  }
+  if (manifestResult.status === 'fulfilled' && manifestResult.value) {
+    manifestContent = manifestResult.value.content;
+    parsedDependencies = manifestResult.value.deps;
+    ecosystem = manifestResult.value.eco;
+  }
+  if (commitsResult.status === 'fulfilled' && commitsResult.value) {
+    recentCommits = commitsResult.value;
   }
 
   // Apply secret sanitization
   const sanitizedReadme = safeSanitizeSecrets(readmeContent, 'README.md');
   const sanitizedManifest = safeSanitizeSecrets(manifestContent, 'manifest');
-
-  // Fetch recent commits for AST changelog and client handoff report
-  let recentCommits: Array<{ message: string; author?: string; sha?: string; date?: string }> = [];
-  try {
-    const commitsRes = await fetchWithTimeout(
-      `https://api.github.com/repos/${owner}/${repo}/commits?per_page=10`,
-      { headers, next: { revalidate: 3600 } },
-      5000
-    );
-    if (commitsRes.ok) {
-      const commitsData = await commitsRes.json();
-      if (Array.isArray(commitsData)) {
-        recentCommits = commitsData.map((c: any) => ({
-          message: c.commit?.message || '',
-          author: c.commit?.author?.name,
-          sha: c.sha ? c.sha.slice(0, 7) : undefined,
-          date: c.commit?.author?.date,
-        }));
-      }
-    }
-  } catch {
-    // Non-blocking fallback
-  }
 
   return {
     owner,

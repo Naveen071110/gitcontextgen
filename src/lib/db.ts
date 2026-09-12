@@ -1,14 +1,25 @@
 'use server';
 
-import { createClient, createAdminClient } from './supabase/server';
+import { createClient, createAdminClient, isSupabaseConfigured } from './supabase/server';
 import { Project, DocAsset, Release, Subscriber, UserSubscription, SubscriptionTier, SubscriptionStatus, DfyOnboarding, AnalyzedCodebaseOutputs, RepositoryAnalysisResult } from './types';
 import { MockStore } from './mockStore';
+
+function withTimeout<T>(promise: PromiseLike<T>, ms: number = 1500, errorMsg: string = 'Timeout'): Promise<T> {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(errorMsg)), ms)),
+  ]);
+}
 
 // ---------------------------------------------------------------------------
 // Projects
 // ---------------------------------------------------------------------------
 
 export async function getUserProjects(): Promise<Project[]> {
+  if (!isSupabaseConfigured()) {
+    return MockStore.getProjects();
+  }
+
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -38,6 +49,10 @@ export async function getUserProjects(): Promise<Project[]> {
 }
 
 export async function getProjectById(projectId: string): Promise<Project | null> {
+  if (!isSupabaseConfigured()) {
+    return MockStore.getProjectById(projectId) || null;
+  }
+
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -84,6 +99,20 @@ export async function createProject(payload: {
   const webhookSecret = 'whsec_' + crypto.randomUUID().slice(0, 12);
   const repoName = payload.repo_name || payload.repo_url.split('/').pop()?.replace(/\.git$/, '') || payload.slug;
   const status = payload.status || 'completed';
+
+  if (!isSupabaseConfigured()) {
+    return MockStore.saveProject({
+      user_id: payload.user_id,
+      repo_name: repoName,
+      repo_url: payload.repo_url,
+      slug: payload.slug,
+      status,
+      analysis_results: payload.analysis_results,
+      branding_color: payload.branding_color || '#6366f1',
+      audience_tone: (payload.audience_tone as any) || 'technical',
+      webhook_secret: webhookSecret,
+    });
+  }
 
   try {
     const supabase = await createClient();
@@ -322,6 +351,10 @@ export async function addSubscriberDb(projectId: string, email: string): Promise
 // ---------------------------------------------------------------------------
 
 export async function getUserSubscriptionDb(userId: string): Promise<UserSubscription | null> {
+  if (!isSupabaseConfigured()) {
+    return MockStore.getUserSubscription(userId);
+  }
+
   try {
     const supabase = createAdminClient();
     const { data, error } = await supabase
@@ -351,6 +384,10 @@ export async function upsertUserSubscriptionDb(payload: {
   // Always mirror in MockStore
   const localSub = MockStore.upsertUserSubscription(payload);
 
+  if (!isSupabaseConfigured()) {
+    return localSub;
+  }
+
   try {
     const supabase = createAdminClient();
     const { data, error } = await supabase
@@ -379,6 +416,10 @@ export async function upsertUserSubscriptionDb(payload: {
 }
 
 export async function countUserProjects(userId: string): Promise<number> {
+  if (!isSupabaseConfigured()) {
+    return MockStore.getProjects(userId).length;
+  }
+
   try {
     const supabase = createAdminClient();
     const { count, error } = await supabase
@@ -407,6 +448,10 @@ export async function addDfyOnboardingDb(payload: {
 }): Promise<DfyOnboarding | null> {
   // Always mirror in MockStore
   const localDfy = MockStore.addDfyOnboarding(payload);
+
+  if (!isSupabaseConfigured()) {
+    return localDfy;
+  }
 
   try {
     const supabase = createAdminClient();
@@ -448,37 +493,58 @@ export async function getL2CachedAnalysis(
 ): Promise<RepositoryAnalysisResult | null> {
   const repoKey = `${owner}/${repo}`.toLowerCase();
 
+  // If Supabase is not configured, immediately use in-memory MockStore (0ms latency)
+  if (!isSupabaseConfigured()) {
+    return MockStore.getL2Cache(repoKey, L2_CACHE_TTL_MS);
+  }
+
   try {
     const admin = createAdminClient();
 
-    // 1. Query cache_store table
-    const { data: cacheRecord, error: cacheError } = await admin
-      .from('cache_store')
-      .select('analysis_results, created_at')
-      .eq('repo_key', repoKey)
-      .maybeSingle();
+    // 1. Query cache_store table with strict 1.5s timeout
+    try {
+      const { data: cacheRecord, error: cacheError } = await withTimeout(
+        admin
+          .from('cache_store')
+          .select('analysis_results, created_at')
+          .eq('repo_key', repoKey)
+          .maybeSingle(),
+        1500,
+        'cache_store query timeout'
+      );
 
-    if (!cacheError && cacheRecord && cacheRecord.analysis_results) {
-      const createdAt = new Date(cacheRecord.created_at).getTime();
-      if (Date.now() - createdAt < L2_CACHE_TTL_MS) {
-        return cacheRecord.analysis_results as RepositoryAnalysisResult;
+      if (!cacheError && cacheRecord && cacheRecord.analysis_results) {
+        const createdAt = new Date(cacheRecord.created_at).getTime();
+        if (Date.now() - createdAt < L2_CACHE_TTL_MS) {
+          return cacheRecord.analysis_results as RepositoryAnalysisResult;
+        }
       }
+    } catch {
+      // Non-blocking timeout or missing table fallback
     }
 
-    // 2. Query projects table as secondary database source
-    const { data: projectRecord, error: projError } = await admin
-      .from('projects')
-      .select('analysis_results, created_at')
-      .ilike('repo_url', `%${owner}/${repo}%`)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // 2. Query projects table as secondary database source with strict 1.5s timeout
+    try {
+      const { data: projectRecord, error: projError } = await withTimeout(
+        admin
+          .from('projects')
+          .select('analysis_results, created_at')
+          .ilike('repo_url', `%${owner}/${repo}%`)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        1500,
+        'projects query timeout'
+      );
 
-    if (!projError && projectRecord && projectRecord.analysis_results) {
-      const createdAt = new Date(projectRecord.created_at).getTime();
-      if (Date.now() - createdAt < L2_CACHE_TTL_MS) {
-        return projectRecord.analysis_results as RepositoryAnalysisResult;
+      if (!projError && projectRecord && projectRecord.analysis_results) {
+        const createdAt = new Date(projectRecord.created_at).getTime();
+        if (Date.now() - createdAt < L2_CACHE_TTL_MS) {
+          return projectRecord.analysis_results as RepositoryAnalysisResult;
+        }
       }
+    } catch {
+      // Non-blocking timeout or missing table fallback
     }
   } catch (err: any) {
     console.warn('[L2 Cache] Supabase lookup error, falling back to local store:', err?.message);
@@ -498,18 +564,26 @@ export async function saveL2CachedAnalysis(
   // Always update in-memory cache immediately
   MockStore.setL2Cache(repoKey, data);
 
+  if (!isSupabaseConfigured()) {
+    return;
+  }
+
   try {
     const admin = createAdminClient();
-    await admin
-      .from('cache_store')
-      .upsert(
-        {
-          repo_key: repoKey,
-          analysis_results: data,
-          created_at: new Date().toISOString(),
-        },
-        { onConflict: 'repo_key' }
-      );
+    await withTimeout(
+      admin
+        .from('cache_store')
+        .upsert(
+          {
+            repo_key: repoKey,
+            analysis_results: data,
+            created_at: new Date().toISOString(),
+          },
+          { onConflict: 'repo_key' }
+        ),
+      1500,
+      'cache_store upsert timeout'
+    );
   } catch (err: any) {
     console.warn('[L2 Cache] Could not persist to Supabase cache_store:', err?.message);
   }

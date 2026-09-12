@@ -21,7 +21,7 @@ export default function RepositoryAnalyzer({
     if (!repoUrl.trim()) return;
 
     const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 30_000);
+    const timeout = window.setTimeout(() => controller.abort(), 45_000);
     setStatus('running');
     setError(null);
 

@@ -108,7 +108,7 @@ export default function HeroSection() {
     setActiveAbortController(controller);
     const timeout = window.setTimeout(() => {
       controller.abort();
-    }, 30_000);
+    }, 45_000);
 
     setIsLoading(true);
     setStatus('running');

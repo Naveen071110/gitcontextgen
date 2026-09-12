@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import DodoPayments from 'dodopayments';
@@ -20,10 +23,23 @@ export function resetIdempotencyCacheForTesting() {
   processedTransactions.clear();
 }
 
-function verifyWebhookSignature(rawBody: string, signature: string | null, webhookKey: string): boolean {
+export async function idempotently<T>(
+  key: string,
+  fn: () => Promise<T>
+): Promise<{ result?: T; duplicate: boolean }> {
+  if (processedTransactions.has(key)) {
+    return { duplicate: true };
+  }
+  processedTransactions.set(key, Date.now());
+  sweepIdempotencyCache();
+  const result = await fn();
+  return { result, duplicate: false };
+}
+
+export function verifyDodoSignature(rawBody: string, signature: string | null, webhookKey: string): boolean {
   if (!signature || !signature.trim()) return false;
 
-  // 1. Try DodoPayments SDK unwrap if applicable
+  // 1. Try DodoPayments SDK unwrap
   try {
     const dodo = new DodoPayments({
       bearerToken: process.env.DODO_PAYMENTS_API_KEY || 'test',
@@ -74,17 +90,19 @@ function resolveTierFromProductId(productId?: string): SubscriptionTier {
 export async function POST(req: Request) {
   try {
     const rawBody = await req.text();
-    const signature = req.headers.get('x-dodo-signature');
+    const signature = req.headers.get('webhook-signature') || req.headers.get('x-dodo-signature');
     const webhookKey = (
-      process.env.DODO_PAYMENTS_WEBHOOK_SECRET || process.env.DODO_PAYMENTS_WEBHOOK_KEY
+      process.env.DODO_WEBHOOK_SECRET ||
+      process.env.DODO_PAYMENTS_WEBHOOK_SECRET ||
+      process.env.DODO_PAYMENTS_WEBHOOK_KEY
     )?.trim();
 
     // Enforce cryptographic signature verification when webhook key is configured
     if (webhookKey && webhookKey !== 'i will add these later' && webhookKey !== 'your_dodo_webhook_secret_here') {
-      const isValid = verifyWebhookSignature(rawBody, signature, webhookKey);
+      const isValid = verifyDodoSignature(rawBody, signature, webhookKey);
       if (!isValid) {
         console.warn('[Dodo Webhook] Cryptographic signature verification failed.');
-        return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 401 });
+        return NextResponse.json({ error: 'invalid signature' }, { status: 401 });
       }
     }
 
@@ -142,7 +160,6 @@ export async function POST(req: Request) {
         const data = event.data || {};
         console.log(`[Dodo Webhook] Payment succeeded: ${data.id} (${data.currency} ${data.total_amount})`);
 
-        // Check if payment corresponds to Done-For-You (DFY) Onboarding Add-On
         const isDfy =
           data.product_id === DODO_PRODUCTS.DFY_SETUP.oneTime ||
           data.metadata?.bundleDfy === 'true' ||
@@ -159,15 +176,15 @@ export async function POST(req: Request) {
               customer_email: data.customer?.email || data.customer_email,
               customer_name: data.customer?.name || data.customer_name,
             });
-          } catch (dbErr) {
-            console.warn('[Dodo Webhook] Non-fatal DFY DB record warning:', dbErr);
+          } catch (dfyErr) {
+            console.warn('[Dodo Webhook] Non-fatal DFY DB recording warning:', dfyErr);
           }
         }
         break;
       }
 
       case 'subscription.cancelled':
-      case 'subscription.expired': {
+      case 'subscription.canceled': {
         const data = event.data || {};
         const userId = data.metadata?.userId;
         console.log(`[Dodo Webhook] Subscription inactive for user ${userId}`);
@@ -177,19 +194,17 @@ export async function POST(req: Request) {
             await upsertUserSubscriptionDb({
               user_id: userId,
               tier: 'FREE',
-              status: eventType === 'subscription.cancelled' ? 'cancelled' : 'expired',
-              customer_id: data.customer_id,
+              status: 'cancelled',
               subscription_id: data.subscription_id || data.id,
             });
           } catch (dbErr) {
-            console.warn('[Dodo Webhook] Non-fatal DB status update warning:', dbErr);
+            console.warn('[Dodo Webhook] DB subscription cancellation error:', dbErr);
           }
         }
         break;
       }
 
-      case 'payment.failed':
-      case 'subscription.on_hold': {
+      case 'payment.failed': {
         const data = event.data || {};
         const userId = data.metadata?.userId;
         console.log(`[Dodo Webhook] Payment failed or subscription on hold for user ${userId}`);
@@ -198,26 +213,24 @@ export async function POST(req: Request) {
           try {
             await upsertUserSubscriptionDb({
               user_id: userId,
-              tier: 'FREE',
+              tier: 'STARTER',
               status: 'on_hold',
-              customer_id: data.customer_id,
               subscription_id: data.subscription_id || data.id,
             });
           } catch (dbErr) {
-            console.warn('[Dodo Webhook] Non-fatal DB status update warning:', dbErr);
+            console.warn('[Dodo Webhook] DB payment failure logging error:', dbErr);
           }
         }
         break;
       }
 
       default:
-        console.log(`[Dodo Webhook] Unhandled event payload: ${eventType}`);
+        console.log(`[Dodo Webhook] Unhandled event type: ${eventType}`);
     }
 
-
-    return NextResponse.json({ received: true });
+    return NextResponse.json({ received: true, event: eventType });
   } catch (error: any) {
-    console.error('[Dodo Webhook Error]:', error);
-    return NextResponse.json({ error: error.message || 'Webhook processing error' }, { status: 400 });
+    console.error('[Dodo Webhook] Error processing event:', error);
+    return NextResponse.json({ error: error?.message || 'Internal Webhook Error' }, { status: 500 });
   }
 }

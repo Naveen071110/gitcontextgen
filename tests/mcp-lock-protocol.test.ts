@@ -22,7 +22,7 @@ class McpTestClient {
     return new Promise((resolve, reject) => {
       this.child = spawn('node', [this.serverPath], {
         stdio: ['pipe', 'pipe', 'pipe'],
-        env: { ...process.env },
+        env: { ...process.env, GITCONTEXTGEN_LICENSE_KEY: 'gcg_test_license_pro' },
       });
 
       this.child.stderr.on('data', (d: Buffer) => {

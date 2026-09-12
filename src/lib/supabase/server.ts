@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -21,20 +22,23 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing user sessions.
+            // The setAll method was called from a Server Component.
           }
         },
+      },
+      global: {
+        fetch: (url, options = {}) => fetch(url, { ...options, cache: 'no-store' }),
       },
     }
   );
 }
 
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-
 export function createAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
-  return createSupabaseClient(supabaseUrl, key);
+  return createSupabaseClient(supabaseUrl, key, {
+    global: {
+      fetch: (url, options = {}) => fetch(url, { ...options, cache: 'no-store' }),
+    },
+  });
 }
-

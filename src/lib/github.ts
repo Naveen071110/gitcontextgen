@@ -8,6 +8,31 @@ export interface ParsedRepoUrl {
 const GITHUB_NAME_REGEX = /^[a-zA-Z0-9_.-]+$/;
 const DEFAULT_FETCH_TIMEOUT_MS = 10000;
 
+export function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number = 20000,
+  errorMessage: string = 'Operation timed out'
+): Promise<T> {
+  let timer: NodeJS.Timeout;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      const err: any = new Error(errorMessage);
+      err.status = 504;
+      err.name = 'TimeoutError';
+      reject(err);
+    }, timeoutMs);
+  });
+
+  return Promise.race([
+    promise.then((res) => {
+      clearTimeout(timer);
+      return res;
+    }),
+    timeoutPromise,
+  ]);
+}
+
+
 export async function fetchWithTimeout(
   url: string,
   options: RequestInit = {},
@@ -68,6 +93,25 @@ export function sanitizeSecrets(text: string): string {
     .replace(/(?:api_key|secret_key|auth_token|access_token|password)\s*[:=]\s*["'][^"']+["']/gi, '$1: "[REDACTED_SECRET]"');
 }
 
+export const MAX_SCAN_FILE_SIZE_BYTES = 500 * 1024; // 500 KB ceiling to prevent ReDoS
+const VENDOR_PATH_REGEX = /(?:^|[\\/])(node_modules|dist|build|\.next|\.open-next|vendor|wp-includes|wp-admin|out|coverage)[\\/]/i;
+
+/**
+ * ReDoS-Safe Secret Sanitizer with file size and vendor directory gating
+ */
+export function safeSanitizeSecrets(content: string, filePath: string = 'file'): string {
+  if (!content) return '';
+
+  const byteLength = Buffer.byteLength(content, 'utf8');
+  const filename = filePath.split(/[\\/]/).pop() || filePath;
+
+  if (byteLength > MAX_SCAN_FILE_SIZE_BYTES || VENDOR_PATH_REGEX.test(filePath)) {
+    return `// [File: ${filename} size exceeded 500KB - skipped credentials scan for performance]\n`;
+  }
+
+  return sanitizeSecrets(content);
+}
+
 export interface FetchRepoDetailsResult {
   owner: string;
   repo: string;
@@ -82,6 +126,7 @@ export interface FetchRepoDetailsResult {
   licenseSpdx: string | null;
   parsedDependencies: Record<string, string>;
   ecosystem: 'npm' | 'PyPI' | 'crates.io' | 'Go';
+  recentCommits?: Array<{ message: string; author?: string; sha?: string; date?: string }>;
 }
 
 export async function fetchGitHubRepoDetails(
@@ -123,7 +168,11 @@ export async function fetchGitHubRepoDetails(
 
   // 2. Fetch Recursive Git Tree
   const treeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${defaultBranch}?recursive=1`;
-  const treeRes = await fetchWithTimeout(treeUrl, { headers, next: { revalidate: 3600 } });
+  const treeRes = await withTimeout(
+    fetchWithTimeout(treeUrl, { headers, next: { revalidate: 3600 } }, 18000),
+    20000,
+    'GitHub tree request timed out'
+  );
 
   let fileTree: GitHubFile[] = [];
   if (treeRes.ok) {
@@ -236,8 +285,31 @@ export async function fetchGitHubRepoDetails(
   }
 
   // Apply secret sanitization
-  const sanitizedReadme = sanitizeSecrets(readmeContent);
-  const sanitizedManifest = sanitizeSecrets(manifestContent);
+  const sanitizedReadme = safeSanitizeSecrets(readmeContent, 'README.md');
+  const sanitizedManifest = safeSanitizeSecrets(manifestContent, 'manifest');
+
+  // Fetch recent commits for AST changelog and client handoff report
+  let recentCommits: Array<{ message: string; author?: string; sha?: string; date?: string }> = [];
+  try {
+    const commitsRes = await fetchWithTimeout(
+      `https://api.github.com/repos/${owner}/${repo}/commits?per_page=10`,
+      { headers, next: { revalidate: 3600 } },
+      5000
+    );
+    if (commitsRes.ok) {
+      const commitsData = await commitsRes.json();
+      if (Array.isArray(commitsData)) {
+        recentCommits = commitsData.map((c: any) => ({
+          message: c.commit?.message || '',
+          author: c.commit?.author?.name,
+          sha: c.sha ? c.sha.slice(0, 7) : undefined,
+          date: c.commit?.author?.date,
+        }));
+      }
+    }
+  } catch {
+    // Non-blocking fallback
+  }
 
   return {
     owner,
@@ -253,5 +325,6 @@ export async function fetchGitHubRepoDetails(
     licenseSpdx,
     parsedDependencies,
     ecosystem,
+    recentCommits,
   };
 }

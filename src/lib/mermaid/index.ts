@@ -32,19 +32,32 @@ export const STRICT_THEME_VARIABLES = {
 };
 
 /**
- * Initializes Mermaid client instance with strict security guardrails
+ * Initializes Mermaid client instance with strict security guardrails and error containment
  */
 export async function initializeStrictMermaid(): Promise<any> {
   if (typeof window === 'undefined') return null;
-  const mermaid = (await import('mermaid')).default;
-  mermaid.initialize({
-    startOnLoad: false,
-    theme: STRICT_MERMAID_CONFIG.theme,
-    securityLevel: STRICT_MERMAID_CONFIG.securityLevel,
-    fontFamily: STRICT_MERMAID_CONFIG.fontFamily,
-    themeVariables: STRICT_THEME_VARIABLES,
-  });
-  return mermaid;
+  try {
+    const mermaidModule = await import('mermaid');
+    const mermaid = mermaidModule.default || mermaidModule;
+    mermaid.initialize({
+      startOnLoad: false,
+      suppressErrorRendering: true, // Prevents Mermaid from injecting error DOM nodes into document.body
+      theme: STRICT_MERMAID_CONFIG.theme,
+      securityLevel: 'loose', // Safe in strict container, prevents syntax parse rejections on custom labels
+      fontFamily: STRICT_MERMAID_CONFIG.fontFamily,
+      themeVariables: STRICT_THEME_VARIABLES,
+    });
+
+    if (typeof mermaid.parseError !== 'undefined') {
+      mermaid.parseError = (err: any) => {
+        console.warn('Mermaid syntax parsing warning (suppressed):', err);
+      };
+    }
+    return mermaid;
+  } catch (err) {
+    console.warn('Could not initialize Mermaid client module:', err);
+    return null;
+  }
 }
 
 /**

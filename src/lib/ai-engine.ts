@@ -451,23 +451,24 @@ function generateHeuristicMermaidGraph(repoName: string, fileTreeSummary: string
     }
   });
 
+  const safeRepoName = repoName.replace(/"/g, "'");
   let diagram = `graph TD\n`;
-  diagram += `    title["Repository Architecture: ${repoName}"]\n\n`;
+  diagram += `    title["Repository Architecture: ${safeRepoName}"]\n\n`;
 
   diagram += `    subgraph UI ["Frontend & Pages"]\n`;
   if (frontendFiles.length > 0) {
     frontendFiles.slice(0, 6).forEach((f, idx) => {
-      diagram += `        ui_${idx}["${f}"]\n`;
+      diagram += `        ui_${idx}["${f.replace(/"/g, "'")}"]\n`;
     });
   } else {
-    diagram += `        ui_main["${repoName} Interface"]\n`;
+    diagram += `        ui_main["${safeRepoName} Interface"]\n`;
   }
   diagram += `    end\n\n`;
 
   if (apiFiles.length > 0) {
     diagram += `    subgraph API ["API Routes & Webhooks"]\n`;
     apiFiles.slice(0, 5).forEach((f, idx) => {
-      diagram += `        api_${idx}["${f}"]\n`;
+      diagram += `        api_${idx}["${f.replace(/"/g, "'")}"]\n`;
     });
     diagram += `    end\n\n`;
   }
@@ -475,7 +476,7 @@ function generateHeuristicMermaidGraph(repoName: string, fileTreeSummary: string
   diagram += `    subgraph Core ["Core Utilities & Logic"]\n`;
   if (libFiles.length > 0) {
     libFiles.slice(0, 6).forEach((f, idx) => {
-      diagram += `        core_${idx}["${f}"]\n`;
+      diagram += `        core_${idx}["${f.replace(/"/g, "'")}"]\n`;
     });
   } else {
     diagram += `        core_util["Business Logic & Helpers"]\n`;

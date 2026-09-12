@@ -7,8 +7,11 @@
 CREATE TABLE IF NOT EXISTS public.projects (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  repo_name TEXT,
   repo_url TEXT NOT NULL,
   slug TEXT NOT NULL UNIQUE,
+  status TEXT DEFAULT 'completed' CHECK (status IN ('analyzing', 'completed', 'failed')),
+  analysis_results JSONB,
   branding_color TEXT DEFAULT '#6366f1',
   audience_tone TEXT DEFAULT 'technical' CHECK (audience_tone IN ('technical', 'marketing')),
   webhook_secret TEXT,
@@ -216,3 +219,37 @@ CREATE POLICY "Users can view their own DFY onboarding status"
   TO authenticated
   USING (auth.uid() = user_id);
 
+
+
+-- ==============================================================================
+-- 7. Public L2 Analysis Cache Store (12-Hour GitHub Rate-Limit Shield)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.cache_store (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  repo_key TEXT NOT NULL UNIQUE,
+  analysis_results JSONB NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_cache_store_repo_key ON public.cache_store(repo_key);
+CREATE INDEX IF NOT EXISTS idx_cache_store_created_at ON public.cache_store(created_at);
+
+ALTER TABLE public.cache_store ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read cached analyses"
+  ON public.cache_store
+  FOR SELECT
+  TO anon, authenticated
+  USING (true);
+
+CREATE POLICY "Public write cached analyses"
+  ON public.cache_store
+  FOR INSERT
+  TO anon, authenticated
+  WITH CHECK (true);
+
+CREATE POLICY "Public update cached analyses"
+  ON public.cache_store
+  FOR UPDATE
+  TO anon, authenticated
+  USING (true);

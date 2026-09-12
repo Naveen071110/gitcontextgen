@@ -2,7 +2,7 @@ import { RefreshCw, GitPullRequest, AlertCircle, CheckCircle2 } from 'lucide-rea
 
 export default function ContextDriftSection() {
   return (
-    <section id="context-drift" className="flex flex-col items-center justify-center w-full max-w-7xl mx-auto px-4 sm:px-6 py-28 md:py-36 bg-black text-white relative">
+    <section id="context-drift" className="flex flex-col items-center justify-center w-full max-w-6xl mx-auto px-4 sm:px-6 py-28 md:py-36 bg-black text-white relative">
       <div className="w-full flex flex-col items-center justify-center">
         
         {/* Header */}

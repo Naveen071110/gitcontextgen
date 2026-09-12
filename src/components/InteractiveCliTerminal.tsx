@@ -29,12 +29,15 @@ export default function InteractiveCliTerminal() {
   useEffect(() => {
     if (!isInView || !isPlaying) return;
 
-    const timer = setInterval(() => {
-      setStep((prev) => (prev >= 8 ? 0 : prev + 1));
-    }, 1400);
+    // Realistic CLI execution pacing
+    const delay = step === 8 ? 3400 : step === 0 ? 1400 : step === 2 ? 1200 : 750;
 
-    return () => clearInterval(timer);
-  }, [isInView, isPlaying]);
+    const timer = setTimeout(() => {
+      setStep((prev) => (prev >= 8 ? 0 : prev + 1));
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [isInView, isPlaying, step]);
 
   const handleReplay = () => {
     setStep(0);
@@ -42,17 +45,19 @@ export default function InteractiveCliTerminal() {
   };
 
   return (
-    <section className="w-full max-w-4xl mx-auto px-4 py-20 text-left font-mono select-none">
-      {/* Section Header */}
-      <div className="text-center max-w-2xl mx-auto mb-10">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-xs text-amber-400 mb-4">
-          <Zap className="w-3.5 h-3.5 text-amber-400" /> Instant Local Onboarding
+    <section className="flex flex-col items-center justify-center w-full max-w-6xl mx-auto px-4 sm:px-6 py-28 md:py-36 text-zinc-100 font-mono select-none">
+      {/* Symmetrical Centered Section Header */}
+      <div className="w-full max-w-3xl mx-auto flex flex-col items-center justify-center text-center mb-16">
+        <div className="w-full flex justify-center mb-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-xs text-amber-400 shadow-sm">
+            <Zap className="w-3.5 h-3.5 text-amber-400" /> Instant Local Onboarding
+          </div>
         </div>
-        <h3 className="text-2xl sm:text-4xl font-bold tracking-tight text-zinc-100 mb-3">
+        <h3 className="text-2xl sm:text-4xl font-semibold tracking-tight text-zinc-100 mb-4 text-center w-full">
           One Command.{' '}
           <span className="font-serif italic font-normal text-amber-300">Every AI Agent Configured.</span>
         </h3>
-        <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed">
+        <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed text-center max-w-xl mx-auto w-full font-sans">
           No manual JSON editing. Automatically detect your project structure, lock down rule formats, and register stdio MCP servers in seconds.
         </p>
       </div>
@@ -60,7 +65,7 @@ export default function InteractiveCliTerminal() {
       {/* Terminal Mock Window */}
       <div
         ref={containerRef}
-        className="w-full rounded-2xl border border-zinc-800 bg-[#070707] shadow-2xl overflow-hidden"
+        className="w-full max-w-4xl mx-auto rounded-2xl border border-zinc-800 bg-[#070707] shadow-2xl overflow-hidden text-left"
       >
         {/* Chrome Title Bar */}
         <div className="px-4 py-3 bg-zinc-950/90 border-b border-zinc-850 flex items-center justify-between">

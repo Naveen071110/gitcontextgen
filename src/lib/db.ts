@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient, createAdminClient } from './supabase/server';
-import { Project, DocAsset, Release, Subscriber, UserSubscription, SubscriptionTier, SubscriptionStatus, DfyOnboarding } from './types';
+import { Project, DocAsset, Release, Subscriber, UserSubscription, SubscriptionTier, SubscriptionStatus, DfyOnboarding, AnalyzedCodebaseOutputs, RepositoryAnalysisResult } from './types';
 import { MockStore } from './mockStore';
 
 // ---------------------------------------------------------------------------
@@ -75,19 +75,27 @@ export async function createProject(payload: {
   user_id: string;
   repo_url: string;
   slug: string;
+  repo_name?: string;
+  status?: 'analyzing' | 'completed' | 'failed';
+  analysis_results?: AnalyzedCodebaseOutputs;
   branding_color?: string;
   audience_tone?: string;
 }): Promise<Project> {
   const webhookSecret = 'whsec_' + crypto.randomUUID().slice(0, 12);
+  const repoName = payload.repo_name || payload.repo_url.split('/').pop()?.replace(/\.git$/, '') || payload.slug;
+  const status = payload.status || 'completed';
 
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('projects')
       .insert({
         user_id: payload.user_id,
+        repo_name: repoName,
         repo_url: payload.repo_url,
         slug: payload.slug,
+        status,
+        analysis_results: payload.analysis_results || null,
         branding_color: payload.branding_color || '#6366f1',
         audience_tone: payload.audience_tone || 'technical',
         webhook_secret: webhookSecret,
@@ -95,9 +103,35 @@ export async function createProject(payload: {
       .select()
       .single();
 
+    // If Supabase table schema does not yet have repo_name / status / analysis_results, retry with basic columns
+    if (error) {
+      const retryResult = await supabase
+        .from('projects')
+        .insert({
+          user_id: payload.user_id,
+          repo_url: payload.repo_url,
+          slug: payload.slug,
+          branding_color: payload.branding_color || '#6366f1',
+          audience_tone: payload.audience_tone || 'technical',
+          webhook_secret: webhookSecret,
+        })
+        .select()
+        .single();
+      if (!retryResult.error && retryResult.data) {
+        data = retryResult.data;
+        error = null;
+      }
+    }
+
     if (!error && data) {
-      MockStore.saveProject(data as Project);
-      return data as Project;
+      const fullProject: Project = {
+        ...(data as Project),
+        repo_name: data.repo_name || repoName,
+        status: data.status || status,
+        analysis_results: data.analysis_results || payload.analysis_results,
+      };
+      MockStore.saveProject(fullProject);
+      return fullProject;
     }
 
     console.warn('[Database] Supabase createProject error (falling back to resilient store):', error?.message);
@@ -108,13 +142,42 @@ export async function createProject(payload: {
   // Resilient fallback: Save in MockStore so the user is NEVER blocked from adding repositories!
   const localProject = MockStore.saveProject({
     user_id: payload.user_id,
+    repo_name: repoName,
     repo_url: payload.repo_url,
     slug: payload.slug,
+    status,
+    analysis_results: payload.analysis_results,
     branding_color: payload.branding_color || '#6366f1',
+    audience_tone: (payload.audience_tone as any) || 'technical',
     webhook_secret: webhookSecret,
   });
 
   return localProject;
+}
+
+export async function updateProjectStatus(
+  projectId: string,
+  status: 'analyzing' | 'completed' | 'failed',
+  analysisResults?: AnalyzedCodebaseOutputs
+): Promise<Project | null> {
+  try {
+    const supabase = await createClient();
+    await supabase
+      .from('projects')
+      .update({
+        status,
+        ...(analysisResults ? { analysis_results: analysisResults } : {}),
+      })
+      .eq('id', projectId);
+  } catch (err: any) {
+    console.warn('[Database] updateProjectStatus Supabase warning:', err?.message);
+  }
+
+  const updated = MockStore.updateProject(projectId, {
+    status,
+    ...(analysisResults ? { analysis_results: analysisResults } : {}),
+  });
+  return updated;
 }
 
 export async function deleteProjectDb(projectId: string): Promise<boolean> {
@@ -370,3 +433,84 @@ export async function addDfyOnboardingDb(payload: {
   return localDfy;
 }
 
+
+
+// ---------------------------------------------------------------------------
+// L2 Database Caching for Public Analysis (12-Hour TTL)
+// Shields outbound requests against GitHub REST API rate limits
+// ---------------------------------------------------------------------------
+
+const L2_CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 Hours
+
+export async function getL2CachedAnalysis(
+  owner: string,
+  repo: string
+): Promise<RepositoryAnalysisResult | null> {
+  const repoKey = `${owner}/${repo}`.toLowerCase();
+
+  try {
+    const admin = createAdminClient();
+
+    // 1. Query cache_store table
+    const { data: cacheRecord, error: cacheError } = await admin
+      .from('cache_store')
+      .select('analysis_results, created_at')
+      .eq('repo_key', repoKey)
+      .maybeSingle();
+
+    if (!cacheError && cacheRecord && cacheRecord.analysis_results) {
+      const createdAt = new Date(cacheRecord.created_at).getTime();
+      if (Date.now() - createdAt < L2_CACHE_TTL_MS) {
+        return cacheRecord.analysis_results as RepositoryAnalysisResult;
+      }
+    }
+
+    // 2. Query projects table as secondary database source
+    const { data: projectRecord, error: projError } = await admin
+      .from('projects')
+      .select('analysis_results, created_at')
+      .ilike('repo_url', `%${owner}/${repo}%`)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!projError && projectRecord && projectRecord.analysis_results) {
+      const createdAt = new Date(projectRecord.created_at).getTime();
+      if (Date.now() - createdAt < L2_CACHE_TTL_MS) {
+        return projectRecord.analysis_results as RepositoryAnalysisResult;
+      }
+    }
+  } catch (err: any) {
+    console.warn('[L2 Cache] Supabase lookup error, falling back to local store:', err?.message);
+  }
+
+  // 3. Fallback to resilient in-memory MockStore
+  return MockStore.getL2Cache(repoKey, L2_CACHE_TTL_MS);
+}
+
+export async function saveL2CachedAnalysis(
+  owner: string,
+  repo: string,
+  data: RepositoryAnalysisResult
+): Promise<void> {
+  const repoKey = `${owner}/${repo}`.toLowerCase();
+
+  // Always update in-memory cache immediately
+  MockStore.setL2Cache(repoKey, data);
+
+  try {
+    const admin = createAdminClient();
+    await admin
+      .from('cache_store')
+      .upsert(
+        {
+          repo_key: repoKey,
+          analysis_results: data,
+          created_at: new Date().toISOString(),
+        },
+        { onConflict: 'repo_key' }
+      );
+  } catch (err: any) {
+    console.warn('[L2 Cache] Could not persist to Supabase cache_store:', err?.message);
+  }
+}

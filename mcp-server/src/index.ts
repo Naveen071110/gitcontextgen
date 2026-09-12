@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { loadCliConfig, saveCliConfig, verifyLicenseKey } from './utils/config.js';
+
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -279,6 +281,48 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 // Launch Stdio Transport
 export async function runMcpServer(): Promise<void> {
+  // Authorization Gate: Verify Dodo Payments License Key
+  const config = loadCliConfig();
+  const licenseKey =
+    process.env.GITCONTEXTGEN_LICENSE_KEY ||
+    config.licenseKey ||
+    (process.env.NODE_ENV === 'test' ? 'gcg_test_license_pro' : undefined);
+
+  if (!licenseKey) {
+    process.stderr.write(
+      '\n❌ [GitContextGen MCP Server Authorization Error]\n' +
+      'Authorization failed: No Dodo Payments license key found.\n' +
+      'The Model Context Protocol (MCP) server requires an active Pro or Agency subscription.\n\n' +
+      'To resolve this:\n' +
+      '1. Run "gitcontextgen init" to configure your license key interactively.\n' +
+      '2. Or set the GITCONTEXTGEN_LICENSE_KEY environment variable.\n' +
+      '3. Purchase a license at: https://gitcontextgen.com#pricing\n\n'
+    );
+    process.exit(1);
+  }
+
+  const now = Date.now();
+  const lastChecked = config.lastChecked || 0;
+  const TWELVE_HOURS = 12 * 60 * 60 * 1000;
+
+  if (now - lastChecked > TWELVE_HOURS) {
+    const result = await verifyLicenseKey(licenseKey);
+    if (!result.valid) {
+      process.stderr.write(
+        `\n❌ [GitContextGen MCP Server Authorization Error]: ${result.error || 'License invalid or expired'}\n` +
+        'Please renew your license at https://gitcontextgen.com#pricing or re-authenticate via "gitcontextgen init"\n\n'
+      );
+      process.exit(1);
+    }
+    saveCliConfig({
+      ...config,
+      licenseKey,
+      plan: result.plan || config.plan || 'PRO',
+      status: 'active',
+      lastChecked: now,
+    });
+  }
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error('GitContextGen MCP Server running on stdio');

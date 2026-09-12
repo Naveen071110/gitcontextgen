@@ -18,11 +18,18 @@ export default function SignupPage() {
     try {
       const supabase = createClient();
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const callbackUrl = new URL(`${origin}/auth/callback`);
+      if (params) {
+        if (params.get('next')) callbackUrl.searchParams.set('next', params.get('next')!);
+        if (params.get('save_owner')) callbackUrl.searchParams.set('save_owner', params.get('save_owner')!);
+        if (params.get('save_repo')) callbackUrl.searchParams.set('save_repo', params.get('save_repo')!);
+      }
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
           scopes: 'read:user repo',
-          redirectTo: `${origin}/auth/callback`,
+          redirectTo: callbackUrl.toString(),
         },
       });
       if (error) setError(error.message);

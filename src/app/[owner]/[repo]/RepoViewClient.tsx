@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { analyzeRepositoryAction } from '@/lib/actions';
 import { RepositoryAnalysisResult } from '@/lib/types';
 import TerminalLoader from '@/components/TerminalLoader';
-import RepoDashboard from '@/components/RepoDashboard';
+import RepoWorkspaceView from '@/components/RepoWorkspaceView';
 import { GitHubBrandIcon } from '@/components/icons/Integrations';
+import { createClient } from '@/lib/supabase/client';
 import { ShieldAlert, Lock, ArrowRight, RotateCcw } from 'lucide-react';
 
 interface RepoViewClientProps {
@@ -19,6 +20,29 @@ export default function RepoViewClient({ owner, repo }: RepoViewClientProps) {
   const [result, setResult] = useState<RepositoryAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPrivateOrUnauthorized, setIsPrivateOrUnauthorized] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [isSaved, setIsSaved] = useState<boolean>(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data.user) {
+        setUser(data.user);
+        try {
+          const res = await fetch('/api/projects');
+          if (res.ok) {
+            const json = await res.json();
+            const exists = (json.projects || []).some(
+              (p: any) => p.repo_url?.toLowerCase().includes(`${owner}/${repo}`.toLowerCase())
+            );
+            if (exists) setIsSaved(true);
+          }
+        } catch (e) {
+          console.warn('Could not check saved status:', e);
+        }
+      }
+    });
+  }, [owner, repo]);
 
   const fetchRepoAnalysis = useCallback(async (bypassCache = false) => {
     setIsLoading(true);
@@ -54,6 +78,31 @@ export default function RepoViewClient({ owner, repo }: RepoViewClientProps) {
     fetchRepoAnalysis();
   }, [fetchRepoAnalysis]);
 
+  const handleSave = async () => {
+    if (!user) {
+      window.location.href = `/auth/login?save_owner=${owner}&save_repo=${repo}&next=/${owner}/${repo}`;
+      return;
+    }
+    if (!result) return;
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repo_url: result.repoUrl,
+          repo_name: `${result.owner}/${result.repo}`,
+          status: 'completed',
+          analysis_results: result.monetizableOutputs,
+        }),
+      });
+      if (res.ok) {
+        setIsSaved(true);
+      }
+    } catch (err) {
+      console.warn('Failed to save project:', err);
+    }
+  };
+
   // 1. Loading state with TerminalLoader animation
   if (isLoading) {
     return (
@@ -86,7 +135,7 @@ export default function RepoViewClient({ owner, repo }: RepoViewClientProps) {
 
           <div className="space-y-3 pt-2">
             <Link
-              href={`/auth/login?next=/${owner}/${repo}`}
+              href={`/auth/login?save_owner=${owner}&save_repo=${repo}&next=/${owner}/${repo}`}
               className="w-full py-3 px-4 rounded-xl bg-[#238636] hover:bg-[#2ea043] text-white font-semibold text-xs flex items-center justify-center gap-2 transition shadow-lg cursor-pointer"
             >
               <GitHubBrandIcon className="w-4 h-4" />
@@ -118,6 +167,7 @@ export default function RepoViewClient({ owner, repo }: RepoViewClientProps) {
             <h2 className="text-lg font-bold text-[#f0f6fc]">Analysis Failed</h2>
             <p className="text-xs text-[#8b949e]">{error || 'Could not fetch repository.'}</p>
           </div>
+
           <button
             onClick={() => fetchRepoAnalysis(true)}
             className="w-full py-2.5 px-4 rounded-xl bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-xs text-[#f0f6fc] flex items-center justify-center gap-2 transition cursor-pointer"
@@ -130,6 +180,19 @@ export default function RepoViewClient({ owner, repo }: RepoViewClientProps) {
     );
   }
 
-  // 4. Render the GitHub-Familiar Dashboard
-  return <RepoDashboard result={result} onReSync={() => fetchRepoAnalysis(true)} />;
+  // 4. Render the Unified 5-Tab GitHub-Familiar Workspace
+  return (
+    <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans flex flex-col">
+      <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <RepoWorkspaceView
+          result={result}
+          isGuest={!user}
+          isSaved={isSaved}
+          onSave={handleSave}
+          onReSync={() => fetchRepoAnalysis(true)}
+          showBackToDashboard={!!user}
+        />
+      </div>
+    </div>
+  );
 }

@@ -1,3 +1,4 @@
+import { loadCliConfig, saveCliConfig, verifyLicenseKey } from '../utils/config.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -48,6 +49,39 @@ export async function executeInit(options: InitOptions = {}): Promise<void> {
   let rl: readline.Interface | null = null;
   if (!isAuto) {
     rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  }
+
+  // License Key Verification Prompt
+  const existingConfig = loadCliConfig();
+  let activeLicense = process.env.GITCONTEXTGEN_LICENSE_KEY || existingConfig.licenseKey;
+  if (!activeLicense) {
+    if (!isAuto && rl) {
+      console.log('\n🔑 Dodo Payments License Key Required for MCP Daemon:');
+      console.log('   The local Model Context Protocol server requires an active Pro/Agency tier.');
+      console.log('   Purchase or view your license: https://gitcontextgen.com#pricing');
+      const inputKey = await rl.question('\nEnter your Dodo Payments License Key (or press Enter to skip): ');
+      if (inputKey.trim()) {
+        activeLicense = inputKey.trim();
+        console.log('⏳ Validating license key...');
+        const check = await verifyLicenseKey(activeLicense);
+        if (check.valid) {
+          saveCliConfig({
+            ...existingConfig,
+            licenseKey: activeLicense,
+            plan: check.plan || 'PRO',
+            status: 'active',
+            verifiedAt: new Date().toISOString(),
+            lastChecked: Date.now(),
+          });
+          console.log(`✅ License verified successfully: Active [${check.plan || 'PRO'}] Plan.`);
+        } else {
+          console.warn(`⚠️  License validation notice: ${check.error}. Key saved to ~/.gitcontextgen/config.json.`);
+          saveCliConfig({ ...existingConfig, licenseKey: activeLicense });
+        }
+      }
+    }
+  } else {
+    console.log(`\n🔑 Dodo License Key: ✅ Configured (${activeLicense.slice(0, 8)}...)`);
   }
 
   const ask = async (prompt: string, defaultYes = true): Promise<boolean> => {

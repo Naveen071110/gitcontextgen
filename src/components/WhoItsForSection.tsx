@@ -68,7 +68,7 @@ export default function WhoItsForSection() {
   const isInView = useInView(ref, { once: true, margin: '-80px' });
 
   return (
-    <section className="flex flex-col items-center justify-center w-full max-w-7xl mx-auto px-4 sm:px-6 py-28 md:py-36 bg-black text-white">
+    <section className="flex flex-col items-center justify-center w-full max-w-6xl mx-auto px-4 sm:px-6 py-28 md:py-36 bg-black text-white">
       <div ref={ref} className="w-full flex flex-col items-center justify-center">
 
         {/* Section Header */}

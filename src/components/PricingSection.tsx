@@ -52,42 +52,55 @@ export default function PricingSection() {
         };
       }
 
-      const res = await fetch('/api/checkout', {
+      const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
+      if (!response.ok) {
+        throw new Error(`Checkout session failed (${response.status})`);
+      }
 
-      const data = await res.json();
+      const r = await response.json();
+      if (!r.url) {
+        throw new Error(r.error || 'Checkout API returned an invalid response');
+      }
 
-      if (data.url) {
-        if (typeof window !== 'undefined') {
-          try {
-            // Attempt standard DodoPayments overlay checkout modal
-            DodoPayments.Checkout.open({ checkoutUrl: data.url });
-          } catch {
-            // Fallback: direct window location redirect to hosted checkout
-            window.location.href = data.url;
-          }
+      // Origin safety check: must be https://checkout.dodopayments.com/ or sandbox/appUrl
+      const isHostedDodo = /^https:\/\/checkout\.dodopayments\.com\//.test(r.url) ||
+                           /^https:\/\/test\.dodopayments\.com\//.test(r.url);
+      const isAppUrlFallback = typeof window !== 'undefined' && (r.url.startsWith(window.location.origin) || r.mode === 'mock');
+
+      if (!isHostedDodo && !isAppUrlFallback) {
+        throw new Error('Checkout API returned an invalid hosted checkout URL');
+      }
+
+      try {
+        if (isHostedDodo && typeof (DodoPayments as any)?.Checkout?.open === 'function') {
+          (DodoPayments as any).Checkout.open({ checkoutUrl: r.url });
+        } else {
+          window.location.assign(r.url);
         }
-      } else if (data.error) {
-        alert(`Checkout error: ${data.error}`);
+      } catch (cause) {
+        console.error('Dodo checkout SDK failed', { requestId: r.requestId, cause });
+        // Only redirect to a validated hosted URL; never redirect to arbitrary/local origins.
+        window.location.assign(r.url);
       }
     } catch (err: any) {
       console.error('Dodo checkout initiation failed:', err);
-      alert('Unable to connect to Dodo Payments checkout session. Please try again.');
+      alert(err.message || 'Unable to connect to Dodo Payments checkout session. Please try again.');
     } finally {
       setLoadingProductId(null);
     }
   };
 
   return (
-    <section id="pricing" className="flex flex-col items-center justify-center w-full max-w-7xl mx-auto px-4 sm:px-6 py-20 md:py-28 bg-[#030303] text-zinc-100 selection:bg-amber-400 selection:text-black">
+    <section id="pricing" className="flex flex-col items-center justify-center w-full max-w-6xl mx-auto px-4 sm:px-6 py-28 md:py-36 bg-[#030303] text-zinc-100 selection:bg-amber-400 selection:text-black">
       <div className="w-full flex flex-col items-center justify-center">
         
         {/* Section Header */}
-        <div className="w-full max-w-3xl mx-auto flex flex-col items-center text-center mb-10">
+        <div className="w-full max-w-3xl mx-auto flex flex-col items-center text-center mb-12">
           <div className="w-full flex justify-center mb-4">
             <div className="w-fit inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/90 text-xs font-mono text-amber-400 border border-zinc-800 shadow-[0_0_20px_rgba(245,158,11,0.08)]">
               <Zap className="w-3.5 h-3.5 text-amber-400" /> Dodo Payments (Merchant of Record)
@@ -102,14 +115,14 @@ export default function PricingSection() {
           </p>
         </div>
 
-        {/* Step 3: Pricing Switch Toggle Box with solid grid isolation */}
-        <div className="relative flex justify-center items-center mb-12 z-20 w-full">
-          <div className="relative inline-flex items-center h-11 p-1 rounded-full bg-zinc-900 border border-zinc-800 shadow-xl font-mono text-xs select-none touch-manipulation">
+        {/* Step 3: Fixed-Dimension Proportional Flex Toggle Container (Enforces non-wrapping symmetry) */}
+        <div className="w-full max-w-xs mx-auto h-11 relative flex justify-center items-center mb-16 z-20">
+          <div className="relative inline-flex items-center h-11 p-1 rounded-full bg-zinc-900/90 border border-zinc-800 shadow-xl font-mono text-xs select-none touch-manipulation flex-nowrap shrink-0">
             {/* Monthly Button */}
             <button
               type="button"
               onClick={() => setIsAnnual(false)}
-              className={`relative z-10 h-9 w-36 rounded-full font-bold transition-colors duration-200 cursor-pointer touch-manipulation flex items-center justify-center min-h-[36px] ${
+              className={`relative z-10 h-9 px-4 rounded-full font-bold transition-colors duration-200 cursor-pointer touch-manipulation flex items-center justify-center whitespace-nowrap min-h-[36px] ${
                 !isAnnual ? 'text-zinc-950' : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
@@ -127,7 +140,7 @@ export default function PricingSection() {
             <button
               type="button"
               onClick={() => setIsAnnual(true)}
-              className={`relative z-10 h-9 w-40 rounded-full font-bold transition-colors duration-200 cursor-pointer touch-manipulation flex items-center justify-center gap-1.5 min-h-[36px] ${
+              className={`relative z-10 h-9 px-4 rounded-full font-bold transition-colors duration-200 cursor-pointer touch-manipulation flex items-center justify-center gap-1.5 whitespace-nowrap min-h-[36px] ${
                 isAnnual ? 'text-zinc-950' : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
@@ -153,7 +166,7 @@ export default function PricingSection() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch justify-center w-full text-left">
             
             {/* Card 1: Starter Pass (For Solo Hobbyists) */}
-            <div className="p-8 sm:p-9 rounded-3xl bg-zinc-900/30 flex flex-col justify-between space-y-8 border border-zinc-800/80 hover:border-zinc-700 hover:shadow-[0_0_50px_rgba(255,255,255,0.02)] transition-all duration-300">
+            <div className="p-8 rounded-3xl bg-zinc-950/60 flex flex-col justify-between space-y-8 border border-zinc-900 hover:border-zinc-800 transition-all duration-300">
               <div>
                 <div className="flex items-center justify-between gap-2 mb-4">
                   <h3 className="text-xl sm:text-2xl font-bold text-white font-mono">Starter Pass</h3>
@@ -216,7 +229,7 @@ export default function PricingSection() {
             </div>
 
             {/* Card 2: Pro Builder (For Elite Freelancers & Power Users) — Refined Razor-Thin Highlight */}
-            <div className="p-8 sm:p-9 rounded-3xl bg-gradient-to-b from-amber-500/[0.04] via-zinc-900/40 to-black flex flex-col justify-between space-y-8 border border-amber-500/30 hover:border-amber-400/60 shadow-[0_0_40px_rgba(245,158,11,0.06)] relative transition-all duration-300">
+            <div className="p-8 rounded-3xl bg-gradient-to-b from-zinc-900/40 to-black flex flex-col justify-between space-y-8 border border-zinc-700/80 shadow-[0_0_20px_rgba(24,24,27,0.5)] relative transition-all duration-300">
               <div>
                 <div className="flex items-center justify-between gap-2 mb-4">
                   <h3 className="text-xl sm:text-2xl font-bold text-white font-mono">Pro Builder</h3>
@@ -298,7 +311,7 @@ export default function PricingSection() {
             </div>
 
             {/* Card 3: Agency Team (For Dev Agencies & WordPress Shops) */}
-            <div className="p-8 sm:p-9 rounded-3xl bg-zinc-900/30 flex flex-col justify-between space-y-8 border border-zinc-800/80 hover:border-zinc-700 hover:shadow-[0_0_50px_rgba(255,255,255,0.02)] transition-all duration-300">
+            <div className="p-8 rounded-3xl bg-zinc-950/60 flex flex-col justify-between space-y-8 border border-zinc-900 hover:border-zinc-800 transition-all duration-300">
               <div>
                 <div className="flex items-center justify-between gap-2 mb-4">
                   <h3 className="text-xl sm:text-2xl font-bold text-white font-mono">Agency Team</h3>
@@ -387,7 +400,7 @@ export default function PricingSection() {
         </div>
 
         {/* Step 5: Done-For-You (DFY) Setup Add-On (High-Margin Upsell) */}
-        <div className="w-full max-w-4xl mx-auto rounded-3xl bg-zinc-900/50 border border-zinc-800 hover:border-amber-500/30 p-8 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-8 text-left shadow-2xl mb-14 relative overflow-hidden transition-all duration-300">
+        <div className="w-full max-w-4xl mx-auto rounded-2xl bg-zinc-950/80 border border-zinc-900 hover:border-zinc-800 p-8 flex flex-col md:flex-row items-center justify-between gap-8 text-left shadow-2xl mb-14 relative overflow-hidden transition-all duration-300">
           <div className="space-y-3 max-w-xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 text-amber-300 text-[11px] font-mono font-bold border border-amber-400/30">
               <Users className="w-3.5 h-3.5 text-amber-400" /> Done-For-You Team Integration Pack
@@ -428,7 +441,7 @@ export default function PricingSection() {
         </div>
 
         {/* 100% Zero-Risk Guarantee */}
-        <div className="w-full max-w-4xl mx-auto rounded-2xl bg-zinc-950 border border-zinc-800/80 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 text-left shadow-2xl">
+        <div className="w-full max-w-4xl mx-auto rounded-2xl bg-zinc-950 border border-zinc-900 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 text-left shadow-2xl">
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 shrink-0">
               <ShieldCheck className="w-6 h-6 text-amber-400" />

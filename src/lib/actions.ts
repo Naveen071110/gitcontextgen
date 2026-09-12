@@ -2,9 +2,12 @@
 
 import { parseGitHubUrl, fetchGitHubRepoDetails } from './github';
 import { generateClaudeContext, generateMermaidArchitecture, generateReleaseNotes, calculateReadinessScore, generateContextExport, ExportFormat } from './ai-engine';
-import { RepositoryAnalysisResult } from './types';
+import { RepositoryAnalysisResult, Project, AnalyzedCodebaseOutputs } from './types';
+import { analyzeCodebase } from './analyzer/engine';
 import {
   getUserProjects,
+  getL2CachedAnalysis,
+  saveL2CachedAnalysis,
   getProjectById,
   createProject,
   deleteProjectDb,
@@ -58,6 +61,13 @@ export async function analyzeRepositoryAction(
       return { success: true, data: existingCache.data, cached: true };
     }
 
+    // L2 Database Cache Check: Bypass GitHub API if cached within 12 hours
+    const l2Cached = await getL2CachedAnalysis(parsed.owner, parsed.repo);
+    if (l2Cached) {
+      setInCache(cacheKey, { data: l2Cached, timestamp: Date.now() });
+      return { success: true, data: l2Cached, cached: true };
+    }
+
     const repoInfo = await fetchGitHubRepoDetails(parsed.owner, parsed.repo, userToken);
 
     const [contextMarkdown, mermaidArchitecture, vulnSummary, frameworkInsights] = await Promise.all([
@@ -99,6 +109,18 @@ export async function analyzeRepositoryAction(
       repoInfo.repo
     );
 
+    const monetizableOutputs = analyzeCodebase({
+      repoName: repoInfo.repo,
+      owner: repoInfo.owner,
+      repo: repoInfo.repo,
+      defaultBranch: repoInfo.defaultBranch,
+      fileTreeSummary: repoInfo.fileTreeSummary,
+      readmeContent: repoInfo.readmeContent,
+      manifestContent: repoInfo.manifestContent,
+      parsedDependencies: repoInfo.parsedDependencies,
+      recentCommits: repoInfo.recentCommits,
+    });
+
     const result: RepositoryAnalysisResult = {
       repoUrl: `https://github.com/${repoInfo.owner}/${repoInfo.repo}`,
       owner: repoInfo.owner,
@@ -106,17 +128,23 @@ export async function analyzeRepositoryAction(
       defaultBranch: repoInfo.defaultBranch,
       fileTreeSummary: repoInfo.fileTreeSummary,
       readmeContent: repoInfo.readmeContent,
-      contextMarkdown,
-      mermaidArchitecture,
+      contextMarkdown: monetizableOutputs.onboarding.claudeMd || contextMarkdown,
+      mermaidArchitecture: monetizableOutputs.architecture.mermaidGraph || mermaidArchitecture,
       analyzedAt: new Date().toISOString(),
       licenseSpdx: repoInfo.licenseSpdx || undefined,
       radarChartUrl,
       krokiDiagramUrls: krokiUrls,
       vulnerabilityCount: vulnSummary.totalVulnerabilities,
       criticalVulnerabilityCount: vulnSummary.criticalCount,
+      monetizableOutputs,
     };
 
     setInCache(cacheKey, { data: result, timestamp: Date.now() });
+    try {
+      await saveL2CachedAnalysis(repoInfo.owner, repoInfo.repo, result);
+    } catch (l2Err) {
+      console.warn('[L2 Cache] Non-blocking cache persistence notice:', l2Err);
+    }
 
     return { success: true, data: result, cached: false };
   } catch (err: any) {
@@ -190,7 +218,10 @@ export async function saveProjectAction(payload: {
   contextMarkdown: string;
   mermaidArchitecture: string;
   brandingColor?: string;
-}): Promise<{ success: boolean; projectId?: string; slug?: string; error?: string }> {
+  repoName?: string;
+  status?: 'analyzing' | 'completed' | 'failed';
+  analysis_results?: AnalyzedCodebaseOutputs;
+}): Promise<{ success: boolean; projectId?: string; slug?: string; project?: Project; error?: string }> {
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -206,23 +237,195 @@ export async function saveProjectAction(payload: {
     }
 
     const parsed = parseGitHubUrl(payload.repoUrl);
-    const repoName = parsed ? parsed.repo : 'my-repo';
+    const repoName = payload.repoName || (parsed ? parsed.repo : 'my-repo');
     const slug = (repoName + '-' + Math.random().toString(36).substring(2, 6)).toLowerCase();
 
     const project = await createProject({
       user_id: user.id,
+      repo_name: repoName,
       repo_url: payload.repoUrl,
       slug,
+      status: payload.status || 'completed',
+      analysis_results: payload.analysis_results,
       branding_color: payload.brandingColor || '#6366f1',
       audience_tone: 'technical',
     });
 
     await saveDocAssets(project.id, payload.contextMarkdown, payload.mermaidArchitecture);
 
-    return { success: true, projectId: project.id, slug: project.slug };
+    return { success: true, projectId: project.id, slug: project.slug, project };
   } catch (err: unknown) {
     console.error('Error saving project:', err);
     return { success: false, error: (err as any)?.message || 'Failed to securely save project workspace.' };
+  }
+}
+
+export async function createAndAnalyzeProjectAction(payload: {
+  repoUrl: string;
+  userToken?: string;
+  brandingColor?: string;
+}): Promise<{
+  success: boolean;
+  project?: Project;
+  analysis?: RepositoryAnalysisResult;
+  error?: string;
+  diagnostic?: string;
+}> {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return {
+        success: false,
+        error: 'Unauthorized: You must be signed in with GitHub to add a repository.',
+        diagnostic: 'Session missing or expired. Please sign in with GitHub.',
+      };
+    }
+
+    if (!payload.repoUrl || typeof payload.repoUrl !== 'string') {
+      return {
+        success: false,
+        error: 'Please enter a valid GitHub repository URL.',
+        diagnostic: 'Repository URL is required and cannot be empty.',
+      };
+    }
+
+    const parsed = parseGitHubUrl(payload.repoUrl.trim());
+    if (!parsed || !parsed.owner || !parsed.repo) {
+      return {
+        success: false,
+        error: 'Invalid GitHub URL. Must be in the format: https://github.com/owner/repository',
+        diagnostic: 'Please ensure the URL points to a valid public or accessible repository on GitHub.',
+      };
+    }
+
+    // Enforce tier repository creation limits (Starter: 1, Pro: 5, Agency: Unlimited)
+    const limitCheck = await validateRepoCreationLimit(user.id);
+    if (!limitCheck.allowed) {
+      return {
+        success: false,
+        error: limitCheck.error || 'Plan limit exceeded. Please upgrade your subscription.',
+        diagnostic: `Tier ${limitCheck.tier} limit reached (${limitCheck.currentCount}/${limitCheck.limit} repos). Upgrade to Starter, Pro, or Agency.`,
+      };
+    }
+
+    const slug = `${parsed.repo}-${Math.random().toString(36).substring(2, 6)}`.toLowerCase();
+
+    // Fetch repository details from GitHub API with graceful diagnostics
+    let repoInfo;
+    try {
+      repoInfo = await fetchGitHubRepoDetails(parsed.owner, parsed.repo, payload.userToken);
+    } catch (ghErr: any) {
+      const errMsg = ghErr?.message || '';
+      const isPrivateOrNotFound = errMsg.includes('404') || errMsg.includes('Not Found') || errMsg.includes('private');
+      const isRateLimit = errMsg.includes('403') || errMsg.includes('rate limit');
+
+      let diagnostic = 'Failed to fetch repository from GitHub.';
+      let userError = errMsg;
+      if (isPrivateOrNotFound) {
+        userError = 'Private repository detected. Please check permissions.';
+        diagnostic = 'Private repository detected or repository not found. Please verify your repository permissions or connect a GitHub account with read access.';
+      } else if (isRateLimit) {
+        userError = 'GitHub API rate limit exceeded. Please try again shortly.';
+        diagnostic = 'GitHub API rate limit reached. Authenticate with a personal access token for higher limits.';
+      }
+
+      return {
+        success: false,
+        error: userError,
+        diagnostic,
+      };
+    }
+
+    // Run the high-performance analyzer engine to generate all 4 monetizable deliverables
+    const monetizableOutputs = analyzeCodebase({
+      repoName: parsed.repo,
+      owner: parsed.owner,
+      repo: parsed.repo,
+      defaultBranch: repoInfo.defaultBranch,
+      fileTreeSummary: repoInfo.fileTreeSummary,
+      readmeContent: repoInfo.readmeContent,
+      manifestContent: repoInfo.manifestContent,
+      parsedDependencies: repoInfo.parsedDependencies,
+      recentCommits: repoInfo.recentCommits,
+    });
+
+    const contextMarkdown = monetizableOutputs.onboarding.claudeMd;
+    const mermaidArchitecture = monetizableOutputs.architecture.mermaidGraph;
+
+    // Run peripheral integrations asynchronously in parallel
+    const [vulnSummary, frameworkInsights] = await Promise.all([
+      auditPackageVulnerabilities(repoInfo.parsedDependencies, repoInfo.ecosystem).catch(() => ({ totalVulnerabilities: 0, criticalCount: 0 })),
+      auditEcosystemFrameworks(repoInfo.parsedDependencies, repoInfo.ecosystem).catch(() => []),
+    ]);
+
+    const krokiUrls = generateKrokiDiagramUrls(mermaidArchitecture, repoInfo.repo);
+    const readinessResult = calculateReadinessScore(
+      repoInfo.fileTreeSummary,
+      repoInfo.manifestContent,
+      repoInfo.readmeContent,
+      vulnSummary.totalVulnerabilities,
+      repoInfo.licenseSpdx
+    );
+
+    const radarChartUrl = generateReadinessRadarChartUrl(
+      {
+        overallScore: readinessResult.overallScore,
+        setupScore: readinessResult.setupClarity.score,
+        testScore: readinessResult.testClarity.score,
+        archScore: readinessResult.architectureClarity.score,
+        safetyScore: readinessResult.boundarySafety.score,
+        multiAgentScore: readinessResult.multiAgentCoverage.score,
+      },
+      repoInfo.repo
+    );
+
+    const analysisResult: RepositoryAnalysisResult = {
+      repoUrl: `https://github.com/${repoInfo.owner}/${repoInfo.repo}`,
+      owner: repoInfo.owner,
+      repo: repoInfo.repo,
+      defaultBranch: repoInfo.defaultBranch,
+      fileTreeSummary: repoInfo.fileTreeSummary,
+      readmeContent: repoInfo.readmeContent,
+      contextMarkdown,
+      mermaidArchitecture,
+      analyzedAt: new Date().toISOString(),
+      licenseSpdx: repoInfo.licenseSpdx || undefined,
+      radarChartUrl,
+      krokiDiagramUrls: krokiUrls,
+      vulnerabilityCount: vulnSummary.totalVulnerabilities,
+      criticalVulnerabilityCount: vulnSummary.criticalCount,
+      monetizableOutputs,
+    };
+
+    // Atomically persist to database
+    const project = await createProject({
+      user_id: user.id,
+      repo_name: parsed.repo,
+      repo_url: `https://github.com/${repoInfo.owner}/${repoInfo.repo}`,
+      slug,
+      status: 'completed',
+      analysis_results: monetizableOutputs,
+      branding_color: payload.brandingColor || '#6366f1',
+      audience_tone: 'technical',
+    });
+
+    // Save doc assets for backwards-compatibility
+    await saveDocAssets(project.id, contextMarkdown, mermaidArchitecture);
+
+    return {
+      success: true,
+      project,
+      analysis: analysisResult,
+    };
+  } catch (err: any) {
+    console.error('Error in createAndAnalyzeProjectAction:', err);
+    return {
+      success: false,
+      error: err?.message || 'Failed to analyze and save repository workspace.',
+      diagnostic: 'An unexpected error occurred while analyzing and saving the repository. Please retry.',
+    };
   }
 }
 

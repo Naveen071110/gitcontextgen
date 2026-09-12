@@ -30,6 +30,9 @@ export interface EntitlementsResult {
   };
 }
 
+// Development & Launch Mode: Bypass repository limits during testing and launch onboarding
+export const DEV_BYPASS_LIMITS = true;
+
 /**
  * Resolves comprehensive feature entitlements for a given user
  */
@@ -38,11 +41,11 @@ export async function getUserEntitlements(userId: string): Promise<EntitlementsR
 
   // If no explicit DB record, default to STARTER during demo/test mode or initial sign-in
   const tier: SubscriptionTier = subscription?.status === 'active' ? subscription.tier : 'STARTER';
-  const isActive = subscription ? subscription.status === 'active' : true;
-  const maxRepos = TIER_LIMITS[tier] ?? 1;
+  const isActive = subscription ? subscription.status === 'active' ? true : DEV_BYPASS_LIMITS : true;
+  const maxRepos = DEV_BYPASS_LIMITS ? Infinity : (TIER_LIMITS[tier] ?? 1);
 
   const currentRepoCount = await countUserProjects(userId);
-  const canCreateRepo = currentRepoCount < maxRepos;
+  const canCreateRepo = DEV_BYPASS_LIMITS || currentRepoCount < maxRepos;
 
   const isProOrAgency = tier === 'PRO' || tier === 'AGENCY';
   const isAgency = tier === 'AGENCY';
@@ -86,13 +89,13 @@ export async function validateRepoCreationLimit(userId: string): Promise<{
 }> {
   const entitlements = await getUserEntitlements(userId);
 
-  // Agency tier bypasses all repository limits
-  if (entitlements.tier === 'AGENCY') {
+  // Development / Launch bypass or Agency tier bypasses all repository limits
+  if (DEV_BYPASS_LIMITS || entitlements.tier === 'AGENCY') {
     return {
       allowed: true,
       currentCount: entitlements.currentRepoCount,
       limit: Infinity,
-      tier: 'AGENCY',
+      tier: entitlements.tier,
     };
   }
 

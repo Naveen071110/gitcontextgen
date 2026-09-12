@@ -2,7 +2,7 @@ import { XCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 export default function ProblemAgitationSection() {
   return (
-    <section className="flex flex-col items-center justify-center w-full max-w-7xl mx-auto px-4 sm:px-6 py-28 md:py-36 bg-black text-white relative">
+    <section className="flex flex-col items-center justify-center w-full max-w-6xl mx-auto px-4 sm:px-6 py-28 md:py-36 bg-black text-white relative">
       <div className="w-full flex flex-col items-center justify-center">
         
         {/* Header */}

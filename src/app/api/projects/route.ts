@@ -1,8 +1,12 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createProject, deleteProjectDb, getProjectById, getUserProjects } from '@/lib/db';
 import { validateRepoCreationLimit } from '@/lib/entitlements';
-import { parseGitHubUrl } from '@/lib/github';
+import { parseGitHubUrl, fetchGitHubRepoDetails } from '@/lib/github';
+import { analyzeCodebase } from '@/lib/analyzer/engine';
 
 async function resolveUser(req: Request) {
   // Test/Mock bypass header for automated integration test runners
@@ -83,10 +87,33 @@ export async function POST(req: Request) {
   const slug = `${parsed.repo}-${Math.random().toString(36).substring(2, 7)}`.toLowerCase();
 
   try {
+    let analysisResults = body?.analysis_results;
+    if (!analysisResults) {
+      try {
+        const repoInfo = await fetchGitHubRepoDetails(parsed.owner, parsed.repo);
+        analysisResults = analyzeCodebase({
+          repoName: repoInfo.repo,
+          owner: repoInfo.owner,
+          repo: repoInfo.repo,
+          defaultBranch: repoInfo.defaultBranch,
+          fileTreeSummary: repoInfo.fileTreeSummary,
+          readmeContent: repoInfo.readmeContent,
+          manifestContent: repoInfo.manifestContent,
+          parsedDependencies: repoInfo.parsedDependencies,
+          recentCommits: repoInfo.recentCommits,
+        });
+      } catch (err) {
+        console.warn('Could not auto-generate analysis_results during project creation:', err);
+      }
+    }
+
     const project = await createProject({
       user_id: user.id,
+      repo_name: body?.repo_name || parsed.repo,
       repo_url: repoUrl,
       slug,
+      status: body?.status || 'completed',
+      analysis_results: analysisResults,
       branding_color: body?.branding_color || '#6366f1',
       audience_tone: body?.audience_tone || 'technical',
     });

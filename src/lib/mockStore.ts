@@ -8,6 +8,7 @@ const globalObj = globalThis as unknown as {
   __memorySubscribers?: Map<string, Subscriber[]>;
   __memorySubscriptions?: Map<string, UserSubscription>;
   __memoryDfyOnboardings?: Map<string, DfyOnboarding>;
+  __memoryL2Cache?: Map<string, { data: any; timestamp: number }>;
 };
 
 const memoryProjects: Map<string, Project> = globalObj.__memoryProjects || (globalObj.__memoryProjects = new Map());
@@ -16,6 +17,7 @@ const memoryReleases: Map<string, Release[]> = globalObj.__memoryReleases || (gl
 const memorySubscribers: Map<string, Subscriber[]> = globalObj.__memorySubscribers || (globalObj.__memorySubscribers = new Map());
 const memorySubscriptions: Map<string, UserSubscription> = globalObj.__memorySubscriptions || (globalObj.__memorySubscriptions = new Map());
 const memoryDfyOnboardings: Map<string, DfyOnboarding> = globalObj.__memoryDfyOnboardings || (globalObj.__memoryDfyOnboardings = new Map());
+const memoryL2Cache: Map<string, { data: any; timestamp: number }> = globalObj.__memoryL2Cache || (globalObj.__memoryL2Cache = new Map());
 
 // Seed mock project for immediate demo/testing
 const sampleId = 'demo-project-123';
@@ -133,16 +135,22 @@ export const MockStore = {
 
   saveProject(project: Partial<Project>, contextDoc?: string, archDoc?: string) {
     const id = project.id || 'proj_' + crypto.randomUUID().slice(0, 9);
-    const slug = project.slug || (project.repo_url ? project.repo_url.split('/').pop()?.toLowerCase() || 'repo-app' : 'my-repo');
+    const existing = memoryProjects.get(id);
+    const slug = project.slug || existing?.slug || (project.repo_url ? project.repo_url.split('/').pop()?.toLowerCase() || 'repo-app' : 'my-repo');
+    const repoName = project.repo_name || existing?.repo_name || (project.repo_url ? project.repo_url.split('/').pop()?.replace(/\.git$/, '') : 'repo');
     
     const newProject: Project = {
       id,
-      user_id: project.user_id || 'user_demo',
-      repo_url: project.repo_url || 'https://github.com/example/repo',
+      user_id: project.user_id || existing?.user_id || 'user_demo',
+      repo_name: repoName,
+      repo_url: project.repo_url || existing?.repo_url || 'https://github.com/example/repo',
       slug,
-      webhook_secret: project.webhook_secret || 'whsec_' + crypto.randomUUID().slice(0, 12),
-      branding_color: project.branding_color || '#6366f1',
-      created_at: new Date().toISOString(),
+      status: project.status || existing?.status || 'completed',
+      analysis_results: project.analysis_results || existing?.analysis_results,
+      webhook_secret: project.webhook_secret || existing?.webhook_secret || 'whsec_' + crypto.randomUUID().slice(0, 12),
+      branding_color: project.branding_color || existing?.branding_color || '#6366f1',
+      audience_tone: project.audience_tone || existing?.audience_tone || 'technical',
+      created_at: project.created_at || existing?.created_at || new Date().toISOString(),
     };
 
     memoryProjects.set(id, newProject);
@@ -171,6 +179,14 @@ export const MockStore = {
     }
 
     return newProject;
+  },
+
+  updateProject(id: string, updates: Partial<Project>): Project | null {
+    const existing = memoryProjects.get(id);
+    if (!existing) return null;
+    const updated: Project = { ...existing, ...updates };
+    memoryProjects.set(id, updated);
+    return updated;
   },
 
   deleteProject(id: string) {
@@ -271,5 +287,23 @@ export const MockStore = {
     memorySubscribers.clear();
     memorySubscriptions.clear();
     memoryDfyOnboardings.clear();
-  }
+    memoryL2Cache.clear();
+  },
+
+  // L2 Persistent Cache (12-Hour TTL)
+  getL2Cache(repoKey: string, ttlMs: number = 12 * 60 * 60 * 1000): any | null {
+    const entry = memoryL2Cache.get(repoKey.toLowerCase());
+    if (entry && Date.now() - entry.timestamp < ttlMs) {
+      return entry.data;
+    }
+    return null;
+  },
+
+  setL2Cache(repoKey: string, data: any): void {
+    memoryL2Cache.set(repoKey.toLowerCase(), {
+      data,
+      timestamp: Date.now(),
+    });
+  },
 };
+

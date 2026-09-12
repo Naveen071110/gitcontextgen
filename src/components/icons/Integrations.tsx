@@ -52,3 +52,27 @@ export function DodoPaymentsIcon({ className = 'w-5 h-5' }: { className?: string
     </svg>
   );
 }
+
+export function ReplitIcon({ className = 'w-5 h-5' }: { className?: string }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-label="Replit" role="img">
+      <path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h7A1.5 1.5 0 0 1 12 3.5v4A1.5 1.5 0 0 1 10.5 9h-7A1.5 1.5 0 0 1 2 7.5v-4zm10 6.5A1.5 1.5 0 0 1 13.5 8.5h7a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5h-7a1.5 1.5 0 0 1-1.5-1.5v-4zm-10 6.5A1.5 1.5 0 0 1 3.5 15h7a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 2 20.5v-4z" />
+    </svg>
+  );
+}
+
+export function LovableIcon({ className = 'w-5 h-5' }: { className?: string }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-label="Lovable" role="img">
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+    </svg>
+  );
+}
+
+export function BoltIcon({ className = 'w-5 h-5' }: { className?: string }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-label="Bolt.new" role="img">
+      <path d="M13 2L3 14h8l-1 8 11-12h-8l1-8z" />
+    </svg>
+  );
+}

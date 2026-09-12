@@ -42,23 +42,25 @@ export default function HowItWorksStepper() {
   ];
 
   return (
-    <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-16 md:py-20 text-left font-sans select-none">
-      {/* Section Header */}
-      <div className="text-center max-w-2xl mx-auto mb-12">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-mono text-amber-400 mb-3.5">
-          <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Three-Step Context Pipeline
+    <section className="flex flex-col items-center justify-center w-full max-w-6xl mx-auto px-4 sm:px-6 py-28 md:py-36 text-zinc-100 font-sans select-none">
+      {/* Symmetrical Centered Section Header */}
+      <div className="w-full max-w-3xl mx-auto flex flex-col items-center justify-center text-center mb-16">
+        <div className="w-full flex justify-center mb-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-mono text-amber-400 shadow-sm">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Three-Step Context Pipeline
+          </div>
         </div>
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-3 leading-tight">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-white mb-4 leading-tight text-center w-full">
           How It Works.{' '}
           <span className="font-serif italic font-normal text-amber-300">Deterministic AI Sync.</span>
         </h2>
-        <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
+        <p className="text-zinc-400 text-sm sm:text-base leading-relaxed text-center max-w-xl mx-auto w-full">
           From raw GitHub repository to synchronized Cursor and Claude Code configurations in three high-speed stages.
         </p>
       </div>
 
       {/* 3-Step Interactive Grid with whileInView */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+      <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6 relative text-left">
         {steps.map((item, idx) => {
           const Icon = item.icon;
           return (

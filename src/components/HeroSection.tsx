@@ -5,17 +5,19 @@ import Link from 'next/link';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { GithubIcon } from '@/components/icons/Github';
 import {
-  GitHubBrandIcon,
   ClaudeCodeIcon,
   CursorIcon,
   WindsurfIcon,
   WordPressStudioIcon,
-  DodoPaymentsIcon,
+  ReplitIcon,
+  LovableIcon,
+  BoltIcon,
 } from '@/components/icons/Integrations';
 import { analyzeRepositoryAction, saveProjectAction, switchExportFormatAction } from '@/lib/actions';
 import { createClient } from '@/lib/supabase/client';
 import { RepositoryAnalysisResult } from '@/lib/types';
 import Navbar from '@/components/Navbar';
+import RepoWorkspaceView from '@/components/RepoWorkspaceView';
 import MermaidDiagram from '@/components/MermaidDiagram';
 import CodeViewer from '@/components/CodeViewer';
 import LoadingSkeleton from '@/components/LoadingSkeleton';
@@ -46,16 +48,11 @@ export default function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const auditResultsRef = useRef<HTMLDivElement>(null);
 
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ['start start', 'end start'],
-  });
-
-  const dashboardY = useTransform(scrollYProgress, [0, 1], [0, -220]);
-
   // PLG Sandbox state
   const [repoUrl, setRepoUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'running' | 'complete' | 'error'>('idle');
+  const [activeAbortController, setActiveAbortController] = useState<AbortController | null>(null);
   const [loadingStep, setLoadingStep] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RepositoryAnalysisResult | null>(null);
@@ -65,7 +62,13 @@ export default function HeroSection() {
   const [activeTab, setActiveTab] = useState<'truth' | 'spec' | 'architecture' | 'security' | 'sync'>('truth');
   const [copiedCode, setCopiedCode] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
-  const [showNonCoderGuide, setShowNonCoderGuide] = useState<boolean>(false);
+  const [user, setUser] = useState<any>(null);
+  const [isSaved, setIsSaved] = useState<boolean>(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -77,23 +80,45 @@ export default function HeroSection() {
     }
   }, []);
 
+  const handleCancelAnalysis = () => {
+    if (activeAbortController) {
+      activeAbortController.abort();
+      setActiveAbortController(null);
+    }
+    setIsLoading(false);
+    setStatus('idle');
+    setLoadingStep('');
+  };
+
   const handleAnalyze = async (e?: React.FormEvent, targetUrl?: string) => {
     if (e) e.preventDefault();
-    const urlToFetch = targetUrl || repoUrl;
+    const urlToFetch = (targetUrl || repoUrl).trim();
 
-    if (!urlToFetch || urlToFetch.trim().length === 0) {
+    if (!urlToFetch || urlToFetch.length === 0) {
       setError('Please enter a valid public GitHub repository URL.');
+      setStatus('error');
       return;
     }
 
+    if (activeAbortController) {
+      activeAbortController.abort();
+    }
+
+    const controller = new AbortController();
+    setActiveAbortController(controller);
+    const timeout = window.setTimeout(() => {
+      controller.abort();
+    }, 30_000);
+
     setIsLoading(true);
+    setStatus('running');
     setLoadingStep('1/3 Parsing Repository URL...');
     setError(null);
     setResult(null);
     setReadinessScore(null);
     setSaveStatus(null);
 
-    const storageKey = `gitcontextgen_cache_${urlToFetch.trim().toLowerCase()}`;
+    const storageKey = `gitcontextgen_cache_${urlToFetch.toLowerCase()}`;
 
     // 0. Instant Client-Side Cache Check
     try {
@@ -113,8 +138,10 @@ export default function HeroSection() {
           setReadinessScore(score);
           setFormattedContent(parsedCache.data.contextMarkdown);
           setActiveTab('truth');
+          setStatus('complete');
           setIsLoading(false);
           setLoadingStep('');
+          window.clearTimeout(timeout);
 
           setTimeout(() => {
             auditResultsRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -122,8 +149,8 @@ export default function HeroSection() {
           return;
         }
       }
-    } catch (e) {
-      console.warn('Cache read notice:', e);
+    } catch (cacheErr) {
+      console.warn('Cache read notice:', cacheErr);
     }
 
     try {
@@ -132,38 +159,70 @@ export default function HeroSection() {
       const { data: sessionData } = await supabase.auth.getSession();
       const userToken = sessionData?.session?.provider_token || undefined;
 
-      const res = await analyzeRepositoryAction(urlToFetch, userToken);
-      
-      if (res.success && res.data) {
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: urlToFetch, token: userToken }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        let errText = `Analysis failed (${res.status})`;
+        try {
+          const errJson = await res.json();
+          if (errJson?.error) errText = errJson.error;
+        } catch {}
+        throw new Error(errText);
+      }
+
+      const payload = await res.json();
+      const repoResult = payload.data;
+
+      if (payload.success && repoResult) {
         setLoadingStep('3/3 High-Fidelity AI Synthesizing Truth...');
-        setResult(res.data);
+        setResult(repoResult);
         const score = calculateReadinessScore(
-          res.data.fileTreeSummary,
+          repoResult.fileTreeSummary,
           undefined,
-          res.data.readmeContent,
-          res.data.vulnerabilityCount ?? 0,
-          res.data.licenseSpdx
+          repoResult.readmeContent,
+          repoResult.vulnerabilityCount ?? 0,
+          repoResult.licenseSpdx
         );
         setReadinessScore(score);
-        setFormattedContent(res.data.contextMarkdown);
+        setFormattedContent(repoResult.contextMarkdown);
         setActiveTab('truth');
+        setStatus('complete');
 
-        // Persist to local cache for instant future pings
         try {
-          localStorage.setItem(storageKey, JSON.stringify({ data: res.data, timestamp: Date.now() }));
+          localStorage.setItem(storageKey, JSON.stringify({ data: repoResult, timestamp: Date.now() }));
         } catch (e) {}
 
-        // Smooth scroll to audit results
         setTimeout(() => {
           auditResultsRef.current?.scrollIntoView({ behavior: 'smooth' });
         }, 200);
       } else {
-        setError(res.error || 'Failed to analyze repository. Please verify URL is public.');
+        throw new Error(payload.error || 'Failed to analyze repository. Please verify URL is public.');
       }
-    } catch (err: any) {
-      setError(err?.message || 'An unexpected error occurred during repository analysis.');
+    } catch (cause: any) {
+      setStatus('error');
+      const isAbort =
+        (cause instanceof DOMException && cause.name === 'AbortError') ||
+        cause?.name === 'AbortError' ||
+        cause?.message?.toLowerCase().includes('aborted') ||
+        cause?.message?.toLowerCase().includes('timed out') ||
+        cause?.message?.toLowerCase().includes('too long');
+
+      const errMessage = isAbort
+        ? 'GitHub took too long to respond. Please try the analysis again.'
+        : cause instanceof Error
+        ? cause.message
+        : 'Analysis failed. Please try again.';
+
+      setError(errMessage);
     } finally {
+      window.clearTimeout(timeout);
       setIsLoading(false);
+      setActiveAbortController(null);
       setLoadingStep('');
     }
   };
@@ -248,19 +307,19 @@ export default function HeroSection() {
             type="video/mp4"
           />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/80 to-[#030303]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(6,182,212,0.12),transparent_70%)]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/95 via-black/90 to-[#030303]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(24,24,27,0.6),transparent_70%)]" />
       </div>
 
       {/* Hero Main Typography Group */}
-      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center z-10 pt-2 pb-6">
+      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center z-10 pt-2 pb-6">
         {/* Liquid Glass Tag Pill */}
         <div className="w-full flex justify-center mb-5">
-          <div className="liquid-glass px-4 py-2 rounded-xl inline-flex items-center justify-center gap-2.5 border border-white/20 shadow-xl text-center w-fit">
+          <div className="liquid-glass px-4 py-2 rounded-xl inline-flex items-center justify-center gap-2.5 border border-zinc-800 bg-zinc-950/80 shadow-xl text-center w-fit">
             <span className="bg-white text-black rounded-md text-[11px] font-bold px-2.5 py-0.5 font-mono shrink-0">
               AGENCIES, SOLOPRENEURS & NO-CODE BUILDERS
             </span>
-            <span className="text-xs font-medium text-white/90 flex items-center gap-1.5 font-mono">
+            <span className="text-xs font-medium text-zinc-300 flex items-center gap-1.5 font-mono">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse shrink-0" />
               Stop Fighting Your AI Co-Pilot
             </span>
@@ -268,7 +327,7 @@ export default function HeroSection() {
         </div>
 
         {/* Prominent Symmetrical H1 Title */}
-        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.1] mb-5 text-center w-full max-w-4xl mx-auto drop-shadow-sm">
+        <h1 className="text-3xl md:text-5xl font-semibold tracking-tight text-white leading-[1.15] mb-5 text-center w-full max-w-4xl mx-auto">
           Stop AI models from burning your context.{' '}
           <span className="font-serif italic font-normal text-cyan-300">
             Automatically sync Cursor rules & Claude Code configurations across your entire team.
@@ -276,14 +335,14 @@ export default function HeroSection() {
         </h1>
 
         {/* Subtitle Statement */}
-        <p className="text-base md:text-lg text-zinc-300 font-normal max-w-2xl mx-auto mb-8 leading-relaxed text-center w-full">
+        <p className="text-sm md:text-base text-zinc-400 font-normal max-w-xl mx-auto mt-4 leading-relaxed text-center w-full">
           GitContextGen acts as hallucination insurance—saving agencies up to 92% on token bills by using a persistent L2 caching layer and keeping parallel sub-agents from overwriting files via multi-agent write locks.
         </p>
 
-        {/* PLG Sandbox Input CTA */}
-        <div className="w-full max-w-2xl mx-auto mb-2 flex flex-col items-center justify-center">
+        {/* PLG Sandbox Input CTA with standardized mt-10 gap */}
+        <div className="w-full max-w-2xl mx-auto mt-10 mb-2 flex flex-col items-center justify-center">
           <form onSubmit={handleAnalyze} className="relative w-full max-w-full">
-            <div className="bg-black/90 backdrop-blur-xl rounded-2xl p-2 sm:p-2.5 border border-white/20 flex flex-col sm:flex-row items-center justify-between gap-2 shadow-2xl w-full">
+            <div className="bg-zinc-950/90 backdrop-blur-xl rounded-2xl p-2 sm:p-2.5 border border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-2 shadow-2xl w-full">
               <div className="flex items-center gap-2.5 sm:gap-3 pl-2 sm:pl-3 w-full sm:w-auto flex-1 min-w-0">
                 <GithubIcon className="w-5 h-5 text-white/60 shrink-0" />
                 <input
@@ -321,8 +380,8 @@ export default function HeroSection() {
           </form>
 
           {/* Quick Demo Badges */}
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs text-white/70 font-mono w-full">
-            <span className="text-white/50 flex items-center gap-1.5">
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs text-zinc-400 font-mono w-full">
+            <span className="text-zinc-500 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" /> Try interactive demo repos:
             </span>
             {[
@@ -334,7 +393,7 @@ export default function HeroSection() {
                 key={demo.label}
                 type="button"
                 onClick={() => handleQuickDemo(demo.url)}
-                className="px-3 py-1.5 min-h-[36px] rounded-xl bg-white/[0.05] hover:bg-white/[0.15] border border-white/20 text-white font-medium hover:border-cyan-400/50 hover:text-cyan-300 transition-all duration-200 flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer touch-manipulation"
+                className="px-3 py-1.5 min-h-[36px] rounded-xl bg-zinc-900/50 hover:bg-zinc-800/80 border border-zinc-800 text-zinc-300 font-medium hover:border-zinc-700 hover:text-white transition-all duration-200 flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer touch-manipulation"
               >
                 {demo.label}
                 {demo.badge && (
@@ -348,70 +407,111 @@ export default function HeroSection() {
         </div>
 
         {error && (
-          <div className="mt-3 max-w-2xl w-full mx-auto p-4 rounded-xl bg-red-950/80 border border-red-800/80 text-red-200 text-xs flex items-center gap-3 text-left backdrop-blur-md">
-            <ShieldAlert className="w-5 h-5 text-red-400 shrink-0" />
-            <p>{error}</p>
+          <div className="mt-4 max-w-2xl w-full mx-auto p-4 sm:p-5 rounded-2xl bg-red-950/90 border border-red-800/80 text-red-200 text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-left backdrop-blur-xl shadow-2xl animate-in fade-in duration-200">
+            <div className="flex items-center gap-3">
+              <ShieldAlert className="w-5 h-5 text-red-400 shrink-0" />
+              <div>
+                <p className="font-semibold text-white">{error}</p>
+                <p className="text-[11px] text-red-300/80 mt-0.5 font-mono">
+                  Network timeout window reached. Upstream GitHub tree streams can be retried immediately.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+              <button
+                type="button"
+                onClick={() => handleAnalyze(undefined, repoUrl)}
+                className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-mono text-xs font-bold transition flex items-center gap-1.5 shadow-md cursor-pointer active:scale-95"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Retry Analysis</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setError(null); setStatus('idle'); }}
+                className="px-2.5 py-1.5 rounded-xl bg-red-950 hover:bg-red-900 border border-red-800 text-red-300 font-mono text-xs transition cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Cancel control while loading */}
+        {isLoading && (
+          <div className="mt-2 text-center">
+            <button
+              type="button"
+              onClick={handleCancelAnalysis}
+              className="text-xs text-zinc-400 hover:text-white underline font-mono cursor-pointer transition"
+            >
+              Cancel analysis
+            </button>
           </div>
         )}
 
         {/* Animated "hub ➔ contextgen" Viral Redirection Browser Container - Positioned above-the-fold */}
         {!result && (
-          <div className="w-full mt-4 mb-4 z-10 px-2 sm:px-4">
+          <div className="w-full my-8 z-10 px-2 sm:px-4">
             <BrowserRedirectLoop />
           </div>
         )}
 
         {/* Professional Monochrome Integration Trust Badges */}
-        <div className="mt-4 pt-4 border-t border-white/10 flex flex-col items-center gap-2.5 w-full max-w-3xl">
-          <span className="text-[11px] font-mono uppercase tracking-widest text-white/40">
+        <div className="mt-8 pt-6 border-t border-zinc-900 flex flex-col items-center gap-3.5 w-full max-w-4xl">
+          <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-500">
             Engineered for Modern Enterprise AI Developer Ecosystems
           </span>
-          <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-7 text-white/60">
+          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 text-zinc-400">
             <div className="flex items-center gap-2 hover:text-white transition">
-              <GitHubBrandIcon className="w-4 h-4 text-white/70" />
-              <span className="text-xs font-mono">GitHub</span>
+              <WordPressStudioIcon className="w-4 h-4 text-zinc-400" />
+              <span className="text-xs font-mono">WordPress</span>
             </div>
             <div className="flex items-center gap-2 hover:text-white transition">
-              <ClaudeCodeIcon className="w-4 h-4 text-white/70" />
+              <ClaudeCodeIcon className="w-4 h-4 text-zinc-400" />
               <span className="text-xs font-mono">Claude Code</span>
             </div>
             <div className="flex items-center gap-2 hover:text-white transition">
-              <CursorIcon className="w-4 h-4 text-white/70" />
+              <CursorIcon className="w-4 h-4 text-zinc-400" />
               <span className="text-xs font-mono">Cursor</span>
             </div>
             <div className="flex items-center gap-2 hover:text-white transition">
-              <WindsurfIcon className="w-4 h-4 text-white/70" />
+              <WindsurfIcon className="w-4 h-4 text-zinc-400" />
               <span className="text-xs font-mono">Windsurf</span>
             </div>
             <div className="flex items-center gap-2 hover:text-white transition">
-              <WordPressStudioIcon className="w-4 h-4 text-white/70" />
-              <span className="text-xs font-mono">WordPress Studio</span>
+              <ReplitIcon className="w-4 h-4 text-zinc-400" />
+              <span className="text-xs font-mono">Replit</span>
             </div>
             <div className="flex items-center gap-2 hover:text-white transition">
-              <DodoPaymentsIcon className="w-4 h-4 text-white/70" />
-              <span className="text-xs font-mono">Dodo Payments</span>
+              <LovableIcon className="w-4 h-4 text-zinc-400" />
+              <span className="text-xs font-mono">Lovable</span>
+            </div>
+            <div className="flex items-center gap-2 hover:text-white transition">
+              <BoltIcon className="w-4 h-4 text-zinc-400" />
+              <span className="text-xs font-mono">Bolt.new</span>
             </div>
           </div>
         </div>
 
         {/* $299 Done-For-You (DFY) Integration Service Callout */}
-        <div className="mt-3.5 w-full max-w-2xl px-4 py-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] border border-cyan-500/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-left transition shadow-lg">
+        <div className="mt-6 w-full max-w-2xl px-4 py-3 rounded-xl bg-zinc-950/50 hover:bg-zinc-900/40 border border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-left transition shadow-lg">
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shrink-0">
-              <Sparkles className="w-3.5 h-3.5" />
+            <div className="w-7 h-7 rounded-lg bg-zinc-900 border border-zinc-700/60 flex items-center justify-center text-zinc-300 shrink-0">
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
             </div>
             <div>
-              <p className="text-xs text-white font-medium">
+              <p className="text-xs text-zinc-200 font-medium">
                 Busy agency team? Skip manual configuration.
               </p>
-              <p className="text-[11px] text-white/60 font-mono">
-                Book our premium <span className="text-cyan-300 font-bold">$299 Done-For-You (DFY) Team Onboarding Pack</span>.
+              <p className="text-[11px] text-zinc-400 font-mono">
+                Book our premium <span className="text-zinc-200 font-bold">$299 Done-For-You (DFY) Team Onboarding Pack</span>.
               </p>
             </div>
           </div>
           <Link
             href="/pricing#dfy-setup"
-            className="px-3 py-1.5 min-h-[36px] flex items-center rounded-lg bg-cyan-500 text-black text-xs font-bold font-mono hover:bg-cyan-400 transition whitespace-nowrap shrink-0 cursor-pointer touch-manipulation"
+            className="px-3.5 py-1.5 min-h-[36px] flex items-center rounded-lg bg-zinc-100 text-black text-xs font-bold font-mono hover:bg-white transition whitespace-nowrap shrink-0 cursor-pointer touch-manipulation"
           >
             Get DFY Setup →
           </Link>
@@ -423,421 +523,61 @@ export default function HeroSection() {
         {isLoading && <LoadingSkeleton />}
 
         {result && (
-          <div className="space-y-8 rounded-3xl bg-neutral-950/90 border border-white/20 p-6 sm:p-10 backdrop-blur-2xl shadow-2xl text-left">
-            
-            {/* 1. Dedicated Audit Suite Header Bar */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-white/10">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-cyan-950/80 border border-cyan-500/40 flex items-center justify-center text-cyan-300 shadow-xl shrink-0">
-                  <FolderGit2 className="w-7 h-7" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <h2 className="text-xl sm:text-2xl font-bold text-white font-mono">
-                      {result.owner} / <span className="text-cyan-300">{result.repo}</span>
-                    </h2>
-                    <span className="px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-bold flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Agency Audit Complete
-                    </span>
-                    <button
-                      onClick={() => {
-                        if (result) {
-                          const storageKey = `gitcontextgen_cache_${result.repoUrl.trim().toLowerCase()}`;
-                          try {
-                            localStorage.removeItem(storageKey);
-                          } catch (e) {}
-                          handleAnalyze(undefined, result.repoUrl);
-                        }
-                      }}
-                      title="Force re-fetch repository from GitHub"
-                      className="px-3 py-1 rounded-full bg-white/5 hover:bg-white/15 border border-white/20 text-white/70 hover:text-white text-xs font-mono transition flex items-center gap-1.5 shrink-0 cursor-pointer"
-                    >
-                      <RotateCcw className="w-3 h-3 text-cyan-400" /> Re-Sync GitHub
-                    </button>
-                  </div>
-                  <p className="text-xs text-white/60 font-mono mt-1 flex items-center gap-3">
-                    <span>Default Branch: <code className="text-white">{result.defaultBranch}</code></span>
-                    <span>•</span>
-                    <span>Audit Date: {new Date(result.analyzedAt).toLocaleDateString()}</span>
-                  </p>
-                </div>
-              </div>
-
-              {/* Format Exporter Switcher & Non-Coder Guide Toggle */}
-              <div className="flex items-center gap-3 overflow-x-auto no-scrollbar shrink-0">
-                <button
-                  onClick={() => setShowNonCoderGuide(!showNonCoderGuide)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-mono font-bold transition-all border flex items-center gap-2 shrink-0 cursor-pointer ${
-                    showNonCoderGuide
-                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-lg'
-                      : 'bg-white/5 text-white/70 hover:text-white hover:bg-white/10 border-white/20'
-                  }`}
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                  {showNonCoderGuide ? '⚡ Technical View' : '💡 Non-Coder Guide'}
-                </button>
-
-                <div className="flex items-center gap-2 p-1.5 rounded-xl bg-black border border-white/10">
-                  <span className="text-xs font-mono text-white/50 px-2 shrink-0">Format:</span>
-                  {(['agent_readme', 'agents', 'claude', 'copilot', 'cursor', 'replit', 'windsurf'] as ExportFormat[]).map((fmt) => (
-                    <button
-                      key={fmt}
-                      onClick={() => handleFormatChange(fmt)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-mono uppercase font-bold transition-all whitespace-nowrap cursor-pointer ${
-                        selectedFormat === fmt
-                          ? 'bg-white text-black shadow-lg'
-                          : 'text-white/60 hover:text-white hover:bg-white/10'
-                      }`}
-                    >
-                      {fmt === 'agent_readme' ? 'AGENT_README' : fmt}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Non-Coder 3-Step Workflow & Plain-English Explainer (Visible ONLY when Non-Coder Guide is toggled ON) */}
-            {showNonCoderGuide && (
-              <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-indigo-950/30 to-black border border-cyan-500/30 shadow-2xl space-y-5">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shrink-0">
-                      <Sparkles className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-base sm:text-lg font-bold text-white font-mono flex items-center gap-2">
-                        How to Use This Output <span className="text-xs font-sans px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-500/30 font-normal">No Coding Required</span>
-                      </h3>
-                      <p className="text-xs text-white/60 font-mono">Follow these 3 simple steps to make your AI tool (Cursor, Claude, Replit, Copilot) write perfect code for this repository.</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
-                  <div className="p-4 rounded-xl bg-black/60 border border-white/10 space-y-2">
-                    <span className="text-cyan-400 font-bold flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-500/40 flex items-center justify-center text-[11px]">1</span>
-                      Copy or Download Output
-                    </span>
-                    <p className="text-white/70 leading-relaxed text-[11px]">
-                      Select your AI format above (e.g., <code className="text-cyan-300">CLAUDE.md</code>, <code className="text-indigo-300">.cursorrules</code>, or <code className="text-emerald-300">replit.md</code>) and click <strong>Copy Specification</strong>.
-                    </p>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-black/60 border border-white/10 space-y-2">
-                    <span className="text-indigo-400 font-bold flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-indigo-950 text-indigo-400 border border-indigo-500/40 flex items-center justify-center text-[11px]">2</span>
-                      Drop into Project Folder
-                    </span>
-                    <p className="text-white/70 leading-relaxed text-[11px]">
-                      Save or paste the file directly into your app&apos;s main project folder (or paste it into your AI assistant chat).
-                    </p>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-black/60 border border-white/10 space-y-2">
-                    <span className="text-emerald-400 font-bold flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-500/40 flex items-center justify-center text-[11px]">3</span>
-                      AI Operates Flawlessly
-                    </span>
-                    <p className="text-white/70 leading-relaxed text-[11px]">
-                      Your AI tool reads this spec before coding. It automatically knows your start commands, folder map, and safety rules!
-                    </p>
-                  </div>
-                </div>
-
-                {/* Non-Coder Plain-English Takeaway Summary */}
-                <div className="mt-4 p-5 rounded-xl bg-black/80 border border-white/15 space-y-3 font-sans text-xs">
-                  <div className="flex items-center gap-2 text-cyan-400 font-mono font-bold">
-                    <CheckCircle2 className="w-4 h-4" /> Non-Coder Plain-English Summary for {result.owner}/{result.repo}:
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-white/80 leading-relaxed">
-                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/5 space-y-1">
-                      <span className="font-mono text-cyan-300 font-bold block">🚀 Run Commands:</span>
-                      <span>Tells your AI how to start and test your app (<code className="text-white font-mono">pnpm dev</code>, <code className="text-white font-mono">pnpm run build</code>) so your terminal never crashes.</span>
-                    </div>
-                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/5 space-y-1">
-                      <span className="font-mono text-indigo-300 font-bold block">📁 Where Things Live:</span>
-                      <span>Maps out page routes and component folders so the AI edits the exact right file instead of creating random duplicates.</span>
-                    </div>
-                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/5 space-y-1">
-                      <span className="font-mono text-emerald-300 font-bold block">🛡️ Safety Rules (DO NOT TOUCH):</span>
-                      <span>Warns the AI what NOT to edit (like <code className="text-white font-mono">.env</code> keys or build files) so your database keys stay safe.</span>
-                    </div>
-                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/5 space-y-1">
-                      <span className="font-mono text-amber-300 font-bold block">🏗️ Architecture Rules:</span>
-                      <span>Forces the AI to write clean, professional code matching your project&apos;s existing style like a senior developer.</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 2. Audit Suite Interactive Navigation Bar */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 border-b border-white/10">
-              {[
-                { id: 'truth', label: '3-Line Truth Stream', icon: Zap },
-                { id: 'spec', label: '150+ Line Audit Spec', icon: FileCode2 },
-                { id: 'architecture', label: 'System Architecture Map', icon: GitGraph },
-                { id: 'security', label: 'Security & Boundaries', icon: Lock },
-                { id: 'sync', label: 'Save to Agency Workspace', icon: Radio },
-              ].map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
-                    className={`flex items-center gap-2 px-4 py-3 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap cursor-pointer ${
-                      isActive
-                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 shadow-lg'
-                        : 'text-white/60 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" /> {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Tab 1: Executive 3-Line Truth Stream & Readiness Score */}
-            {activeTab === 'truth' && (
-              <div className="space-y-8">
-                {readinessScore && (
-                  <AgentReadinessScore
-                    score={readinessScore}
-                    repoName={`${result.owner}/${result.repo}`}
-                    radarChartUrl={result.radarChartUrl}
-                    licenseSpdx={result.licenseSpdx}
-                    vulnerabilityCount={result.vulnerabilityCount}
-                  />
-                )}
-
-                {/* Task 3: Visual Standout Container for 3-Line Architectural Truth Stream */}
-                <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-cyan-950/40 via-neutral-950 to-black border-2 border-cyan-500/50 space-y-6 shadow-[0_0_45px_rgba(6,182,212,0.2)] relative overflow-hidden">
-                  {/* Glowing Vertical Accent Bar */}
-                  <div className="absolute top-0 left-0 bottom-0 w-2 bg-gradient-to-b from-cyan-400 via-indigo-500 to-emerald-400 shadow-[0_0_15px_rgba(6,182,212,0.8)]" />
-
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-white/10 pl-2">
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 rounded-2xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-lg shrink-0">
-                        <Zap className="w-6 h-6 animate-pulse" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-base sm:text-xl font-bold text-white font-mono">
-                            Direct 3-Line Architectural Truth Summary
-                          </h3>
-                          <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-[10px] font-mono font-extrabold tracking-wider uppercase">
-                            ⚡ ZERO-DECISION DAY-1 WIN
-                          </span>
-                        </div>
-                        <p className="text-xs text-white/60 font-mono mt-0.5">
-                          High-Density Architectural Truth Stream for <span className="text-white font-bold">{result.owner}/{result.repo}</span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-5 sm:p-6 rounded-2xl bg-black/80 font-mono text-xs sm:text-sm text-white/90 space-y-4 leading-relaxed border border-cyan-500/30 shadow-inner ml-2">
-                    <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                      <span className="text-cyan-400 font-extrabold text-xs flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-cyan-400" /> Evidence-Backed Truth Stream
-                      </span>
-                      <span className="text-[10px] text-white/40 font-mono">Verified via Repo Tree & Manifests</span>
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-cyan-950/30 border border-cyan-500/30 space-y-1">
-                      <span className="text-cyan-300 font-extrabold block text-xs uppercase tracking-wide">
-                        Line 1 (Tech Stack Topology):
-                      </span>
-                      <p className="text-white/90 text-xs">
-                        {result.repo} • Modular Source Tree • Component & API Boundaries Mapped
-                      </p>
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-indigo-950/30 border border-indigo-500/30 space-y-1">
-                      <span className="text-indigo-300 font-extrabold block text-xs uppercase tracking-wide">
-                        Line 2 (Verified Execution Commands):
-                      </span>
-                      <p className="text-white/90 text-xs">
-                        Dev: <code className="text-emerald-300 font-bold bg-black/60 px-2 py-0.5 rounded border border-emerald-500/30">pnpm dev</code> • Build: <code className="text-emerald-300 font-bold bg-black/60 px-2 py-0.5 rounded border border-emerald-500/30">pnpm run build</code> • Test: <code className="text-emerald-300 font-bold bg-black/60 px-2 py-0.5 rounded border border-emerald-500/30">pnpm test</code> (Evidence: package.json#scripts)
-                      </p>
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30 space-y-1">
-                      <span className="text-emerald-300 font-extrabold block text-xs uppercase tracking-wide">
-                        Line 3 (Safety Guardrails):
-                      </span>
-                      <p className="text-white/90 text-xs">
-                        Protected /src/lib secrets; .env strictly filtered; Zero-hallucination boundaries active.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Tab 2: Deep 150+ Line Audit Specification Suite */}
-            {activeTab === 'spec' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between px-1">
-                  <div>
-                    <h3 className="text-base font-bold text-white font-mono inline-flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" /> Full {selectedFormat.toUpperCase()} Specification Suite
-                    </h3>
-                    <p className="text-xs text-white/60 font-mono">150+ line high-density, evidence-backed multi-agent documentation</p>
-                  </div>
-                  <button
-                    onClick={handleCopyCode}
-                    className="px-4 py-2 rounded-xl bg-white text-black font-mono text-xs font-bold hover:opacity-90 transition flex items-center gap-1.5 shadow-md"
-                  >
-                    {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                    {copiedCode ? 'Copied All Specs!' : 'Copy Full Specification'}
-                  </button>
-                </div>
-                <CodeViewer content={formattedContent || result.contextMarkdown} filename={`${selectedFormat.toUpperCase()}.md`} />
-              </div>
-            )}
-
-            {/* Tab 3: Interactive System Architecture Map */}
-            {activeTab === 'architecture' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between px-1">
-                  <div>
-                    <h3 className="text-base font-bold text-white font-mono inline-flex items-center gap-2">
-                      <GitGraph className="w-4 h-4 text-indigo-400 shrink-0" /> System Architecture Diagram
-                    </h3>
-                    <p className="text-xs text-white/60 font-mono">Rendered via Mermaid.js with Subgraph Layering</p>
-                  </div>
-                </div>
-                <MermaidDiagram
-                  chart={result.mermaidArchitecture}
-                  onReanalyze={() => handleAnalyze(undefined, result.repoUrl)}
-                  krokiUrls={result.krokiDiagramUrls}
-                />
-              </div>
-            )}
-
-            {/* Tab 4: Security & Boundaries */}
-            {activeTab === 'security' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                <div className="p-6 rounded-2xl bg-black border border-white/10 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
-                      <Lock className="w-5 h-5" />
-                    </div>
-                    <h4 className="text-base font-bold text-white font-mono">Secret & .env Protection</h4>
-                  </div>
-                  <p className="text-xs text-white/70 font-sans leading-relaxed">
-                    API keys, credentials, and <code className="text-emerald-300 font-mono">.env</code> files in {result.repo} are automatically scanned and excluded from prompt exports.
-                  </p>
-                  <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Verified Security Protocol
-                  </span>
-                </div>
-
-                <div className="p-6 rounded-2xl bg-black border border-white/10 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-indigo-950/80 text-indigo-400 border border-indigo-500/30">
-                      <Layers className="w-5 h-5" />
-                    </div>
-                    <h4 className="text-base font-bold text-white font-mono">Prohibited Edit Directories</h4>
-                  </div>
-                  <p className="text-xs text-white/70 font-sans leading-relaxed">
-                    Strict prompt rules forbid AI agents from mutating <code className="text-indigo-300 font-mono">.next/</code>, <code className="text-indigo-300 font-mono">dist/</code>, or lockfile dependencies.
-                  </p>
-                  <span className="text-[11px] font-mono text-indigo-400 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Strict Boundary Active
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Tab 5: Save to Agency Workspace & Auto-Sync */}
-            {activeTab === 'sync' && (
-              <div className="p-6 sm:p-8 rounded-2xl bg-black border border-white/10 space-y-6 text-left">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-xl bg-cyan-950/80 text-cyan-400 border border-cyan-500/30 shrink-0">
-                      <Radio className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-base font-bold text-white font-mono">Save to Agency Client Workspace</h4>
-                      <p className="text-xs text-white/60 font-mono">Store context exports, track webhook drift, and invite developer teams.</p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleSaveToWorkspace}
-                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white text-black font-mono text-xs font-bold hover:opacity-90 transition flex items-center justify-center gap-2 shadow-lg shrink-0"
-                  >
-                    <FolderGit2 className="w-4 h-4" /> Save Workspace
-                  </button>
-                </div>
-
-                {saveStatus && (
-                  <div className="p-4 rounded-xl bg-cyan-950/60 border border-cyan-500/30 text-xs font-mono text-cyan-300">
-                    {saveStatus}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Sticky Action Footer */}
-            <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs">
-              <div className="flex items-center gap-3">
-                <span className="text-white/60">Audit Target:</span>
-                <a href={result.repoUrl} target="_blank" rel="noreferrer" className="text-cyan-300 hover:underline flex items-center gap-1">
-                  {result.owner}/{result.repo} <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <button
-                  onClick={handleCopyCode}
-                  className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold transition flex items-center justify-center gap-2 border border-white/20"
-                >
-                  <Copy className="w-3.5 h-3.5" /> Copy Specs
-                </button>
-                <Link
-                  href="/dashboard"
-                  className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-white text-black font-bold transition hover:opacity-90 flex items-center justify-center gap-2 shadow-md"
-                >
-                  Go to Agency Dashboard <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
-
-          </div>
+          <RepoWorkspaceView
+            result={result}
+            isGuest={!user}
+            isSaved={isSaved}
+            onSave={async () => {
+              if (!user) {
+                window.location.href = `/auth/login?save_owner=${result.owner}&save_repo=${result.repo}&next=/dashboard`;
+                return;
+              }
+              try {
+                const res = await fetch('/api/projects', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    repo_url: result.repoUrl,
+                    repo_name: `${result.owner}/${result.repo}`,
+                    status: 'completed',
+                    analysis_results: result.monetizableOutputs,
+                  }),
+                });
+                if (res.ok) {
+                  setIsSaved(true);
+                }
+              } catch (e) {
+                console.warn('Save failed:', e);
+              }
+            }}
+            onReSync={() => {
+              const storageKey = `gitcontextgen_cache_${result.repoUrl.trim().toLowerCase()}`;
+              try {
+                localStorage.removeItem(storageKey);
+              } catch (e) {}
+              handleAnalyze(undefined, result.repoUrl);
+            }}
+          />
         )}
       </div>
 
-      {/* Workspace Preview Frame */}
-      <div className="w-full flex justify-center z-10 px-4 sm:px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          style={{ y: dashboardY }}
-          className="relative max-w-4xl w-full pb-8 pt-4"
-        >
-          <div
-            className="rounded-2xl overflow-hidden bg-black/80 backdrop-blur-xl shadow-2xl p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-3 mx-auto w-full"
-            style={{ mixBlendMode: 'luminosity' }}
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-3 h-3 rounded-full bg-red-500 shrink-0"></div>
-              <div className="w-3 h-3 rounded-full bg-amber-500 shrink-0"></div>
-              <div className="w-3 h-3 rounded-full bg-emerald-500 shrink-0"></div>
-              <span className="text-xs text-white/70 ml-2 font-mono truncate">
+      {/* Workspace Preview Frame - Stable and centered */}
+      <div className="w-full flex justify-center z-10 px-4 sm:px-6 my-8">
+        <div className="relative max-w-4xl w-full">
+          <div className="rounded-2xl overflow-hidden bg-zinc-950/90 border border-zinc-800 shadow-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3 mx-auto w-full">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-3 h-3 rounded-full bg-red-500/80 shrink-0"></div>
+              <div className="w-3 h-3 rounded-full bg-amber-500/80 shrink-0"></div>
+              <div className="w-3 h-3 rounded-full bg-emerald-500/80 shrink-0"></div>
+              <span className="text-xs text-zinc-300 ml-2 font-mono truncate">
                 GitContextGen — High-Fidelity Context Engine for Multi-Repo Agencies
               </span>
             </div>
-            <span className="text-xs font-mono text-cyan-400 border border-cyan-500/30 px-3 py-1 rounded-full whitespace-nowrap shrink-0">
+            <span className="text-xs font-mono text-cyan-400 bg-cyan-950/40 border border-cyan-500/30 px-3 py-1 rounded-full whitespace-nowrap shrink-0">
               Billable Efficiency Engine Active
             </span>
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Bottom Gradient Fade */}

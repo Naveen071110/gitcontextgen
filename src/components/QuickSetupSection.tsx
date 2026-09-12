@@ -3,7 +3,7 @@ import { Terminal, ArrowRight, Zap, CheckCircle2 } from 'lucide-react';
 
 export default function QuickSetupSection() {
   return (
-    <section className="flex flex-col items-center justify-center w-full max-w-7xl mx-auto px-4 sm:px-6 py-28 md:py-36 bg-black text-white relative">
+    <section className="flex flex-col items-center justify-center w-full max-w-6xl mx-auto px-4 sm:px-6 py-28 md:py-36 bg-black text-white relative">
       <div className="w-full flex flex-col items-center justify-center">
         
         {/* Header */}

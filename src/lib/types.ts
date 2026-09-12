@@ -1,12 +1,45 @@
 export interface Project {
   id: string;
   user_id?: string;
+  repo_name?: string;
   repo_url: string;
   slug: string;
+  status?: 'analyzing' | 'completed' | 'failed';
+  analysis_results?: AnalyzedCodebaseOutputs;
   webhook_secret: string;
   branding_color: string;
   audience_tone?: 'technical' | 'marketing';
   created_at?: string;
+}
+
+export interface AnalyzedCodebaseOutputs {
+  framework: 'Next.js' | 'WordPress' | 'Laravel' | 'Generic';
+  onboarding: {
+    claudeMd: string;
+    agentsMd: string;
+    devCommands: string[];
+    stylingStandards: string;
+    componentRules: string;
+  };
+  cursorRules: Array<{
+    filename: string;
+    content: string;
+    framework: string;
+  }>;
+  architecture: {
+    mermaidGraph: string;
+    flowchartNodes: Array<{ id: string; label: string; type: string }>;
+  };
+  clientHandoffReport: {
+    title: string;
+    summary: string;
+    categories: {
+      newFeatures: string[];
+      securityMaintenance: string[];
+      userExperience: string[];
+    };
+    markdown: string;
+  };
 }
 
 export interface DocAsset {
@@ -62,6 +95,7 @@ export interface RepositoryAnalysisResult {
   vulnerabilityCount?: number;
   criticalVulnerabilityCount?: number;
   wordpress?: import('../analyzer/detector').WordPressDetection;
+  monetizableOutputs?: AnalyzedCodebaseOutputs;
 }
 
 export interface SandboxState {

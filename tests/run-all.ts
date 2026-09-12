@@ -6,6 +6,9 @@ const suites = [
   { name: 'Phase 3: Dodo Payments Webhook & Subscription Gate', file: 'tests/webhook-signature.test.ts' },
   { name: 'Phase 4: Unified Rules Parser & L2 Cache Eviction', file: 'tests/prompt-sanitizer.test.ts' },
   { name: 'Phase 5: MCP Local Server & Concurrency Lock', file: 'tests/mcp-lock-protocol.test.ts' },
+  { name: 'Phase 6: Monetization Analyzer Engine & Atomic Persistence', file: 'tests/analyzer-engine.test.ts' },
+  { name: 'Phase 7: Checkout Redirection & Analyzer Timeout Gates', file: 'tests/checkout-and-timeout.test.ts' },
+  { name: 'Phase 8: Excel (.xlsx) & CSV Export Utilities', file: 'tests/export-utility.test.ts' },
 ];
 
 console.log('='.repeat(78));

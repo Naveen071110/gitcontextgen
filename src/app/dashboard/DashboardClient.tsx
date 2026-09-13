@@ -105,6 +105,17 @@ export default function DashboardPage() {
         const merged = Array.from(map.values());
         setProjects(merged);
         saveStoredProjects(data.user.id, merged);
+
+        // Check for checkout success return
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          if (params.get('checkout') === 'success' || params.get('dodo_session')) {
+            setSuccessToast('Pro Builder unlocked! Sandbox simulation mode active (live domain & payment gateway pending).');
+            try {
+              window.history.replaceState({}, '', '/dashboard');
+            } catch {}
+          }
+        }
       } catch (e) {
         console.warn('Auth check error:', e);
         router.push('/auth/login');

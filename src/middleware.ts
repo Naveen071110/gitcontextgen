@@ -3,6 +3,9 @@ import type { NextRequest } from 'next/server';
 
 const ALLOWED_ORIGIN_PATTERNS = [
   /^https:\/\/(?:[a-zA-Z0-9-]+\.)*gitcontextgen\.com$/,
+  /^https:\/\/(?:[a-zA-Z0-9-]+\.)*workers\.dev$/,
+  /^https?:\/\/localhost(?::\d+)?$/,
+  /^https?:\/\/127\.0\.0\.1(?::\d+)?$/,
 ];
 
 function isOriginAllowed(origin: string | null): boolean {
@@ -61,7 +64,7 @@ export function proxy(request: NextRequest) {
 
   // 1. Production SSL/HTTPS Force Redirect
   if (process.env.NODE_ENV === 'production' && proto === 'http') {
-    const targetHost = host.includes('gitcontextgen.com') ? host : 'gitcontextgen.com';
+    const targetHost = host || 'repopulse-ai.singhnaveen360.workers.dev';
     return NextResponse.redirect(`https://${targetHost}${pathname}${search}`, {
       status: 301,
     });
@@ -85,7 +88,7 @@ export function proxy(request: NextRequest) {
   // 3. CORS Preflight & Handling for API Routes
   if (pathname.startsWith('/api')) {
     const allowed = isOriginAllowed(origin);
-    const corsOrigin = allowed && origin ? origin : 'https://gitcontextgen.com';
+    const corsOrigin = allowed && origin ? origin : (process.env.NEXT_PUBLIC_APP_URL || '*');
 
     // Handle preflight OPTIONS request
     if (request.method === 'OPTIONS') {

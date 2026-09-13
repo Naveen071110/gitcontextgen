@@ -1,17 +1,23 @@
 import { NextResponse } from 'next/server';
 import DodoPayments from 'dodopayments';
 
-import { isDodoApiKeyPlaceholder } from '@/lib/payments/dodo';
+import { isDodoApiKeyPlaceholder, getAppUrl } from '@/lib/payments/dodo';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
     const customerId = body.customerId || 'cus_agency_demo_id';
 
+    const origin = req.headers.get('origin') || req.headers.get('referer');
+    let dynamicOrigin: string | undefined;
+    if (origin) {
+      try {
+        dynamicOrigin = new URL(origin).origin;
+      } catch {}
+    }
+
     const apiKey = process.env.DODO_PAYMENTS_API_KEY?.trim();
-    const defaultBaseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      (process.env.NODE_ENV === 'production' ? 'https://gitcontextgen.com' : 'http://localhost:3000');
+    const defaultBaseUrl = getAppUrl(dynamicOrigin);
     const returnUrl =
       process.env.DODO_PAYMENTS_RETURN_URL || `${defaultBaseUrl}/dashboard/agency`;
     const isPlaceholder = isDodoApiKeyPlaceholder(apiKey);

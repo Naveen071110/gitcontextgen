@@ -1,31 +1,36 @@
 import DodoPayments from 'dodopayments';
 
-export function getAppUrl(): string {
+export function getAppUrl(requestOrigin?: string): string {
+  if (requestOrigin && /^https?:\/\//.test(requestOrigin)) {
+    return requestOrigin.replace(/\/+$/, '');
+  }
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
   let envUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
   if (envUrl === 'undefined' || envUrl === 'null' || !envUrl) {
     envUrl = undefined;
   }
+  if (envUrl && /^https?:\/\//.test(envUrl)) {
+    return envUrl.replace(/\/+$/, '');
+  }
   const isProd = process.env.NODE_ENV === 'production';
 
   if (isProd) {
-    const fallbackProd = 'https://gitcontextgen.com';
-    const activeUrl = envUrl || fallbackProd;
-    if (!activeUrl || !/^https:\/\//.test(activeUrl)) {
-      throw new Error('NEXT_PUBLIC_APP_URL must be an HTTPS production URL');
-    }
-    return activeUrl;
+    // Graceful fallback to live Cloudflare Worker when custom domain has not been purchased yet
+    return 'https://repopulse-ai.singhnaveen360.workers.dev';
   }
 
-  return envUrl || 'http://localhost:3000';
+  return 'http://localhost:3000';
 }
 
-export function getCheckoutReturnUrl(): string {
-  const appUrl = getAppUrl();
+export function getCheckoutReturnUrl(customOrigin?: string): string {
+  const appUrl = getAppUrl(customOrigin);
   return new URL('/dashboard?checkout=success', appUrl).toString();
 }
 
-export function getCheckoutCancelUrl(): string {
-  const appUrl = getAppUrl();
+export function getCheckoutCancelUrl(customOrigin?: string): string {
+  const appUrl = getAppUrl(customOrigin);
   return new URL('/pricing?checkout=cancelled', appUrl).toString();
 }
 
@@ -35,6 +40,7 @@ export interface DodoCheckoutPayload {
   userEmail?: string;
   userName?: string;
   userId?: string;
+  requestOrigin?: string;
 }
 
 export function isDodoApiKeyPlaceholder(key?: string): boolean {
@@ -50,10 +56,11 @@ export function isDodoApiKeyPlaceholder(key?: string): boolean {
   );
 }
 
-export async function createDodoCheckoutSession(payload: DodoCheckoutPayload) {
+export async function createDodoCheckoutSession(payload: DodoCheckoutPayload, requestOrigin?: string) {
   const apiKey = (process.env.DODO_PAYMENTS_API_KEY || '').trim();
   const environment = (process.env.DODO_PAYMENTS_ENVIRONMENT as 'test_mode' | 'live_mode') || 'test_mode';
-  const returnUrl = getCheckoutReturnUrl();
+  const effectiveOrigin = payload.requestOrigin || requestOrigin;
+  const returnUrl = getCheckoutReturnUrl(effectiveOrigin);
 
   let cart: Array<{ product_id: string; quantity: number }> = [];
   if (Array.isArray(payload.productCart) && payload.productCart.length > 0) {
@@ -70,7 +77,7 @@ export async function createDodoCheckoutSession(payload: DodoCheckoutPayload) {
   const isPlaceholder = isDodoApiKeyPlaceholder(apiKey);
 
   if (isPlaceholder) {
-    // In demo / placeholder mode, return a safe URL strictly deriving from getAppUrl()
+    // In demo / placeholder mode, return a safe URL strictly deriving from returnUrl
     const productIdsParam = cart.map((i) => i.product_id).join(',');
     const mockCheckoutUrl = `${returnUrl}&dodo_session=mock_checkout_success&product_ids=${encodeURIComponent(productIdsParam)}`;
     return {

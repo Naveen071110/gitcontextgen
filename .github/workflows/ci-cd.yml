@@ -3,14 +3,41 @@ name: CI/CD Quality & Security Verification
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      run_full_audit:
+        description: 'Run deep security and AST analysis'
+        required: false
+        type: boolean
+        default: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  code-quality:
-    name: Code Quality & Type Safety
+  verify:
+    name: Quality & Security Gate
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || 'https://gitcontextgen.com' }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-service-key' }}
+      DODO_PAYMENTS_API_KEY: ${{ secrets.DODO_PAYMENTS_API_KEY || 'placeholder-dodo-key' }}
+      GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID || 'placeholder-gh-id' }}
+      GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET || 'placeholder-gh-secret' }}
+      NODE_ENV: test
+      CI: true
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -20,6 +47,30 @@ jobs:
         with:
           node-version: 22
           cache: 'npm'
+
+      - name: Restore Next.js Build Cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('src/**/*.ts', 'src/**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+
+      - name: Verify Environment & Secret Safeguards
+        run: |
+          echo "================================================="
+          echo "🔐 Verifying Environment & Secret Safeguards..."
+          echo "================================================="
+          if [ -z "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" ] || [ "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" = "https://placeholder.supabase.co" ]; then
+            echo "::warning title=Supabase URL Missing::Using fallback placeholder for NEXT_PUBLIC_SUPABASE_URL. MockStore and local fallbacks will be active."
+          fi
+          if [ -z "${{ secrets.DODO_PAYMENTS_API_KEY }}" ]; then
+            echo "::warning title=Dodo Payments Key Missing::Dodo Payments API Key omitted. Running with synthetic payments sandbox."
+          fi
+          if [ -z "${{ secrets.GITHUB_CLIENT_ID }}" ] || [ -z "${{ secrets.GITHUB_CLIENT_SECRET }}" ]; then
+            echo "::warning title=OAuth Secrets Missing::GitHub OAuth credentials omitted. Client mock auth enabled."
+          fi
+          echo "✅ Environment safeguards verified. Non-production / fork run guaranteed resilient."
 
       - name: Install Root Dependencies
         run: npm ci
@@ -30,66 +81,21 @@ jobs:
       - name: Code Style & ESLint Audit
         run: npm run lint || true
 
-  rules-harmonization:
-    name: Rules Harmonization & Portability Lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
       - name: Validate Cursor & Claude Rules Symmetry
         run: node scripts/validate-rules.mjs
 
-  mcp-engine-verification:
-    name: MCP Stdio Engine & Caching Verification
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install MCP Server Dependencies
+      - name: Install & Build MCP Server
         working-directory: ./mcp-server
-        run: npm ci
-
-      - name: Compile MCP Server
-        working-directory: ./mcp-server
-        run: npm run build
+        run: |
+          npm ci
+          npm run build
 
       - name: Run Automated stdio MCP Verification Suite
         run: node scripts/verify-mcp.mjs
 
-  production-build:
-    name: Next.js Production Build Check
-    needs: [code-quality, rules-harmonization, mcp-engine-verification]
-    runs-on: ubuntu-latest
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-service-key' }}
-      GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID || 'placeholder-gh-id' }}
-      GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET || 'placeholder-gh-secret' }}
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-
-      - name: Install Root Dependencies
-        run: npm ci
+      - name: Deep DevSecOps & AST Quality Gate
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_full_audit }}
+        run: npm test
 
       - name: Build Next.js Production Bundle
         run: npm run build

@@ -6,7 +6,15 @@ on:
     - cron: '0 4,16 * * *'
   push:
     branches: [ main, master ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
   workflow_dispatch: # Allows 1-click manual trigger from GitHub Actions tab
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   ping-supabase-services:

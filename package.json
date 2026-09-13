@@ -22,6 +22,7 @@
     "security:check-staged": "node scripts/pre-commit-check.mjs",
     "test": "npx tsx tests/run-all.ts",
     "test:webhook": "npx tsx scripts/test-dodo-webhook.mjs",
+    "test:cli": "node scripts/test-cli-distribution.mjs",
     "build:binaries": "node scripts/build-binaries.mjs",
     "release:mcp": "powershell -ExecutionPolicy Bypass -File scripts/npm-publish.ps1"
   },

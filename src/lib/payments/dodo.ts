@@ -37,6 +37,19 @@ export interface DodoCheckoutPayload {
   userId?: string;
 }
 
+export function isDodoApiKeyPlaceholder(key?: string): boolean {
+  if (!key) return true;
+  const k = key.trim().toLowerCase();
+  return (
+    !k ||
+    k === 'i will add these later' ||
+    k === 'your_dodo_api_key_here' ||
+    k.includes('placeholder') ||
+    k.includes('mock') ||
+    k.includes('test_key')
+  );
+}
+
 export async function createDodoCheckoutSession(payload: DodoCheckoutPayload) {
   const apiKey = (process.env.DODO_PAYMENTS_API_KEY || '').trim();
   const environment = (process.env.DODO_PAYMENTS_ENVIRONMENT as 'test_mode' | 'live_mode') || 'test_mode';
@@ -54,7 +67,7 @@ export async function createDodoCheckoutSession(payload: DodoCheckoutPayload) {
     throw new Error('Missing required field: productId or productCart');
   }
 
-  const isPlaceholder = !apiKey || apiKey === 'i will add these later' || apiKey === 'your_dodo_api_key_here';
+  const isPlaceholder = isDodoApiKeyPlaceholder(apiKey);
 
   if (isPlaceholder) {
     // In demo / placeholder mode, return a safe URL strictly deriving from getAppUrl()

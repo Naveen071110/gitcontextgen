@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import DodoPayments from 'dodopayments';
 
+import { isDodoApiKeyPlaceholder } from '@/lib/payments/dodo';
+
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
@@ -12,8 +14,7 @@ export async function POST(req: Request) {
       (process.env.NODE_ENV === 'production' ? 'https://gitcontextgen.com' : 'http://localhost:3000');
     const returnUrl =
       process.env.DODO_PAYMENTS_RETURN_URL || `${defaultBaseUrl}/dashboard/agency`;
-    const isPlaceholder =
-      !apiKey || apiKey === 'i will add these later' || apiKey === 'your_dodo_api_key_here';
+    const isPlaceholder = isDodoApiKeyPlaceholder(apiKey);
 
     // Development / Sandbox Mock Mode
     if (isPlaceholder) {

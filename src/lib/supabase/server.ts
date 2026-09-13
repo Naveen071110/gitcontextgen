@@ -6,12 +6,14 @@ export function isSupabaseConfigured(): boolean {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!supabaseUrl || !key) return false;
+  const k = key.trim().toLowerCase();
   if (
     supabaseUrl.includes('placeholder.supabase.co') ||
     supabaseUrl.trim() === '' ||
-    key === 'placeholder_key' ||
-    key === 'placeholder' ||
-    key.includes('your_supabase')
+    k.includes('placeholder') ||
+    k === 'placeholder_key' ||
+    k === 'placeholder' ||
+    k.includes('your_supabase')
   ) {
     return false;
   }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import DodoPayments from 'dodopayments';
+import { isDodoApiKeyPlaceholder } from '@/lib/payments/dodo';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
       cleanedKey.startsWith('gcg_test_');
 
     const apiKey = process.env.DODO_PAYMENTS_API_KEY?.trim();
-    const isPlaceholderKey = !apiKey || apiKey === 'i will add these later' || apiKey === 'your_dodo_api_key_here';
+    const isPlaceholderKey = isDodoApiKeyPlaceholder(apiKey);
 
     if (isTestKey || isPlaceholderKey || process.env.NODE_ENV === 'development') {
       if (cleanedKey === 'invalid_key' || cleanedKey === 'expired_key') {

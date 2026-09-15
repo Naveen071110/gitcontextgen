@@ -105,7 +105,7 @@ export default function DemoVideoSection() {
               onPause={() => setIsPlaying(false)}
               onPlay={() => { setIsPlaying(true); setHasStarted(true); }}
             >
-              <source src="/videos/gitcontextgen-demo.mp4" type="video/mp4" />
+              <source src="https://github.com/Naveen071110/gitcontextgen/raw/main/public/videos/gitcontextgen-demo.mp4" type="video/mp4" />
               Your browser does not support the video tag.
             </video>
 

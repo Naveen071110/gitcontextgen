@@ -14,6 +14,33 @@
 
 ---
 
+## 🎬 See It In Action
+
+> **Watch a full walkthrough** — from pasting a GitHub URL to viewing the complete architectural blueprint, vulnerability audit, and AI-ready context export.
+
+
+https://github.com/Naveen071110/gitcontextgen/raw/main/public/videos/gitcontextgen-demo.mp4
+
+
+<details>
+<summary>▶️ Can't see the video? Click to expand</summary>
+
+<br>
+
+The demo shows GitContextGen analyzing a live repository in under 30 seconds:
+
+1. **Paste any GitHub URL** → Instant repository detection & metadata pull
+2. **Automated AST Scan** → File tree, dependency graph, and tech stack identification  
+3. **Security Audit** → OSV.dev vulnerability batch scanning with severity badges
+4. **Architecture Diagram** → Auto-generated Mermaid.js topology rendered via Kroki.io
+5. **AI Context Export** → One-click copy of `CLAUDE.md`, `.cursorrules`, or `AGENTS.md`
+
+👉 **Try it live**: [repopulse-ai.singhnaveen360.workers.dev](https://repopulse-ai.singhnaveen360.workers.dev)
+
+</details>
+
+---
+
 ## 💥 The Problem: The "Context Debt Crisis"
 
 AI coding models (Claude 3.7 Sonnet, Claude Code CLI, Cursor Composer, GitHub Copilot) are only as effective as the context you feed them. When developers point AI agents at a raw codebase, three catastrophic failures occur:

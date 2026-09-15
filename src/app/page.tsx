@@ -1,4 +1,5 @@
 import HeroSection from '@/components/HeroSection';
+import DemoVideoSection from '@/components/DemoVideoSection';
 import LiveDashboardPreview from '@/components/LiveDashboardPreview';
 import HowItWorksStepper from '@/components/HowItWorksStepper';
 import InteractiveCliTerminal from '@/components/InteractiveCliTerminal';
@@ -26,6 +27,11 @@ export default function LandingPage() {
     <main className="flex flex-col items-center w-full min-h-screen overflow-x-hidden bg-[#030303] text-zinc-100 font-sans selection:bg-amber-400 selection:text-black">
       {/* 1. Hero Section (Compact Above-The-Fold with Address Bar Mock) */}
       <HeroSection />
+
+      <div className="w-full max-w-6xl mx-auto h-px bg-gradient-to-r from-transparent via-zinc-850/80 to-transparent my-4" />
+
+      {/* 1.5. Demo Video (Full Product Walkthrough) */}
+      <DemoVideoSection />
 
       <div className="w-full max-w-6xl mx-auto h-px bg-gradient-to-r from-transparent via-zinc-850/80 to-transparent my-4" />
 

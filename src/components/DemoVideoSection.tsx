@@ -5,7 +5,7 @@ import { motion, useInView } from 'framer-motion';
 import { Play, Maximize2 } from 'lucide-react';
 
 const VIDEO_URL =
-  'https://raw.githubusercontent.com/Naveen071110/gitcontextgen/main/public/videos/gitcontextgen-demo.mp4';
+  'https://raw.githubusercontent.com/Naveen071110/gitcontextgen/main/docs/videos/gitcontextgen-demo.mp4';
 
 export default function DemoVideoSection() {
   const sectionRef = useRef<HTMLElement>(null);

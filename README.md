@@ -19,7 +19,7 @@
 > **Watch a full walkthrough** — from pasting a GitHub URL to viewing the complete architectural blueprint, vulnerability audit, and AI-ready context export.
 
 
-https://github.com/Naveen071110/gitcontextgen/raw/main/public/videos/gitcontextgen-demo.mp4
+https://github.com/Naveen071110/gitcontextgen/raw/main/docs/videos/gitcontextgen-demo.mp4
 
 
 <details>

@@ -1,8 +1,11 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { Play, Pause, Maximize2 } from 'lucide-react';
+import { Play, Maximize2 } from 'lucide-react';
+
+const VIDEO_URL =
+  'https://raw.githubusercontent.com/Naveen071110/gitcontextgen/main/public/videos/gitcontextgen-demo.mp4';
 
 export default function DemoVideoSection() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -10,9 +13,60 @@ export default function DemoVideoSection() {
   const isInView = useInView(sectionRef, { once: true, margin: '-100px' });
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [loadProgress, setLoadProgress] = useState(0);
+
+  // Fetch video as blob to bypass GitHub's CSP/content-type restrictions
+  useEffect(() => {
+    if (!isInView) return;
+
+    const controller = new AbortController();
+
+    fetch(VIDEO_URL, { signal: controller.signal })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const contentLength = Number(res.headers.get('content-length') || 0);
+        const reader = res.body?.getReader();
+        if (!reader) throw new Error('No reader');
+
+        const chunks: Uint8Array[] = [];
+        let received = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          received += value.length;
+          if (contentLength > 0) {
+            setLoadProgress(Math.round((received / contentLength) * 100));
+          }
+        }
+
+        const blob = new Blob(chunks as BlobPart[], { type: 'video/mp4' });
+        setBlobUrl(URL.createObjectURL(blob));
+      })
+      .catch((err) => {
+        if (err.name !== 'AbortError') {
+          console.error('Video load failed:', err);
+          setLoadError(true);
+        }
+      });
+
+    return () => {
+      controller.abort();
+    };
+  }, [isInView]);
+
+  // Cleanup blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  }, [blobUrl]);
 
   const handlePlayPause = () => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || !blobUrl) return;
     if (videoRef.current.paused) {
       videoRef.current.play();
       setIsPlaying(true);
@@ -96,21 +150,39 @@ export default function DemoVideoSection() {
 
           {/* Video */}
           <div className="relative aspect-video cursor-pointer" onClick={handlePlayPause}>
-            <video
-              ref={videoRef}
-              className="w-full h-full object-cover"
-              preload="metadata"
-              playsInline
-              onEnded={() => { setIsPlaying(false); setHasStarted(false); }}
-              onPause={() => setIsPlaying(false)}
-              onPlay={() => { setIsPlaying(true); setHasStarted(true); }}
-            >
-              <source src="https://github.com/Naveen071110/gitcontextgen/raw/main/public/videos/gitcontextgen-demo.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
+            {blobUrl ? (
+              <video
+                ref={videoRef}
+                className="w-full h-full object-cover"
+                preload="metadata"
+                playsInline
+                src={blobUrl}
+                onEnded={() => { setIsPlaying(false); setHasStarted(false); }}
+                onPause={() => setIsPlaying(false)}
+                onPlay={() => { setIsPlaying(true); setHasStarted(true); }}
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-[#0d1117]">
+                {loadError ? (
+                  <p className="text-zinc-500 text-sm">Failed to load video</p>
+                ) : (
+                  <>
+                    <div className="w-48 h-1.5 rounded-full bg-zinc-800 overflow-hidden mb-3">
+                      <div
+                        className="h-full rounded-full bg-amber-500/70 transition-all duration-300"
+                        style={{ width: `${loadProgress}%` }}
+                      />
+                    </div>
+                    <p className="text-zinc-500 text-xs">
+                      Loading demo{loadProgress > 0 ? ` · ${loadProgress}%` : '...'}
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
 
-            {/* Play overlay (shown when not playing) */}
-            {!isPlaying && (
+            {/* Play overlay (shown when video is loaded but not playing) */}
+            {blobUrl && !isPlaying && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}

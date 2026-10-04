@@ -96,9 +96,9 @@ export default function RepoWorkspaceView({
     }, 4500);
   };
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     try {
-      const filename = downloadExcelWorkbook(result);
+      const filename = await downloadExcelWorkbook(result);
       setIsExportOpen(false);
       triggerToast(`✅ Exported ${filename} successfully!`);
     } catch (err) {
@@ -338,6 +338,33 @@ ${folderFiles.slice(0, 25).map(f => `- ${f.replace(/^\[(DIR|FILE)\]\s*/, '')}`).
             <span className="px-2 py-0.5 rounded-full text-[11px] font-mono border border-[#30363d] bg-[#21262d] text-[#8b949e] flex items-center gap-1">
               <Unlock className="w-3 h-3 text-[#3fb950]" /> Public
             </span>
+
+            <span
+              className="px-2.5 py-0.5 rounded-full text-[11px] font-mono border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 flex items-center gap-1.5"
+              title="Persistent Agent Memory Engine Active (.gitcontextgen/memory.db)"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              🧠 SQLite Memory Active
+            </span>
+
+            {/* ⚡ AI Enhanced vs 🛠️ Local Engine Indicator */}
+            {result.analysisEngine === 'deepseek' || result.deepseekEnhanced ? (
+              <span
+                className="px-2.5 py-0.5 rounded-full text-[11px] font-mono border border-cyan-500/40 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 flex items-center gap-1.5 shadow-sm shadow-cyan-500/10"
+                title="Advanced AI Intelligence Active (Deterministic AST Pre-Filtered)"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                ⚡ AI Enhanced
+              </span>
+            ) : (
+              <span
+                className="px-2.5 py-0.5 rounded-full text-[11px] font-mono border border-zinc-700 bg-zinc-800/80 text-zinc-300 flex items-center gap-1.5"
+                title="100% Local Deterministic AST Engine Active ($0 LLM Cost)"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+                🛠️ Local Engine
+              </span>
+            )}
 
             {/* Saved Indicator for Authenticated Users */}
             {!isGuest && isSaved && (

@@ -180,6 +180,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         markdown: `# Delivery Summary\n- Ready for production`,
       },
     },
+    analysisEngine: project.analysis_results?.analysisEngine || 'local',
+    deepseekEnhanced: project.analysis_results?.deepseekEnhanced || false,
   };
 
   return (

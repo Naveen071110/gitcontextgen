@@ -77,3 +77,21 @@ export declare function safeWriteWithVerification(targetFilePath: string, newCon
     written: boolean;
     warning?: string;
 }>;
+/**
+ * Reclaims orphaned or stale locks by inspecting active OS process IDs
+ */
+export declare function reclaimOrphanedLocks(): number;
+export interface AcquireLockOptions {
+    pid?: number;
+    agent?: string;
+    ttlMs?: number;
+    maxWaitMs?: number;
+}
+/**
+ * Acquires an exclusive lock on a named resource using atomic fs.openSync(..., 'wx')
+ */
+export declare function acquireLock(lockName: string, optionsOrPid?: number | AcquireLockOptions, timeoutMs?: number): boolean;
+/**
+ * Releases an exclusive lock on a named resource
+ */
+export declare function releaseLock(lockName: string): boolean;

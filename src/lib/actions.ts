@@ -26,6 +26,7 @@ import { generateReadinessRadarChartUrl } from './integrations/quickchart';
 import { getLicenseGuardrail } from './integrations/licenses';
 import { createClient } from './supabase/server';
 import { validateRepoCreationLimit, getUserEntitlements } from './entitlements';
+import { buildCondensedAstContext, generateDeepSeekContext } from './services/deepseekService';
 
 // Global in-memory cache for analyzed repositories (24-hour TTL with max size limit)
 const analysisCache = new Map<string, { data: RepositoryAnalysisResult; timestamp: number }>();
@@ -42,7 +43,13 @@ function setInCache(key: string, value: { data: RepositoryAnalysisResult; timest
 
 export async function analyzeRepositoryAction(
   repoUrl: string,
-  userToken?: string
+  userToken?: string,
+  options?: {
+    userIp?: string;
+    userId?: string;
+    userTier?: 'FREE' | 'STARTER' | 'PRO' | 'AGENCY';
+    turnstileToken?: string;
+  }
 ): Promise<{ success: boolean; data?: RepositoryAnalysisResult; cached?: boolean; error?: string }> {
   try {
     if (!repoUrl || typeof repoUrl !== 'string') {
@@ -121,6 +128,52 @@ export async function analyzeRepositoryAction(
       recentCommits: repoInfo.recentCommits,
     });
 
+    const condensedAst = buildCondensedAstContext({
+      repoName: repoInfo.repo,
+      owner: repoInfo.owner,
+      repo: repoInfo.repo,
+      defaultBranch: repoInfo.defaultBranch,
+      fileTreeSummary: repoInfo.fileTreeSummary,
+      readmeContent: repoInfo.readmeContent,
+      manifestContent: repoInfo.manifestContent,
+      parsedDependencies: repoInfo.parsedDependencies,
+      recentCommits: repoInfo.recentCommits,
+    });
+
+    const commitSha = repoInfo.recentCommits?.[0]?.sha || repoInfo.defaultBranch || 'main';
+    const deepSeekResult = await generateDeepSeekContext({
+      repoOwner: repoInfo.owner,
+      repoName: repoInfo.repo,
+      commitSha,
+      userId: options?.userId,
+      userIp: options?.userIp || '127.0.0.1',
+      condensedAstContext: condensedAst,
+      userTier: options?.userTier,
+      turnstileToken: options?.turnstileToken,
+    });
+
+    const isDeepSeek = deepSeekResult.engine === 'deepseek';
+    monetizableOutputs.analysisEngine = deepSeekResult.engine;
+    monetizableOutputs.deepseekEnhanced = isDeepSeek;
+
+    let finalClaudeMd = monetizableOutputs.onboarding.claudeMd || contextMarkdown;
+    if (isDeepSeek && deepSeekResult.content) {
+      finalClaudeMd = `# CLAUDE.md — ${repoInfo.repo} Multi-Agent Architecture Dossier (⚡ DeepSeek Enhanced)
+> **Engine**: DeepSeek-V3 Intelligence (Deterministic AST Pre-Filtered)
+> **Verification Status**: Verified & Compiled by GitContextGen
+> **Cursor Synchronization**: Fully paired with \`.cursor/rules/project-rules.mdc\` (\`alwaysApply: true\`).
+
+---
+
+## 🧠 DeepSeek Architectural Synthesis
+${deepSeekResult.content}
+
+---
+
+${finalClaudeMd.replace(/^#\s+CLAUDE\.md[^\n]*\n/, '')}`;
+      monetizableOutputs.onboarding.claudeMd = finalClaudeMd;
+    }
+
     const result: RepositoryAnalysisResult = {
       repoUrl: `https://github.com/${repoInfo.owner}/${repoInfo.repo}`,
       owner: repoInfo.owner,
@@ -128,7 +181,7 @@ export async function analyzeRepositoryAction(
       defaultBranch: repoInfo.defaultBranch,
       fileTreeSummary: repoInfo.fileTreeSummary,
       readmeContent: repoInfo.readmeContent,
-      contextMarkdown: monetizableOutputs.onboarding.claudeMd || contextMarkdown,
+      contextMarkdown: finalClaudeMd,
       mermaidArchitecture: monetizableOutputs.architecture.mermaidGraph || mermaidArchitecture,
       analyzedAt: new Date().toISOString(),
       licenseSpdx: repoInfo.licenseSpdx || undefined,
@@ -137,6 +190,8 @@ export async function analyzeRepositoryAction(
       vulnerabilityCount: vulnSummary.totalVulnerabilities,
       criticalVulnerabilityCount: vulnSummary.criticalCount,
       monetizableOutputs,
+      analysisEngine: deepSeekResult.engine,
+      deepseekEnhanced: isDeepSeek,
     };
 
     setInCache(cacheKey, { data: result, timestamp: Date.now() });

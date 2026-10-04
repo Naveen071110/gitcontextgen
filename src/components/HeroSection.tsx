@@ -41,7 +41,9 @@ import {
   ExternalLink,
   RotateCcw,
   Layers,
-  Lock
+  Lock,
+  Brain,
+  FileSpreadsheet
 } from 'lucide-react';
 
 export default function HeroSection() {
@@ -315,28 +317,28 @@ export default function HeroSection() {
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center z-10 pt-2 pb-6">
         {/* Liquid Glass Tag Pill */}
         <div className="w-full flex justify-center mb-5">
-          <div className="liquid-glass px-4 py-2 rounded-xl inline-flex items-center justify-center gap-2.5 border border-zinc-800 bg-zinc-950/80 shadow-xl text-center w-fit">
-            <span className="bg-white text-black rounded-md text-[11px] font-bold px-2.5 py-0.5 font-mono shrink-0">
-              AGENCIES, SOLOPRENEURS & NO-CODE BUILDERS
+          <div className="liquid-glass px-4 py-2 rounded-xl inline-flex items-center justify-center gap-2.5 border border-cyan-500/30 bg-zinc-950/90 shadow-[0_0_20px_rgba(6,182,212,0.15)] text-center w-fit">
+            <span className="bg-gradient-to-r from-cyan-400 to-emerald-400 text-black rounded-md text-[11px] font-extrabold px-2.5 py-0.5 font-mono shrink-0">
+              NEW: MCP PERSISTENT MEMORY
             </span>
             <span className="text-xs font-medium text-zinc-300 flex items-center gap-1.5 font-mono">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse shrink-0" />
-              Stop Fighting Your AI Co-Pilot
+              AI Intelligence Engine &amp; SQLite Memory Layer Active
             </span>
           </div>
         </div>
 
         {/* Prominent Symmetrical H1 Title */}
         <h1 className="text-3xl md:text-5xl font-semibold tracking-tight text-white leading-[1.15] mb-5 text-center w-full max-w-4xl mx-auto">
-          Stop AI models from burning your context.{' '}
+          Your Codebase.{' '}
           <span className="font-serif italic font-normal text-cyan-300">
-            Automatically sync Cursor rules & Claude Code configurations across your entire team.
+            Unforgettable Context for AI Coding Agents.
           </span>
         </h1>
 
         {/* Subtitle Statement */}
-        <p className="text-sm md:text-base text-zinc-400 font-normal max-w-xl mx-auto mt-4 leading-relaxed text-center w-full">
-          GitContextGen acts as hallucination insurance—saving agencies up to 92% on token bills by using a persistent L2 caching layer and keeping parallel sub-agents from overwriting files via multi-agent write locks.
+        <p className="text-sm md:text-base text-zinc-400 font-normal max-w-2xl mx-auto mt-4 leading-relaxed text-center w-full">
+          Instantly generate verified <code className="text-zinc-200 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800 text-xs">CLAUDE.md</code>, <code className="text-zinc-200 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800 text-xs">.cursor/rules</code>, and <code className="text-zinc-200 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800 text-xs">AGENTS.md</code> context files. Stop agent amnesia with local-first SQLite memory (<code className="text-cyan-300 bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/60 text-xs">.gitcontextgen/memory.db</code>), sub-millisecond MCP tool lookups, and executive Excel exports.
         </p>
 
         {/* PLG Sandbox Input CTA with standardized mt-10 gap */}
@@ -403,6 +405,26 @@ export default function HeroSection() {
                 )}
               </button>
             ))}
+          </div>
+
+          {/* 4 Core Value Proof Pills */}
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 w-full max-w-3xl">
+            <div className="px-3 py-1.5 rounded-xl bg-zinc-900/60 border border-zinc-800/80 text-zinc-300 text-xs font-mono flex items-center gap-2 shadow-sm">
+              <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span>&lt; 5s Repo Scans</span>
+            </div>
+            <div className="px-3 py-1.5 rounded-xl bg-cyan-950/40 border border-cyan-500/40 text-cyan-300 text-xs font-mono flex items-center gap-2 shadow-sm">
+              <Brain className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+              <span className="font-semibold">Persistent Agent Memory (&lt; 1ms)</span>
+            </div>
+            <div className="px-3 py-1.5 rounded-xl bg-zinc-900/60 border border-zinc-800/80 text-zinc-300 text-xs font-mono flex items-center gap-2 shadow-sm">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>100% Secret Redaction</span>
+            </div>
+            <div className="px-3 py-1.5 rounded-xl bg-zinc-900/60 border border-zinc-800/80 text-zinc-300 text-xs font-mono flex items-center gap-2 shadow-sm">
+              <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+              <span>Executive Excel (.xlsx) Exports</span>
+            </div>
           </div>
         </div>
 

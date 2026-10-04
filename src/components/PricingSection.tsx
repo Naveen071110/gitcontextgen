@@ -195,11 +195,14 @@ export default function PricingSection() {
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> 50 Repository Scans / month
                   </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Unified CLAUDE.md & .cursorrules
+                  <li className="flex items-center gap-3 font-semibold text-white">
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Unified CLAUDE.md, .cursorrules &amp; AGENTS.md
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Automatic AST Tech Stack Detection
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Local Heuristic Analysis Engine
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Basic Mermaid.js Architecture Diagrams
@@ -259,19 +262,25 @@ export default function PricingSection() {
                     <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Everything in Starter Pass
                   </li>
                   <li className="flex items-center gap-3 font-semibold text-white">
-                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Standalone Zero-Dependency Binaries
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> Persistent Local MCP Memory (.gitcontextgen/memory.db)
                   </li>
                   <li className="flex items-center gap-3 font-semibold text-white">
-                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Bidirectional CLAUDE.md & .mdc Sync
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> Multi-Agent Atomic PID Mutex Lock
                   </li>
                   <li className="flex items-center gap-3 font-semibold text-white">
-                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Local stdio Model Context Protocol (MCP)
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> 5-Tab Executive Excel (.xlsx) Workbooks
                   </li>
                   <li className="flex items-center gap-3 font-semibold text-white">
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> 150 AI-Enhanced Analyses / month
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Bidirectional CLAUDE.md &amp; .mdc Sync
+                  </li>
+                  <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> L2 Persistent Disk Cache (Saves 92% Tokens)
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Automated OSV.dev Vulnerability Audits
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Automated OSV.dev Vulnerability Audits &amp; SPDX
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Kroki Vector SVG Architecture Exports
@@ -341,16 +350,19 @@ export default function PricingSection() {
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Everything in Pro Builder
                   </li>
                   <li className="flex items-center gap-3 font-semibold text-white">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Unlimited Public & Private Repositories
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Unlimited Public &amp; Private Repositories
                   </li>
                   <li className="flex items-center gap-3 font-semibold text-white">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Auto Tech Detection (WordPress, Laravel, React)
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Unlimited AI-Enhanced Analyses
                   </li>
                   <li className="flex items-center gap-3 font-semibold text-white">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Pre-Configured WordPress AI Presets (WPCS & DB)
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Branded Executive Client Handover (.xlsx &amp; Web)
+                  </li>
+                  <li className="flex items-center gap-3 font-semibold text-white">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" /> Team SQLite Memory Sync &amp; Shared Locks
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Automattic Telex & Gutenberg Block Support
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Pre-Configured WordPress AI Presets (WPCS &amp; DB)
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Multi-Agent Context Splitting (Subagents)
@@ -359,7 +371,7 @@ export default function PricingSection() {
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> GitHub Webhook Context Drift Synchronization
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Shareable Branded Client Audit Reports
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Priority High-Throughput L2 Cache Node
                   </li>
                 </ul>
 

@@ -9,6 +9,8 @@ const suites = [
   { name: 'Phase 6: Monetization Analyzer Engine & Atomic Persistence', file: 'tests/analyzer-engine.test.ts' },
   { name: 'Phase 7: Checkout Redirection & Analyzer Timeout Gates', file: 'tests/checkout-and-timeout.test.ts' },
   { name: 'Phase 8: Excel (.xlsx) & CSV Export Utilities', file: 'tests/export-utility.test.ts' },
+  { name: 'Phase 9: MCP Persistent Agent Memory Engine & Mutex Referee', file: 'tests/mcp-memory-engine.test.ts' },
+  { name: 'Phase 10: DeepSeek Cost-Guardrail & Anti-Abuse Engine', file: 'tests/deepseek-guardrail.test.ts' },
 ];
 
 console.log('='.repeat(78));

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Antigravity Autonomous Scheduled Audit Workers",
+  "version": "1.0.0",
+  "project": "GitContextGen (repopulse-ai)",
+  "workers": [
+    {
+      "id": "AG-TASK-01",
+      "name": "Daily DeepSeek Budget & Circuit Breaker Check",
+      "schedule": "0 */6 * * *",
+      "description": "Inspects Redis daily spending logs against DEEPSEEK_DAILY_BUDGET_LIMIT_USD and resets daily guest IP counters at midnight UTC.",
+      "command": "npm run audit:deepseek-budget",
+      "timeoutSeconds": 60,
+      "severity": "CRITICAL",
+      "alertThreshold": {
+        "budgetUtilizationPercent": 90,
+        "circuitBreakerTripped": true
+      }
+    },
+    {
+      "id": "AG-TASK-02",
+      "name": "Orphaned PID Lock & Memory Sweeper",
+      "schedule": "0 * * * *",
+      "description": "Inspects .gitcontextgen/locks/*.lock files, checks PID liveness (process.kill(pid, 0)), and removes stale locks left by crashed agent processes.",
+      "command": "npm run audit:locks-sweep",
+      "timeoutSeconds": 30,
+      "severity": "HIGH",
+      "alertThreshold": {
+        "staleLocksReclaimed": 5
+      }
+    },
+    {
+      "id": "AG-TASK-03",
+      "name": "Weekly L2 Cache & Supabase DB Hygiene",
+      "schedule": "0 2 * * 0",
+      "description": "Cleans up expired 12-hour TTL cache entries in Supabase cache_store to optimize database storage and query performance.",
+      "command": "npm run audit:cache-cleanup",
+      "timeoutSeconds": 180,
+      "severity": "MEDIUM",
+      "alertThreshold": {
+        "staleEntriesCleaned": 1000
+      }
+    },
+    {
+      "id": "AG-TASK-04",
+      "name": "Nightly Typecheck & Regression Suite",
+      "schedule": "0 0 * * *",
+      "description": "Runs a full production build and test pass to ensure no regressions or broken API contracts were introduced.",
+      "command": "npx tsc --noEmit && npm test",
+      "timeoutSeconds": 300,
+      "severity": "CRITICAL",
+      "alertThreshold": {
+        "typeErrors": 1,
+        "failedTestSuites": 1
+      }
+    },
+    {
+      "id": "AG-TASK-05",
+      "name": "Secret Scanner Pattern Integrity Audit",
+      "schedule": "0 0 1,15 * *",
+      "description": "Validates regex patterns in src/lib/sanitizer/engine.ts against modern credential formats (e.g. new GitHub PAT prefixes, AWS keys) to ensure zero secret leakage.",
+      "command": "npm run audit:security-patterns",
+      "timeoutSeconds": 60,
+      "severity": "CRITICAL",
+      "alertThreshold": {
+        "unredactedSecrets": 1
+      }
+    }
+  ]
+}

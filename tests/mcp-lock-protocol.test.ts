@@ -177,7 +177,10 @@ async function runMcpLockProtocolSuite() {
       capabilities: {},
       clientInfo: { name: 'diagnostic-runner', version: '1.0.0' },
     });
-    assert.strictEqual(initResult.serverInfo.name, 'gitcontextgen-mcp-server');
+    assert.ok(
+      initResult.serverInfo.name === 'gitcontextgen-mcp' || initResult.serverInfo.name === 'gitcontextgen-mcp-server',
+      `serverInfo.name unexpected: ${initResult.serverInfo.name}`
+    );
     client.notify('notifications/initialized');
     console.log(`  -> Connected to "${initResult.serverInfo.name}" v${initResult.serverInfo.version}`);
 

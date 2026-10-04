@@ -30,7 +30,10 @@ import {
   CheckCircle,
   ExternalLink,
   Laptop,
-  TerminalSquare
+  TerminalSquare,
+  Database,
+  Brain,
+  GitBranch
 } from 'lucide-react';
 
 export interface McpExplorerSandboxProps {
@@ -98,7 +101,7 @@ export default function McpExplorerSandbox({ repo }: McpExplorerSandboxProps) {
           protocol: 'JSON-RPC 2.0 (MCP 2024-11-05)',
           repoScope: `${repo.owner}/${repo.repo}`,
           cacheStatus: 'L2 Hot Cache Warm',
-          toolsCount: 4,
+          toolsCount: 7,
         });
       }
     }, 600);
@@ -281,6 +284,147 @@ alwaysApply: true
 - **Status**: Lock Acquired (PID: 4892)
 - **Hash**: \`sha256:7f4a2d8b1c9e...\`
 - **Result**: 2 files written successfully in 3.4ms with zero race conditions.`;
+      },
+    },
+    {
+      id: 'gitcontextgen_remember',
+      name: 'gitcontextgen_remember',
+      badge: 'SQLite Memory Writer',
+      description: 'Explicitly records an architectural decision, convention, bug resolution, or environment invariant into the zero-cost local SQLite engine (.gitcontextgen/memory.db).',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          path: {
+            type: 'string',
+            description: 'Target repository path (defaults to current working directory).',
+          },
+          topic: {
+            type: 'string',
+            description: 'Concise concept or invariant title (e.g., "PostgreSQL Connection Pooling").',
+          },
+          category: {
+            type: 'string',
+            enum: ['architecture', 'bug_fix', 'convention', 'env_config'],
+            description: 'Memory classification category.',
+          },
+          decision_summary: {
+            type: 'string',
+            description: 'Summary of the architectural or technical decision reached.',
+          },
+          code_rationale: {
+            type: 'string',
+            description: 'Rationale explaining constraints and why this approach was chosen.',
+          },
+        },
+        required: ['topic', 'category'],
+      },
+      sampleOutput: (r, q) => {
+        const topic = q || 'PostgreSQL Connection Pooling & Transaction Isolation';
+        return `### 🧠 SQLite Memory Recorded
+- **Status**: Committed to \`.gitcontextgen/memory.db\` (0.42ms)
+- **ID**: \`mem_k8s2x_9f2\`
+- **Repo ID**: \`${r.owner}/${r.repo}\`
+- **Category**: \`architecture\`
+- **Topic**: "${topic}"
+- **Decision**: Centralized all connection pooling in src/lib/db.ts with strict 20-client ceiling and late-escaped parameterized statements.
+- **Rationale**: Mitigates Cloudflare / Node serverless socket exhaustion during concurrent agent refactoring.
+- **Source Agent**: \`claude-code-cli\``;
+      },
+    },
+    {
+      id: 'gitcontextgen_recall',
+      name: 'gitcontextgen_recall',
+      badge: 'Sub-5ms Memory Recall',
+      description: 'Queries persistent agent memories and architectural decisions from local SQLite database using indexed composite lookups.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          path: {
+            type: 'string',
+            description: 'Target repository path.',
+          },
+          query: {
+            type: 'string',
+            description: 'Keyword search matching topics, decisions, or code rationale.',
+          },
+          category: {
+            type: 'string',
+            enum: ['architecture', 'bug_fix', 'convention', 'env_config'],
+            description: 'Category filter for targeted memory retrieval.',
+          },
+          limit: {
+            type: 'number',
+            description: 'Maximum number of memories to return (default: 10).',
+          },
+        },
+        required: ['path'],
+      },
+      sampleOutput: (r, q) => {
+        const queryTerm = q || 'connection pooling';
+        return `### ⚡ SQLite Memory Recall Results (Latency: 0.74ms)
+- **Query**: "${queryTerm}"
+- **Index Utilized**: \`idx_repo_topic\` & \`idx_repo_category\`
+- **Matches Found**: 2 persistent records
+
+#### Record 1: [architecture] Database Connection Pooling Invariant
+- **Stored**: 2 hours ago by \`cursor-composer\`
+- **Decision**: Always import db from \`@/lib/db\` — never instantiate direct pool clients in route handlers.
+- **Code Rationale**: Prevents connection exhaustion in serverless edge runtimes.
+
+#### Record 2: [bug_fix] Resolved Edge Timeout in API Analyze Route
+- **Stored**: 1 day ago by \`auto_git_observer\`
+- **Decision**: Wrapped analysis stream in AbortController with 45s hard ceiling.`;
+      },
+    },
+    {
+      id: 'gitcontextgen_get_context',
+      name: 'gitcontextgen_get_context',
+      badge: 'Unified Brain Priming',
+      description: 'Synthesizes a unified high-density context snapshot combining repository manifest, architecture topology, active rules, and recent memories for instant agent priming.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          path: {
+            type: 'string',
+            description: 'Target repository path or GitHub URL.',
+          },
+          category: {
+            type: 'string',
+            enum: ['architecture', 'bug_fix', 'convention', 'env_config'],
+            description: 'Optional category filter.',
+          },
+          format: {
+            type: 'string',
+            enum: ['claude', 'cursor', 'copilot', 'windsurf', 'universal', 'agents'],
+            description: 'Rule format standard (default: "universal").',
+          },
+        },
+        required: ['path'],
+      },
+      sampleOutput: (r) => {
+        return `### 🌐 Unified Agent Context Priming Snapshot
+\`\`\`json
+{
+  "repository": "${r.owner}/${r.repo}",
+  "ecosystem": "${r.monetizableOutputs?.framework || 'Next.js 15 App Router'}",
+  "architecture_summary": {
+    "total_modules": ${r.fileTreeSummary ? r.fileTreeSummary.split('\n').length : 14},
+    "entrypoint": "src/app/page.tsx",
+    "diagram_type": "Mermaid C4 Architecture"
+  },
+  "active_rules_format": "universal",
+  "memory_engine": {
+    "status": "active",
+    "db": ".gitcontextgen/memory.db",
+    "total_invariants": 6,
+    "recent_decisions": [
+      "Strict parameter binding in DB layer",
+      "Centralized Mutex file locks for multi-agent writes",
+      "Zero-latency L2 caching for AST queries"
+    ]
+  }
+}
+\`\`\``;
       },
     },
   ];
@@ -779,13 +923,156 @@ alwaysApply: true
         </div>
       </div>
 
+      {/* 2.5 Persistent Agent Memory Engine & Multi-Agent Mutex Referee */}
+      <div className="rounded-xl border border-[#30363d] bg-[#161b22] overflow-hidden shadow-xl">
+        <div className="px-5 py-4 bg-[#21262d] border-b border-[#30363d] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+              <Brain className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-semibold text-[#f0f6fc]">
+                  Persistent Agent Memory Engine &amp; Multi-Agent Locking Referee
+                </h4>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold">
+                  Zero-Cost SQLite
+                </span>
+              </div>
+              <p className="text-[11px] text-[#8b949e] font-mono mt-0.5">
+                Local-first indexed state (.gitcontextgen/memory.db) • Sub-5ms query latency • Mutex race prevention
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono bg-[#0d1117] border border-[#30363d] text-[#3fb950]">
+              <span className="w-2 h-2 rounded-full bg-[#3fb950] animate-pulse" />
+              SQLite Hot Warm (0.74ms)
+            </span>
+          </div>
+        </div>
+
+        <div className="p-5 grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Left Column: SQLite Memory Engine */}
+          <div className="p-4 rounded-xl bg-[#0d1117] border border-[#30363d] space-y-4">
+            <div className="flex items-center justify-between border-b border-[#30363d]/60 pb-3">
+              <div className="flex items-center gap-2">
+                <Database className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs font-bold text-[#f0f6fc] font-mono">
+                  Engine Architecture (.gitcontextgen/memory.db)
+                </span>
+              </div>
+              <span className="text-[10px] font-mono text-[#8b949e]">
+                Mirrored ~/.gitcontextgen/
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+              <div className="p-2.5 rounded bg-[#161b22] border border-[#30363d]/80">
+                <div className="text-[10px] text-[#8b949e]">DATABASE DRIVER</div>
+                <div className="text-[#3fb950] font-bold mt-0.5 flex items-center gap-1">
+                  <span>node:sqlite (Node 22)</span>
+                </div>
+                <div className="text-[10px] text-[#8b949e] mt-1">$0 Infrastructure Egress</div>
+              </div>
+
+              <div className="p-2.5 rounded bg-[#161b22] border border-[#30363d]/80">
+                <div className="text-[10px] text-[#8b949e]">RECALL SPEED</div>
+                <div className="text-[#58a6ff] font-bold mt-0.5">&lt; 0.8ms Indexed</div>
+                <div className="text-[10px] text-[#8b949e] mt-1">B-Tree composite indexes</div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-xs font-mono text-[#8b949e] flex items-center justify-between">
+                <span>Active Knowledge Categories:</span>
+                <span className="text-emerald-400 font-bold">6 Invariants Tracked</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                <span className="px-2 py-1 rounded-md text-[11px] font-mono bg-purple-500/10 border border-purple-500/30 text-purple-300">
+                  🏗️ architecture (2)
+                </span>
+                <span className="px-2 py-1 rounded-md text-[11px] font-mono bg-amber-500/10 border border-amber-500/30 text-amber-300">
+                  🐛 bug_fix (1)
+                </span>
+                <span className="px-2 py-1 rounded-md text-[11px] font-mono bg-blue-500/10 border border-blue-500/30 text-blue-300">
+                  📜 convention (2)
+                </span>
+                <span className="px-2 py-1 rounded-md text-[11px] font-mono bg-cyan-500/10 border border-cyan-500/30 text-cyan-300">
+                  ⚙️ env_config (1)
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-[#30363d]/60 flex items-center justify-between text-[11px] font-mono text-[#8b949e]">
+              <span className="flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-yellow-400" />
+                Auto-Capture: Git Commits &amp; Package Manifests
+              </span>
+              <span className="text-[#3fb950]">Active</span>
+            </div>
+          </div>
+
+          {/* Right Column: Multi-Agent Concurrency & Mutex Referee */}
+          <div className="p-4 rounded-xl bg-[#0d1117] border border-[#30363d] space-y-4">
+            <div className="flex items-center justify-between border-b border-[#30363d]/60 pb-3">
+              <div className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-[#58a6ff]" />
+                <span className="text-xs font-bold text-[#f0f6fc] font-mono">
+                  Multi-Agent Mutex Lock Referee
+                </span>
+              </div>
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 border border-blue-500/30 text-[#58a6ff]">
+                Atomic wx Flag
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+              <div className="p-2.5 rounded bg-[#161b22] border border-[#30363d]/80">
+                <div className="text-[10px] text-[#8b949e]">LOCK RESERVATION</div>
+                <div className="text-[#f0f6fc] font-bold mt-0.5">fs.openSync(&apos;wx&apos;)</div>
+                <div className="text-[10px] text-[#8b949e] mt-1">Zero Race Conditions</div>
+              </div>
+
+              <div className="p-2.5 rounded bg-[#161b22] border border-[#30363d]/80">
+                <div className="text-[10px] text-[#8b949e]">HEARTBEAT ORPHAN RECLAIM</div>
+                <div className="text-[#3fb950] font-bold mt-0.5">process.kill(pid, 0)</div>
+                <div className="text-[10px] text-[#8b949e] mt-1">30s TTL Safety Ceiling</div>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-lg bg-[#161b22] border border-[#30363d]/60 space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-[#8b949e]">Simultaneous Agents Guarded:</span>
+                <span className="text-[#58a6ff] font-bold">4 Active Runtimes</span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap text-[11px] font-mono text-[#c9d1d9]">
+                <span className="px-2 py-0.5 rounded bg-[#0d1117] border border-[#30363d]">Claude Code CLI</span>
+                <span className="px-2 py-0.5 rounded bg-[#0d1117] border border-[#30363d]">Cursor Composer</span>
+                <span className="px-2 py-0.5 rounded bg-[#0d1117] border border-[#30363d]">Windsurf</span>
+                <span className="px-2 py-0.5 rounded bg-[#0d1117] border border-[#30363d]">GitHub Copilot</span>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-[#30363d]/60 flex items-center justify-between text-[11px] font-mono text-[#8b949e]">
+              <span className="flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#3fb950]" />
+                Collision Invariant: Lock queues retry with exponential backoff
+              </span>
+              <span className="text-[#3fb950]">Protected</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 3. Interactive Tool & Resource Registry Browser (Accordion) */}
       <div className="rounded-xl border border-[#30363d] bg-[#161b22] overflow-hidden shadow-xl">
         <div className="px-5 py-4 bg-[#21262d] border-b border-[#30363d] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <Cpu className="w-4 h-4 text-[#58a6ff]" />
             <h4 className="text-sm font-semibold text-[#f0f6fc]">
-              Registered MCP Tool Capabilities (4 Active Schema Contracts)
+              Registered MCP Tool Capabilities ({tools.length} Active Schema Contracts)
             </h4>
           </div>
           <span className="text-xs font-mono text-[#8b949e]">
@@ -947,18 +1234,27 @@ alwaysApply: true
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[11px] font-mono text-[#8b949e]">Quick Presets:</span>
             {[
+              'Record architectural decision for connection pooling',
+              'Query past bug fixes and database conventions',
+              'Generate unified instant context priming bundle',
               'Find where database connection queries are escaping',
               'Generate a structural map for Next.js folder routes',
-              'Audit security boundaries for environment variables',
-              'Extract AST dependency nodes for primary services',
             ].map((preset) => (
               <button
                 key={preset}
                 onClick={() => {
                   setQueryInput(preset);
-                  setSelectedTool(
-                    preset.includes('map') ? 'get_ast_tree' : preset.includes('boundaries') ? 'get_framework_rules' : 'search_codebase'
-                  );
+                  if (preset.includes('Record architectural')) {
+                    setSelectedTool('gitcontextgen_remember');
+                  } else if (preset.includes('Query past')) {
+                    setSelectedTool('gitcontextgen_recall');
+                  } else if (preset.includes('priming bundle')) {
+                    setSelectedTool('gitcontextgen_get_context');
+                  } else if (preset.includes('map')) {
+                    setSelectedTool('get_ast_tree');
+                  } else {
+                    setSelectedTool('search_codebase');
+                  }
                 }}
                 className="px-2.5 py-1 rounded-md text-[11px] font-mono bg-[#0d1117] hover:bg-[#21262d] border border-[#30363d] text-[#8b949e] hover:text-[#c9d1d9] transition cursor-pointer"
               >

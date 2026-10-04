@@ -52,3 +52,7 @@ export async function verifyMcpLicense(
     return { valid: false, error: `Network error contacting license endpoint: ${err.message}` };
   }
 }
+
+export * from './memoryStore';
+export * from './fileLock';
+

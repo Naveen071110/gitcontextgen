@@ -263,3 +263,139 @@ export async function safeWriteWithVerification(targetFilePath, newContent, init
         agentId: options.agentId,
     });
 }
+/**
+ * Reclaims orphaned or stale locks by inspecting active OS process IDs
+ */
+export function reclaimOrphanedLocks() {
+    let reclaimed = 0;
+    try {
+        const dir = getLocksDirectory();
+        if (!fs.existsSync(dir))
+            return 0;
+        const files = fs.readdirSync(dir);
+        const now = Date.now();
+        for (const file of files) {
+            if (!file.endsWith('.lock'))
+                continue;
+            const fullPath = path.join(dir, file);
+            try {
+                const raw = fs.readFileSync(fullPath, 'utf-8');
+                const meta = JSON.parse(raw);
+                const isExpired = typeof meta.expiresAt === 'number' && now > meta.expiresAt;
+                const isDead = typeof meta.pid === 'number' && !isPidRunning(meta.pid);
+                if (isExpired || isDead) {
+                    try {
+                        fs.unlinkSync(fullPath);
+                        reclaimed++;
+                    }
+                    catch { }
+                }
+            }
+            catch {
+                try {
+                    fs.unlinkSync(fullPath);
+                    reclaimed++;
+                }
+                catch { }
+            }
+        }
+    }
+    catch { }
+    return reclaimed;
+}
+/**
+ * Acquires an exclusive lock on a named resource using atomic fs.openSync(..., 'wx')
+ */
+export function acquireLock(lockName, optionsOrPid, timeoutMs) {
+    let pid = process.pid;
+    let timeout = 3000;
+    let agentId = `agent-${process.pid}-${Math.random().toString(36).slice(2, 8)}`;
+    let staleMs = 30000;
+    if (typeof optionsOrPid === 'number') {
+        pid = optionsOrPid;
+        if (typeof timeoutMs === 'number') {
+            timeout = timeoutMs;
+        }
+    }
+    else if (optionsOrPid && typeof optionsOrPid === 'object') {
+        if (typeof optionsOrPid.pid === 'number')
+            pid = optionsOrPid.pid;
+        if (typeof optionsOrPid.agent === 'string')
+            agentId = optionsOrPid.agent;
+        if (typeof optionsOrPid.ttlMs === 'number')
+            staleMs = optionsOrPid.ttlMs;
+        if (typeof optionsOrPid.maxWaitMs === 'number')
+            timeout = optionsOrPid.maxWaitMs;
+    }
+    const lockPath = getLockFilePath(lockName);
+    const startTime = Date.now();
+    reclaimOrphanedLocks();
+    while (Date.now() - startTime <= timeout) {
+        try {
+            const now = Date.now();
+            const metadata = {
+                pid,
+                agentId,
+                targetFile: lockName,
+                lockPath,
+                acquiredAt: now,
+                expiresAt: now + staleMs,
+            };
+            const fd = fs.openSync(lockPath, 'wx');
+            try {
+                fs.writeFileSync(fd, JSON.stringify(metadata, null, 2), 'utf-8');
+            }
+            finally {
+                fs.closeSync(fd);
+            }
+            return true;
+        }
+        catch (err) {
+            if (err.code === 'EEXIST') {
+                try {
+                    const raw = fs.readFileSync(lockPath, 'utf-8');
+                    const existing = JSON.parse(raw);
+                    const isExpired = typeof existing.expiresAt === 'number' && Date.now() > existing.expiresAt;
+                    const isDead = typeof existing.pid === 'number' && !isPidRunning(existing.pid);
+                    if (isExpired || isDead) {
+                        try {
+                            fs.unlinkSync(lockPath);
+                            continue;
+                        }
+                        catch { }
+                    }
+                }
+                catch {
+                    try {
+                        fs.unlinkSync(lockPath);
+                        continue;
+                    }
+                    catch { }
+                }
+                const waitMs = 25;
+                const endWait = Date.now() + waitMs;
+                while (Date.now() < endWait) { }
+            }
+            else {
+                return false;
+            }
+        }
+    }
+    return false;
+}
+/**
+ * Releases an exclusive lock on a named resource
+ */
+export function releaseLock(lockName) {
+    try {
+        const lockPath = getLockFilePath(lockName);
+        if (fs.existsSync(lockPath)) {
+            fs.unlinkSync(lockPath);
+            return true;
+        }
+        return false;
+    }
+    catch {
+        return false;
+    }
+}

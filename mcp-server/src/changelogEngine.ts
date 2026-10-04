@@ -9,7 +9,7 @@ export function generateChangelog(
   targetPath: string,
   fromCommit?: string,
   tone: ChangelogTone = 'developer'
-): { tone_applied: ChangelogTone; changelog: string; commitsCount: number } {
+): { tone_applied: ChangelogTone; changelog: string; commitsCount: number; rawCommits?: string[] } {
   // Check for HTTP/HTTPS web links
   if (/^https?:\/\//i.test(targetPath)) {
     throw new Error(
@@ -66,6 +66,7 @@ ${highlights.join('\n')}
       tone_applied: 'marketing',
       changelog,
       commitsCount: commitList.length,
+      rawCommits: commitList,
     };
   }
 
@@ -94,5 +95,6 @@ ${highlights.join('\n')}
     tone_applied: 'developer',
     changelog: sections.join('\n'),
     commitsCount: commitList.length,
+    rawCommits: commitList,
   };
 }

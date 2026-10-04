@@ -6,4 +6,5 @@ export declare function generateChangelog(targetPath: string, fromCommit?: strin
     tone_applied: ChangelogTone;
     changelog: string;
     commitsCount: number;
+    rawCommits?: string[];
 };

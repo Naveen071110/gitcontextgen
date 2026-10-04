@@ -343,3 +343,116 @@ export async function safeWriteWithVerification(
     }
   );
 }
+
+/**
+ * Reclaims orphaned or stale locks by inspecting active OS process IDs
+ */
+export function reclaimOrphanedLocks(): void {
+  try {
+    const dir = getLocksDirectory();
+    if (!fs.existsSync(dir)) return;
+
+    const files = fs.readdirSync(dir);
+    const now = Date.now();
+
+    for (const file of files) {
+      if (!file.endsWith('.lock')) continue;
+      const fullPath = path.join(dir, file);
+      try {
+        const raw = fs.readFileSync(fullPath, 'utf-8');
+        const meta = JSON.parse(raw);
+        const isExpired = now > meta.expiresAt;
+        const isDead = !isPidRunning(meta.pid);
+
+        if (isExpired || isDead) {
+          try {
+            fs.unlinkSync(fullPath);
+          } catch {}
+        }
+      } catch {
+        try {
+          fs.unlinkSync(fullPath);
+        } catch {}
+      }
+    }
+  } catch {}
+}
+
+/**
+ * Acquires an exclusive lock on a named resource using atomic fs.openSync(..., 'wx')
+ */
+export function acquireLock(
+  lockName: string,
+  pid: number = process.pid,
+  timeoutMs: number = 3000
+): boolean {
+  const lockPath = getLockFilePath(lockName);
+  const startTime = Date.now();
+  const staleMs = 30000;
+
+  reclaimOrphanedLocks();
+
+  while (Date.now() - startTime <= timeoutMs) {
+    try {
+      const now = Date.now();
+      const metadata: LockMetadata = {
+        pid,
+        agentId: `agent-${pid}-${Math.random().toString(36).slice(2, 8)}`,
+        targetFile: lockName,
+        lockPath,
+        acquiredAt: now,
+        expiresAt: now + staleMs,
+      };
+
+      const fd = fs.openSync(lockPath, 'wx');
+      try {
+        fs.writeFileSync(fd, JSON.stringify(metadata, null, 2), 'utf-8');
+      } finally {
+        fs.closeSync(fd);
+      }
+      return true;
+    } catch (err: any) {
+      if (err.code === 'EEXIST') {
+        try {
+          const raw = fs.readFileSync(lockPath, 'utf-8');
+          const existing = JSON.parse(raw);
+          const isExpired = Date.now() > existing.expiresAt;
+          const isDead = !isPidRunning(existing.pid);
+
+          if (isExpired || isDead) {
+            try {
+              fs.unlinkSync(lockPath);
+              continue;
+            } catch {}
+          }
+        } catch {
+          try {
+            fs.unlinkSync(lockPath);
+            continue;
+          } catch {}
+        }
+
+        const waitMs = 50;
+        const endWait = Date.now() + waitMs;
+        while (Date.now() < endWait) {}
+      } else {
+        return false;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Releases an exclusive lock on a named resource
+ */
+export function releaseLock(lockName: string): void {
+  try {
+    const lockPath = getLockFilePath(lockName);
+    if (fs.existsSync(lockPath)) {
+      fs.unlinkSync(lockPath);
+    }
+  } catch {}
+}
+

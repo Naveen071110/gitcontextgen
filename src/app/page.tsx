@@ -4,6 +4,7 @@ import LiveDashboardPreview from '@/components/LiveDashboardPreview';
 import HowItWorksStepper from '@/components/HowItWorksStepper';
 import InteractiveCliTerminal from '@/components/InteractiveCliTerminal';
 import ProblemAgitationSection from '@/components/ProblemAgitationSection';
+import AgentMemoryFeature from '@/components/AgentMemoryFeature';
 import NonCoderAnalogySection from '@/components/NonCoderAnalogySection';
 import ComparisonTableSection from '@/components/ComparisonTableSection';
 import McpParadigmSection from '@/components/McpParadigmSection';
@@ -52,6 +53,11 @@ export default function LandingPage() {
 
       {/* 5. Problem / Agitation Section (2-Column Before/After Comparison) */}
       <ProblemAgitationSection />
+
+      <div className="w-full max-w-6xl mx-auto h-px bg-gradient-to-r from-transparent via-zinc-850/80 to-transparent my-4" />
+
+      {/* 5.5. AI Agent Amnesia Crisis Solved (Persistent MCP Memory Engine) */}
+      <AgentMemoryFeature />
 
       <div className="w-full max-w-6xl mx-auto h-px bg-gradient-to-r from-transparent via-zinc-850/80 to-transparent my-4" />
 

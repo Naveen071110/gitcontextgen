@@ -2,6 +2,7 @@ import {
   escapeCsvCell,
   generateFileInventoryCsv,
   generateClientHandoffCsv,
+  generateUnifiedCsv,
   extractInventoryRows,
   extractClientHandoffRows,
 } from '../src/lib/export/csvExporter';
@@ -154,11 +155,54 @@ export async function runExportUtilitySuite() {
   console.log('✅ PASS: Client Handoff CSV correctly generated with 3-category groupings.');
 
   // -------------------------------------------------------------------------
-  // TEST 4: Excel (.xlsx) Multi-Sheet Workbook Generation
+  // TEST 3.5: CSV Executive Header Block & Unified Export
   // -------------------------------------------------------------------------
-  console.log('\n[TEST 4] Testing Excel (.xlsx) 4-sheet binary workbook generation...');
+  console.log('\n[TEST 3.5] Testing CSV executive header block, section delimiters, and unified export...');
 
-  const excelBuffer = generateExcelWorkbook(mockResult);
+  // Verify header block in inventory CSV
+  const invCsvWithHeader = generateFileInventoryCsv(mockResult);
+  if (!invCsvWithHeader.includes('# GITCONTEXTGEN CODEBASE ANALYSIS REPORT')) {
+    throw new Error('File Inventory CSV missing executive header block');
+  }
+  if (!invCsvWithHeader.includes('# --- [ CODEBASE FILE INVENTORY')) {
+    throw new Error('File Inventory CSV missing section delimiter');
+  }
+
+  // Verify header block in handoff CSV
+  const handoffCsvWithHeader = generateClientHandoffCsv(mockResult);
+  if (!handoffCsvWithHeader.includes('# GITCONTEXTGEN CODEBASE ANALYSIS REPORT')) {
+    throw new Error('Client Handoff CSV missing executive header block');
+  }
+  if (!handoffCsvWithHeader.includes('# --- [ CLIENT HANDOFF')) {
+    throw new Error('Client Handoff CSV missing section delimiter');
+  }
+
+  // Verify unified CSV combines all sections
+  const unifiedCsv = generateUnifiedCsv(mockResult);
+  if (!unifiedCsv.includes('SECTION 1: CODEBASE FILE INVENTORY')) {
+    throw new Error('Unified CSV missing Section 1 header');
+  }
+  if (!unifiedCsv.includes('SECTION 2: GENERATED AI RULES')) {
+    throw new Error('Unified CSV missing Section 2 header');
+  }
+  if (!unifiedCsv.includes('SECTION 3: CLIENT HANDOFF')) {
+    throw new Error('Unified CSV missing Section 3 header');
+  }
+  if (!unifiedCsv.includes('CLAUDE.md') || !unifiedCsv.includes('AGENTS.md')) {
+    throw new Error('Unified CSV missing AI rule entries');
+  }
+  if (!unifiedCsv.includes('END OF REPORT')) {
+    throw new Error('Unified CSV missing report footer');
+  }
+
+  console.log('✅ PASS: CSV executive header block, section delimiters, and unified export verified.');
+
+  // -------------------------------------------------------------------------
+  // TEST 4: Excel (.xlsx) Multi-Sheet Executive Workbook Generation (ExcelJS)
+  // -------------------------------------------------------------------------
+  console.log('\n[TEST 4] Testing Excel (.xlsx) 5-tab Executive Workbook generation (ExcelJS)...');
+
+  const excelBuffer = await generateExcelWorkbook(mockResult);
   if (!(excelBuffer instanceof Uint8Array) || excelBuffer.byteLength === 0) {
     throw new Error('Expected non-empty Uint8Array binary buffer for Excel workbook');
   }
@@ -166,10 +210,11 @@ export async function runExportUtilitySuite() {
   // Parse workbook using SheetJS to verify sheets and cells
   const wb = XLSX.read(excelBuffer, { type: 'buffer' });
   const expectedSheets = [
-    'Overview & Metadata',
-    'Codebase Inventory & AST',
-    'Generated AI Rules',
-    'Client Handoff Report',
+    'Executive Summary',
+    'Codebase Topology & AST',
+    'Generated AI Rules & Context',
+    'Architecture & Dependency Map',
+    'Client Handoff & Progress',
   ];
 
   for (const sheetName of expectedSheets) {
@@ -178,23 +223,47 @@ export async function runExportUtilitySuite() {
     }
   }
 
-  // Verify Sheet 1 contents
-  const overviewSheet = wb.Sheets['Overview & Metadata'];
-  const overviewData = XLSX.utils.sheet_to_json<any>(overviewSheet, { header: 1 });
-  const propRows = overviewData.map((row: any) => row[0]);
-  if (!propRows.includes('Repository Name') || !propRows.includes('GitHub URL') || !propRows.includes('Primary Framework Detected')) {
-    throw new Error('Sheet 1 missing key metadata property rows');
+  // Verify Sheet 1 contents (Executive Summary)
+  const executiveSheet = wb.Sheets['Executive Summary'];
+  const executiveData = XLSX.utils.sheet_to_json<any>(executiveSheet, { header: 1 });
+  const executiveFlat = executiveData.flat().map((v: any) => String(v || ''));
+  if (!executiveFlat.some(v => v.includes('GITCONTEXTGEN')) || !executiveFlat.some(v => v.includes('TOTAL CODEBASE FILES'))) {
+    throw new Error('Sheet 1 missing key executive banner or KPI card headers');
   }
 
-  // Verify Sheet 3 contents (AI Rules)
-  const rulesSheet = wb.Sheets['Generated AI Rules'];
+  // Verify Sheet 2 contents (Codebase Topology & AST)
+  const topologySheet = wb.Sheets['Codebase Topology & AST'];
+  const topologyData = XLSX.utils.sheet_to_json<any>(topologySheet, { header: 1 });
+  const topologyFlat = topologyData.flat().map((v: any) => String(v || ''));
+  if (!topologyFlat.some(v => v.includes('File Path')) || !topologyFlat.some(v => v.includes('Category'))) {
+    throw new Error('Sheet 2 missing required column headers');
+  }
+
+  // Verify Sheet 3 contents (Generated AI Rules & Context)
+  const rulesSheet = wb.Sheets['Generated AI Rules & Context'];
   const rulesData = XLSX.utils.sheet_to_json<any>(rulesSheet, { header: 1 });
-  const ruleFiles = rulesData.map((row: any) => row[0]);
-  if (!ruleFiles.includes('CLAUDE.md') || !ruleFiles.includes('AGENTS.md') || !ruleFiles.includes('.cursor/rules/nextjs.mdc')) {
-    throw new Error(`Sheet 3 missing required rule files. Found: ${ruleFiles.join(', ')}`);
+  const rulesFlat = rulesData.flat().map((v: any) => String(v || ''));
+  if (!rulesFlat.some(v => v.includes('CLAUDE.md')) || !rulesFlat.some(v => v.includes('AGENTS.md')) || !rulesFlat.some(v => v.includes('.cursor/rules/nextjs.mdc'))) {
+    throw new Error(`Sheet 3 missing required rule files. Available: ${rulesFlat.join(', ')}`);
   }
 
-  console.log(`✅ PASS: Excel workbook validated with all 4 sheets (${excelBuffer.byteLength} bytes).`);
+  // Verify Sheet 4 contents (Architecture & Dependency Map)
+  const archSheet = wb.Sheets['Architecture & Dependency Map'];
+  const archData = XLSX.utils.sheet_to_json<any>(archSheet, { header: 1 });
+  const archFlat = archData.flat().map((v: any) => String(v || ''));
+  if (!archFlat.some(v => v.includes('Module / Layer')) || !archFlat.some(v => v.includes('Mermaid Topology Node Key'))) {
+    throw new Error('Sheet 4 missing architecture column headers');
+  }
+
+  // Verify Sheet 5 contents (Client Handoff & Progress Report)
+  const handoffSheet = wb.Sheets['Client Handoff & Progress'];
+  const handoffData = XLSX.utils.sheet_to_json<any>(handoffSheet, { header: 1 });
+  const handoffFlat = handoffData.flat().map((v: any) => String(v || ''));
+  if (!handoffFlat.some(v => v.includes('Technical Commit Summary')) || !handoffFlat.some(v => v.includes('Business Impact'))) {
+    throw new Error('Sheet 5 missing client handoff headers');
+  }
+
+  console.log(`✅ PASS: Executive Excel workbook validated with all 5 sheets (${excelBuffer.byteLength} bytes).`);
 
   // -------------------------------------------------------------------------
   // TEST 5: Graceful Handling of Empty / Edge-Case Inputs
@@ -212,7 +281,7 @@ export async function runExportUtilitySuite() {
     analyzedAt: '',
   };
 
-  const minimalWbBuffer = generateExcelWorkbook(minimalResult);
+  const minimalWbBuffer = await generateExcelWorkbook(minimalResult);
   if (!(minimalWbBuffer instanceof Uint8Array) || minimalWbBuffer.byteLength === 0) {
     throw new Error('Failed to generate Excel workbook for minimal repository result');
   }
@@ -230,7 +299,7 @@ export async function runExportUtilitySuite() {
   console.log('✅ PASS: Handled null and empty analysis sections cleanly without throwing.');
 
   console.log('\n========================================================================');
-  console.log('🎉 PHASE 8: EXCEL & CSV EXPORT UTILITY SUITE PASSED 100% (5/5 ASSERTIONS)');
+  console.log('🎉 PHASE 8: EXCEL & CSV EXPORT UTILITY SUITE PASSED 100% (6/6 ASSERTIONS)');
   console.log('========================================================================\n');
 }
 

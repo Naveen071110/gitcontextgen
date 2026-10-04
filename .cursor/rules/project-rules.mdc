@@ -25,3 +25,16 @@ You are an expert full-stack developer working on GitContextGen (RepoPulse AI).
 - [Edge Runtime] Cloudflare Workers compatibility (workerd). Avoid unsupported Node.js native bindings in edge route handlers.
 - [Security] Mermaid.js must always use `securityLevel: 'strict'`. Never log or commit API keys or .env files.
 - [MCP Protocol] Tool definitions must adhere strictly to @modelcontextprotocol/sdk schemas with runtime input validation and persistent L1/L2 caching.
+
+## 3. Strict Backend Code Freeze & Modification Protocol (STRICT FREEZE)
+- **Protected Core Pipeline**: The backend analysis engine, API route handlers, MCP memory pipelines, secret sanitization logic, and caching layers are production-ready and under strict code freeze.
+  - `src/app/api/analyze/route.ts` & `src/app/api/webhooks/**/*.ts`
+  - `src/lib/analyzer/**/*.ts` & `src/lib/sanitizer/**/*.ts` (and secret redaction)
+  - `src/lib/mcp/**/*.ts` & `src/lib/locks/**/*.ts` (and `fileLock.ts`)
+  - `src/lib/cacheStore.ts` & `src/lib/db.ts`
+- **Mandatory Approval Protocol**:
+  1. **Stop & Flag**: Never touch protected files without explicit developer sign-off.
+  2. **Impact Assessment**: State why, which file/function, and any risks or breaking changes.
+  3. **Explicit Query**: Ask: *"This change requires updating [File Path]. Should I proceed with modifying the backend processing logic, or can we accomplish this purely within the frontend presentation layer?"*
+  4. **Proceed ONLY upon explicit written developer confirmation.**
+- **Frontend Independence**: All new features, exports, or dashboard cards must consume existing backend API responses without altering core pipeline processing.

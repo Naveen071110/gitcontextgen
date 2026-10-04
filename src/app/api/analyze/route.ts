@@ -9,6 +9,17 @@ function generateRequestId(): string {
   return 'req_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 8);
 }
 
+function extractClientMetadata(req: Request, body?: any) {
+  const forwarded = req.headers.get('x-forwarded-for');
+  const userIp = forwarded
+    ? forwarded.split(',')[0].trim()
+    : req.headers.get('x-real-ip') || req.headers.get('cf-connecting-ip') || '127.0.0.1';
+  const turnstileToken = req.headers.get('cf-turnstile-token') || body?.turnstileToken || undefined;
+  const userId = body?.userId || undefined;
+  const userTier = body?.userTier || undefined;
+  return { userIp, turnstileToken, userId, userTier };
+}
+
 export async function GET(req: Request) {
   const requestId = generateRequestId();
   try {
@@ -16,6 +27,7 @@ export async function GET(req: Request) {
     const repoUrl = searchParams.get('url') || searchParams.get('repoUrl');
     const owner = searchParams.get('owner');
     const repo = searchParams.get('repo');
+    const clientMeta = extractClientMetadata(req);
 
     let targetUrl = repoUrl;
     if (!targetUrl && owner && repo) {
@@ -30,7 +42,7 @@ export async function GET(req: Request) {
     }
 
     const result = await withTimeout(
-      analyzeRepositoryAction(targetUrl),
+      analyzeRepositoryAction(targetUrl, undefined, clientMeta),
       35_000,
       'GitHub took too long to respond. Please try the analysis again.'
     );
@@ -43,6 +55,8 @@ export async function GET(req: Request) {
       success: true,
       data: result.data,
       cached: result.cached,
+      analysisEngine: result.data.analysisEngine || 'local',
+      deepseekEnhanced: result.data.deepseekEnhanced || false,
       progress: 'complete',
       requestId,
     });
@@ -81,8 +95,9 @@ export async function POST(req: Request) {
     }
 
     const token = body.token || body.userToken;
+    const clientMeta = extractClientMetadata(req, body);
     const result = await withTimeout(
-      analyzeRepositoryAction(targetUrl, token),
+      analyzeRepositoryAction(targetUrl, token, clientMeta),
       35_000,
       'GitHub took too long to respond. Please try the analysis again.'
     );
@@ -95,6 +110,8 @@ export async function POST(req: Request) {
       success: true,
       data: result.data,
       cached: result.cached,
+      analysisEngine: result.data.analysisEngine || 'local',
+      deepseekEnhanced: result.data.deepseekEnhanced || false,
       progress: 'complete',
       requestId,
     });

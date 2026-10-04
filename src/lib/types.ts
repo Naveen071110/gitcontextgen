@@ -40,6 +40,8 @@ export interface AnalyzedCodebaseOutputs {
     };
     markdown: string;
   };
+  analysisEngine?: 'deepseek' | 'local';
+  deepseekEnhanced?: boolean;
 }
 
 export interface DocAsset {
@@ -96,6 +98,8 @@ export interface RepositoryAnalysisResult {
   criticalVulnerabilityCount?: number;
   wordpress?: import('../analyzer/detector').WordPressDetection;
   monetizableOutputs?: AnalyzedCodebaseOutputs;
+  analysisEngine?: 'deepseek' | 'local';
+  deepseekEnhanced?: boolean;
 }
 
 export interface SandboxState {
@@ -131,5 +135,29 @@ export interface DfyOnboarding {
   notes?: string;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface DeepSeekAnalysisOptions {
+  repoOwner: string;
+  repoName: string;
+  commitSha: string;
+  userId?: string;
+  userIp: string;
+  condensedAstContext: string;
+  userTier?: SubscriptionTier;
+  turnstileToken?: string;
+}
+
+export interface DeepSeekAnalysisResult {
+  content: string;
+  engine: 'deepseek' | 'local';
+  cached: boolean;
+  tokensUsed?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+  costUsd?: number;
+  reason?: string;
 }
 

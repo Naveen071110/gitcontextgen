@@ -50,6 +50,7 @@ ${highlights.join('\n')}
             tone_applied: 'marketing',
             changelog,
             commitsCount: commitList.length,
+            rawCommits: commitList,
         };
     }
     // Developer tone (default)
@@ -79,5 +80,6 @@ ${highlights.join('\n')}
         tone_applied: 'developer',
         changelog: sections.join('\n'),
         commitsCount: commitList.length,
+        rawCommits: commitList,
     };
 }

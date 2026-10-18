@@ -494,6 +494,19 @@ alwaysApply: true
     2
   );
 
+  const cursorMcpJson = JSON.stringify(
+    {
+      mcpServers: {
+        [`gitcontextgen-${repo.repo}`]: {
+          command: 'npx',
+          args: ['-y', '@gitcontextgen/core', 'mcp', '--repo', `${repo.owner}/${repo.repo}`],
+        },
+      },
+    },
+    null,
+    2
+  );
+
   const cursorSetupText = `1. Open Cursor Settings (Cmd+, or Ctrl+,)
 2. Navigate to: Features > MCP Servers
 3. Click "Add New MCP Server"
@@ -776,16 +789,16 @@ alwaysApply: true
                 <div>
                   <h5 className="text-sm font-bold text-[#f0f6fc]">Step 2: Initialize &amp; Authenticate Repository</h5>
                   <p className="text-xs text-[#8b949e] mt-0.5">
-                    Run in your repository root to detect git remotes, link your GitContextGen account, and cache AST rules.
+                    Run in your repository root to detect git remotes, generate configuration, and initialize SQLite memory store.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => handleCopy('gitcontextgen init', 'step2-init')}
+                    onClick={() => handleCopy('npx gitcontextgen init', 'step2-init')}
                     className="px-3 py-1.5 rounded-lg bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-xs font-mono text-[#58a6ff] hover:text-white transition flex items-center gap-1.5 cursor-pointer"
                   >
                     {copiedKey === 'step2-init' ? <Check className="w-3.5 h-3.5 text-[#3fb950]" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>Copy init command</span>
+                    <span>Copy npx init</span>
                   </button>
                   <button
                     onClick={() => setMockTerminalStep2(!mockTerminalStep2)}
@@ -798,8 +811,8 @@ alwaysApply: true
               </div>
 
               <div className="p-3.5 rounded-lg bg-[#0d1117] border border-[#30363d] font-mono text-xs text-[#58a6ff] flex items-center justify-between">
-                <span>gitcontextgen init</span>
-                <span className="text-[#8b949e] text-[11px]">Creates .gitcontextgen/config.json</span>
+                <span>npx gitcontextgen init</span>
+                <span className="text-[#8b949e] text-[11px]">Generates .gitcontextgen/config.json &amp; memory.db</span>
               </div>
 
               {mockTerminalStep2 && (
@@ -810,9 +823,9 @@ alwaysApply: true
                     <span className="w-2.5 h-2.5 rounded-full bg-[#3fb950]/80 inline-block" />
                     <span className="ml-2 text-[11px]">zsh — 80x24</span>
                   </div>
-                  <div><span className="text-[#3fb950]">$</span> cd my-project &amp;&amp; gitcontextgen init</div>
+                  <div><span className="text-[#3fb950]">$</span> npx gitcontextgen init</div>
                   <div className="text-[#8b949e]">✔ Detected git remote: {repo.owner}/{repo.repo}</div>
-                  <div className="text-[#8b949e]">✔ Authenticated active session token</div>
+                  <div className="text-[#8b949e]">✔ Initialized SQLite memory database: .gitcontextgen/memory.db</div>
                   <div className="text-[#58a6ff]">✔ Generated .gitcontextgen/config.json</div>
                   <div className="text-[#3fb950] flex items-center gap-1.5 pt-1">
                     <CheckCircle className="w-3.5 h-3.5" />
@@ -866,56 +879,124 @@ alwaysApply: true
               </div>
 
               {setupTab === 'claude-code' && (
-                <div className="p-3.5 rounded-lg bg-[#0d1117] border border-[#30363d] space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono text-[#8b949e]">One-Command Terminal Connector:</span>
-                    <button
-                      onClick={() => handleCopy(`claude mcp add gitcontextgen -- npx -y @gitcontextgen/core mcp --repo ${repo.owner}/${repo.repo}`, 'step3-claude-code')}
-                      className="px-2.5 py-1 rounded bg-[#21262d] hover:bg-[#30363d] text-xs font-mono text-[#58a6ff] hover:text-white transition flex items-center gap-1 cursor-pointer"
-                    >
-                      {copiedKey === 'step3-claude-code' ? <Check className="w-3.5 h-3.5 text-[#3fb950]" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>Copy CLI command</span>
-                    </button>
+                <div className="p-3.5 rounded-lg bg-[#0d1117] border border-[#30363d] space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#30363d]/60">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-[#8b949e]">Target Config:</span>
+                      <code className="px-2 py-0.5 rounded bg-[#161b22] border border-[#30363d] text-[#58a6ff] text-xs font-mono">
+                        ~/.claude.json
+                      </code>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={() => handleCopy(`claude mcp add gitcontextgen -- npx -y @gitcontextgen/core mcp --repo ${repo.owner}/${repo.repo}`, 'step3-claude-cli')}
+                        className="px-2.5 py-1 rounded bg-[#21262d] hover:bg-[#30363d] text-xs font-mono text-[#58a6ff] hover:text-white transition flex items-center gap-1 cursor-pointer"
+                        title="Copy Claude Code CLI command"
+                      >
+                        {copiedKey === 'step3-claude-cli' ? <Check className="w-3.5 h-3.5 text-[#3fb950]" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>Copy CLI command</span>
+                      </button>
+                      <button
+                        onClick={() => handleCopy(claudeCodeJson, 'step3-claude-json')}
+                        className="px-2.5 py-1 rounded bg-[#238636] hover:bg-[#2ea043] text-xs font-mono text-white transition flex items-center gap-1 cursor-pointer shadow-sm"
+                        title="Copy ~/.claude.json configuration"
+                      >
+                        {copiedKey === 'step3-claude-json' ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>Copy ~/.claude.json</span>
+                      </button>
+                    </div>
                   </div>
-                  <pre className="text-xs font-mono text-[#58a6ff] overflow-x-auto whitespace-pre-wrap">
-                    claude mcp add gitcontextgen -- npx -y @gitcontextgen/core mcp --repo {repo.owner}/{repo.repo}
-                  </pre>
+
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-mono text-[#8b949e]">Option A: Direct Terminal Command</span>
+                    <pre className="text-xs font-mono text-[#58a6ff] p-2.5 rounded bg-[#161b22] border border-[#30363d] overflow-x-auto whitespace-pre-wrap">
+                      claude mcp add gitcontextgen -- npx -y @gitcontextgen/core mcp --repo {repo.owner}/{repo.repo}
+                    </pre>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-mono text-[#8b949e]">Option B: Configuration File (~/.claude.json)</span>
+                    <pre className="text-xs font-mono text-[#c9d1d9] p-2.5 rounded bg-[#161b22] border border-[#30363d] overflow-x-auto">
+                      {claudeCodeJson}
+                    </pre>
+                  </div>
                 </div>
               )}
 
               {setupTab === 'claude-desktop' && (
-                <div className="p-3.5 rounded-lg bg-[#0d1117] border border-[#30363d] space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono text-[#8b949e]">Drop into claude_desktop_config.json:</span>
+                <div className="p-3.5 rounded-lg bg-[#0d1117] border border-[#30363d] space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#30363d]/60">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-[#8b949e]">macOS:</span>
+                        <code className="text-[11px] text-[#58a6ff] font-mono truncate">
+                          ~/Library/Application Support/Claude/claude_desktop_config.json
+                        </code>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-[#8b949e]">Windows:</span>
+                        <code className="text-[11px] text-[#58a6ff] font-mono truncate">
+                          %APPDATA%\Claude\claude_desktop_config.json
+                        </code>
+                      </div>
+                    </div>
                     <button
                       onClick={() => handleCopy(claudeDesktopJson, 'step3-claude-desktop')}
-                      className="px-2.5 py-1 rounded bg-[#21262d] hover:bg-[#30363d] text-xs font-mono text-[#58a6ff] hover:text-white transition flex items-center gap-1 cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg bg-[#238636] hover:bg-[#2ea043] text-xs font-mono text-white transition flex items-center gap-1.5 cursor-pointer shrink-0 shadow-sm"
+                      title="Copy Claude Desktop JSON configuration"
                     >
-                      {copiedKey === 'step3-claude-desktop' ? <Check className="w-3.5 h-3.5 text-[#3fb950]" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>Copy JSON</span>
+                      {copiedKey === 'step3-claude-desktop' ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>Copy claude_desktop_config.json</span>
                     </button>
                   </div>
-                  <pre className="text-xs font-mono text-[#c9d1d9] overflow-x-auto">
+                  <pre className="text-xs font-mono text-[#c9d1d9] p-2.5 rounded bg-[#161b22] border border-[#30363d] overflow-x-auto">
                     {claudeDesktopJson}
                   </pre>
                 </div>
               )}
 
               {setupTab === 'cursor' && (
-                <div className="p-3.5 rounded-lg bg-[#0d1117] border border-[#30363d] space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono text-[#8b949e]">Cursor Settings &gt; Features &gt; MCP Servers:</span>
-                    <button
-                      onClick={() => handleCopy(cursorSetupText, 'step3-cursor')}
-                      className="px-2.5 py-1 rounded bg-[#21262d] hover:bg-[#30363d] text-xs font-mono text-[#58a6ff] hover:text-white transition flex items-center gap-1 cursor-pointer"
-                    >
-                      {copiedKey === 'step3-cursor' ? <Check className="w-3.5 h-3.5 text-[#3fb950]" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>Copy Walkthrough</span>
-                    </button>
+                <div className="p-3.5 rounded-lg bg-[#0d1117] border border-[#30363d] space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#30363d]/60">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-[#8b949e]">Target Config:</span>
+                      <code className="px-2 py-0.5 rounded bg-[#161b22] border border-[#30363d] text-[#3fb950] text-xs font-mono font-semibold">
+                        .cursor/mcp.json
+                      </code>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={() => handleCopy(cursorMcpJson, 'step3-cursor-json')}
+                        className="px-3 py-1.5 rounded-lg bg-[#238636] hover:bg-[#2ea043] text-xs font-mono text-white transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                        title="Copy .cursor/mcp.json snippet"
+                      >
+                        {copiedKey === 'step3-cursor-json' ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>Copy .cursor/mcp.json</span>
+                      </button>
+                      <button
+                        onClick={() => handleCopy(cursorSetupText, 'step3-cursor')}
+                        className="px-2.5 py-1.5 rounded-lg bg-[#21262d] hover:bg-[#30363d] text-xs font-mono text-[#58a6ff] hover:text-white transition flex items-center gap-1 cursor-pointer"
+                        title="Copy GUI walkthrough steps"
+                      >
+                        {copiedKey === 'step3-cursor' ? <Check className="w-3.5 h-3.5 text-[#3fb950]" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>Copy GUI Walkthrough</span>
+                      </button>
+                    </div>
                   </div>
-                  <pre className="text-xs font-mono text-[#c9d1d9] overflow-x-auto whitespace-pre-wrap">
-                    {cursorSetupText}
-                  </pre>
+
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-mono text-[#8b949e]">Method 1: Workspace Config (.cursor/mcp.json)</span>
+                    <pre className="text-xs font-mono text-[#c9d1d9] p-2.5 rounded bg-[#161b22] border border-[#30363d] overflow-x-auto">
+                      {cursorMcpJson}
+                    </pre>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-mono text-[#8b949e]">Method 2: Cursor Settings GUI Walkthrough</span>
+                    <pre className="text-xs font-mono text-[#8b949e] p-2.5 rounded bg-[#161b22] border border-[#30363d] overflow-x-auto whitespace-pre-wrap">
+                      {cursorSetupText}
+                    </pre>
+                  </div>
                 </div>
               )}
             </div>
@@ -1177,7 +1258,7 @@ alwaysApply: true
             </p>
           </div>
           <span className="px-2.5 py-1 rounded-full text-[11px] font-mono bg-[#238636]/15 border border-[#2ea043]/30 text-[#3fb950] shrink-0">
-            L2 Cache Simulated • Zero Hallucination
+            L2 Cache Simulated • Verified Invariants
           </span>
         </div>
 

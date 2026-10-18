@@ -298,8 +298,91 @@ export async function runExportUtilitySuite() {
 
   console.log('✅ PASS: Handled null and empty analysis sections cleanly without throwing.');
 
+  // -------------------------------------------------------------------------
+  // TEST 6: AI Agent Archetype Export Verification (Hermes Agent)
+  // -------------------------------------------------------------------------
+  console.log('\n[TEST 6] Testing AI_AGENT Archetype Excel export with agent architecture & vibrant badges...');
+
+  const agentResult: RepositoryAnalysisResult = {
+    repoUrl: 'https://github.com/NousResearch/hermes-agent',
+    owner: 'NousResearch',
+    repo: 'hermes-agent',
+    defaultBranch: 'main',
+    fileTreeSummary: [
+      '[FILE] agent/loop.py (14.2 KB)',
+      '[FILE] tools/registry.py (8.1 KB)',
+      '[FILE] prompts/system.md (5.4 KB)',
+      '[FILE] requirements.txt (1.2 KB)',
+    ].join('\n'),
+    contextMarkdown: '# Hermes Agent\nAutonomous multi-agent system.',
+    mermaidArchitecture: 'graph TD; Loop-->Tools;',
+    analyzedAt: '2026-09-12T12:00:00.000Z',
+    archetype: 'AI_AGENT',
+    monetizableOutputs: {
+      framework: 'Generic',
+      archetype: 'AI_AGENT',
+      onboarding: {
+        claudeMd: '# CLAUDE.md\nAutonomous agent execution guidelines.',
+        agentsMd: '# AGENTS.md\nMulti-agent tool delegation protocol.',
+        devCommands: ['python -m agent.loop', 'pytest tests/'],
+        stylingStandards: 'PEP 8 / Black',
+        componentRules: 'Modular tools with JSON schema',
+      },
+      cursorRules: [
+        {
+          filename: '.cursor/rules/agent-architecture.mdc',
+          content: '---\ndescription: Agent loop\nglobs: agent/**/*.py\nalwaysApply: true\n---\nRules',
+          framework: 'AI_AGENT',
+        },
+      ],
+      architecture: {
+        mermaidGraph: 'graph TD; Loop-->Tools;',
+        flowchartNodes: [{ id: 'agent_loop', label: 'Agent Reasoning Loop', type: 'agent' }],
+      },
+      clientHandoffReport: {
+        title: 'Release Overview',
+        summary: 'Autonomous agent runtime deliverables.',
+        categories: {
+          newFeatures: ['Autonomous reasoning loop with error recovery'],
+          securityMaintenance: ['Strict budget ceiling ($10/day) guardrails'],
+          userExperience: ['Zero-latency prompt caching'],
+        },
+        markdown: '',
+      },
+    },
+  };
+
+  const agentWbBuffer = await generateExcelWorkbook(agentResult);
+  const agentWb = XLSX.read(agentWbBuffer, { type: 'buffer' });
+
+  // Verify Sheet 1 Archetype Card
+  const agentExecSheet = agentWb.Sheets['Executive Summary'];
+  const agentExecData = XLSX.utils.sheet_to_json<any>(agentExecSheet, { header: 1 });
+  const agentExecFlat = agentExecData.flat().map((v: any) => String(v || ''));
+  if (!agentExecFlat.some(v => v.includes('AI AGENT'))) {
+    throw new Error('Executive summary sheet missing AI AGENT archetype badge');
+  }
+
+  // Verify Sheet 4 Specialized Agent Layers
+  const agentArchSheet = agentWb.Sheets['Architecture & Dependency Map'];
+  const agentArchData = XLSX.utils.sheet_to_json<any>(agentArchSheet, { header: 1 });
+  const agentArchFlat = agentArchData.flat().map((v: any) => String(v || ''));
+  if (!agentArchFlat.some(v => v.includes('Agent Reasoning Loop')) || !agentArchFlat.some(v => v.includes('Tool Registry & Sandbox'))) {
+    throw new Error('Architecture sheet missing specialized AI Agent layers');
+  }
+
+  // Verify Sheet 5 Vibrant Handoff Categories & Status Badges
+  const agentHandoffSheet = agentWb.Sheets['Client Handoff & Progress'];
+  const agentHandoffData = XLSX.utils.sheet_to_json<any>(agentHandoffSheet, { header: 1 });
+  const agentHandoffFlat = agentHandoffData.flat().map((v: any) => String(v || ''));
+  if (!agentHandoffFlat.some(v => v.includes('New Features & Agent Capabilities')) || !agentHandoffFlat.some(v => v.includes('PRODUCTION READY'))) {
+    throw new Error('Client handoff sheet missing vibrant agent categories or status badges');
+  }
+
+  console.log('✅ PASS: AI_AGENT archetype export verified across Executive, Architecture, and Handoff tabs.');
+
   console.log('\n========================================================================');
-  console.log('🎉 PHASE 8: EXCEL & CSV EXPORT UTILITY SUITE PASSED 100% (6/6 ASSERTIONS)');
+  console.log('🎉 PHASE 8: EXCEL & CSV EXPORT UTILITY SUITE PASSED 100% (7/7 ASSERTIONS)');
   console.log('========================================================================\n');
 }
 

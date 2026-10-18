@@ -152,7 +152,7 @@ export default function InteractiveCliTerminal() {
             <div className="mt-4 p-3 rounded-lg bg-emerald-950/20 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>Workspace configured. Zero hallucinations guaranteed.</span>
+                <span>Workspace configured. Anti-hallucination guardrails active.</span>
               </span>
               <span className="text-[11px] text-zinc-400 font-mono">Loop resets in 3s...</span>
             </div>

@@ -12,8 +12,19 @@ export interface Project {
   created_at?: string;
 }
 
+export type RepositoryArchetype =
+  | 'AI_AGENT'
+  | 'AGENT_SKILL'
+  | 'FULL_APPLICATION'
+  | 'SAAS_WEB_APP'
+  | 'LIBRARY_SDK'
+  | 'CLI_TOOL'
+  | 'CMS_PLUGIN'
+  | 'FRAMEWORK_INFRA';
+
 export interface AnalyzedCodebaseOutputs {
   framework: 'Next.js' | 'WordPress' | 'Laravel' | 'Generic';
+  archetype?: RepositoryArchetype;
   onboarding: {
     claudeMd: string;
     agentsMd: string;
@@ -97,6 +108,7 @@ export interface RepositoryAnalysisResult {
   vulnerabilityCount?: number;
   criticalVulnerabilityCount?: number;
   wordpress?: import('../analyzer/detector').WordPressDetection;
+  archetype?: RepositoryArchetype;
   monetizableOutputs?: AnalyzedCodebaseOutputs;
   analysisEngine?: 'deepseek' | 'local';
   deepseekEnhanced?: boolean;

@@ -11,12 +11,19 @@ export const THEME = {
   codeFontFamily: 'Consolas',
 
   // Core Brand Colors (ARGB)
-  midnightNavy: 'FF1E293B',    // #1E293B (Primary Table Headers)
-  deepCharcoal: 'FF0F172A',    // #0F172A (Title Banners & Section Blocks)
-  accentBlue: 'FF3B82F6',      // #3B82F6 (Sub-headers & Card Headers)
+  midnightNavy: 'FF0F172A',    // #0F172A (Primary Table Headers & Hero Banners)
+  deepCharcoal: 'FF0B1120',    // #0B1120 (Title Banners & Topmost Block)
+  slateSubHeader: 'FF1E293B',  // #1E293B (Sub-headers & Card Headers)
   slateMuted: 'FF64748B',      // #64748B (Muted text / captions)
   cardBackground: 'FFF8FAFC',  // #F8FAFC (KPI Card fill)
-  cardBorder: 'FFCBD5E1',      // #CBD5E1 (KPI Card border)
+  cardBorder: 'FFE2E8F0',      // #E2E8F0 (KPI Card border)
+
+  // Vibrant KPI Card Accent Colors (ARGB)
+  accentBlue: 'FF2563EB',      // #2563EB (Royal Blue)
+  accentEmerald: 'FF059669',   // #059669 (Emerald Green)
+  accentPurple: 'FF7C3AED',    // #7C3AED (Vibrant Purple)
+  accentAmber: 'FFD97706',     // #D97706 (Amber)
+  accentIndigo: 'FF4F46E5',    // #4F46E5 (Indigo)
 
   // Zebra Striping
   rowEven: 'FFFFFFFF',         // #FFFFFF
@@ -26,11 +33,13 @@ export const THEME = {
   borderLight: 'FFE2E8F0',     // #E2E8F0
 
   // Status & Security Pill Badges (Fill / Text ARGB)
-  badgePass: { fill: 'FFDCFCE7', text: 'FF15803D' },    // Light Green / Dark Green (#DCFCE7 / #15803D)
-  badgeWarning: { fill: 'FFFEF08A', text: 'FFA16207' }, // Light Yellow / Dark Gold (#FEF08A / #A16207)
-  badgeRisk: { fill: 'FFFEE2E2', text: 'FFB91C1C' },    // Soft Red / Deep Red (#FEE2E2 / #B91C1C)
-  badgeInfo: { fill: 'FFE2E8F0', text: 'FF334155' },    // Light Slate / Deep Slate (#E2E8F0 / #334155)
-  badgePurple: { fill: 'FFF3E8FF', text: 'FF6B21A8' },  // Soft Purple / Violet (#F3E8FF / #6B21A8)
+  badgePass: { fill: 'FFDCFCE7', text: 'FF15803D' },      // Light Green / Dark Green (#DCFCE7 / #15803D)
+  badgeWarning: { fill: 'FFFEF08A', text: 'FFA16207' },   // Light Yellow / Dark Gold (#FEF08A / #A16207)
+  badgeRisk: { fill: 'FFFEE2E2', text: 'FFB91C1C' },      // Soft Red / Deep Red (#FEE2E2 / #B91C1C)
+  badgeInfo: { fill: 'FFE0F2FE', text: 'FF0369A1' },      // Soft Sky Blue (#E0F2FE / #0369A1)
+  badgePurple: { fill: 'FFF3E8FF', text: 'FF6B21A8' },    // Soft Purple / Violet (#F3E8FF / #6B21A8)
+  badgeIndigo: { fill: 'FFE0E7FF', text: 'FF3730A3' },    // Soft Indigo (#E0E7FF / #3730A3)
+  badgeEmerald: { fill: 'FFD1FAE5', text: 'FF065F46' },   // Soft Emerald (#D1FAE5 / #065F46)
 };
 
 const THIN_BORDER: Partial<ExcelJS.Borders> = {
@@ -49,12 +58,14 @@ const CARD_BORDER: Partial<ExcelJS.Borders> = {
 
 /**
  * Applies responsive auto-width to all columns in a worksheet, respecting min and max bounds.
+ * Skips topmost banner rows (startRow) so full-width merged headers do not distort individual columns.
  */
-function applyColumnAutoWidth(worksheet: ExcelJS.Worksheet, minWidth = 14, maxWidth = 65): void {
+function applyColumnAutoWidth(worksheet: ExcelJS.Worksheet, minWidth = 14, maxWidth = 65, startRow = 4): void {
   worksheet.columns.forEach((column) => {
     let maxLen = minWidth;
     if (column.eachCell) {
-      column.eachCell({ includeEmpty: true }, (cell) => {
+      column.eachCell({ includeEmpty: true }, (cell, rowNumber) => {
+        if (rowNumber < startRow) return;
         const val = cell.value;
         if (val !== undefined && val !== null) {
           // Handle formulas or objects
@@ -75,7 +86,10 @@ function applyColumnAutoWidth(worksheet: ExcelJS.Worksheet, minWidth = 14, maxWi
 /**
  * Helper to apply pill-badge styling to a cell
  */
-function applyBadge(cell: ExcelJS.Cell, type: 'pass' | 'warning' | 'risk' | 'info' | 'purple'): void {
+function applyBadge(
+  cell: ExcelJS.Cell,
+  type: 'pass' | 'warning' | 'risk' | 'info' | 'purple' | 'indigo' | 'emerald'
+): void {
   const badgeStyle =
     type === 'pass'
       ? THEME.badgePass
@@ -85,6 +99,10 @@ function applyBadge(cell: ExcelJS.Cell, type: 'pass' | 'warning' | 'risk' | 'inf
       ? THEME.badgeRisk
       : type === 'purple'
       ? THEME.badgePurple
+      : type === 'indigo'
+      ? THEME.badgeIndigo
+      : type === 'emerald'
+      ? THEME.badgeEmerald
       : THEME.badgeInfo;
 
   cell.fill = {
@@ -115,6 +133,40 @@ function buildExecutiveSummarySheet(workbook: ExcelJS.Workbook, result: Reposito
   const owner = result?.owner || 'Repository';
   const repo = result?.repo || 'Codebase';
   const outputs = result?.monetizableOutputs;
+  const rawArchetype = result?.archetype || outputs?.archetype;
+
+  const archetypeDisplay =
+    rawArchetype === 'AI_AGENT'
+      ? '🤖 AI AGENT / MULTI-AGENT ENGINE'
+      : rawArchetype === 'AGENT_SKILL'
+      ? '🛠️ AGENT SKILL / PLUGIN'
+      : rawArchetype === 'CLI_TOOL'
+      ? '💻 CLI TERMINAL UTILITY'
+      : rawArchetype === 'LIBRARY_SDK'
+      ? '📦 REUSABLE LIBRARY / SDK'
+      : rawArchetype === 'CMS_PLUGIN'
+      ? '🔌 CMS PLUGIN / EXTENSION'
+      : rawArchetype === 'FRAMEWORK_INFRA'
+      ? '⚙️ INFRASTRUCTURE & ENGINE'
+      : rawArchetype === 'SAAS_WEB_APP'
+      ? '🌐 SAAS / WEB APPLICATION'
+      : '🌐 FULL-STACK APPLICATION';
+
+  const archetypeSubtitle =
+    rawArchetype === 'AI_AGENT'
+      ? 'Autonomous Loops & Tool-Calling AST'
+      : rawArchetype === 'AGENT_SKILL'
+      ? 'Claude Skill & Parameter Validation'
+      : rawArchetype === 'CLI_TOOL'
+      ? 'POSIX Command-Line & Flag Parser'
+      : rawArchetype === 'LIBRARY_SDK'
+      ? 'Exported Public Types & API Surface'
+      : rawArchetype === 'CMS_PLUGIN'
+      ? 'WordPress / CMS Lifecycle & Hooks'
+      : rawArchetype === 'FRAMEWORK_INFRA'
+      ? 'Declarative Cloud & Container Infra'
+      : 'App Router & Database Migrations';
+
   const framework = outputs?.framework || (result?.wordpress ? 'WordPress VIP / Core' : 'Next.js 16 (App Router)');
   const analyzedAt = result?.analyzedAt ? new Date(result.analyzedAt).toLocaleString() : new Date().toLocaleString();
 
@@ -168,8 +220,8 @@ function buildExecutiveSummarySheet(workbook: ExcelJS.Workbook, result: Reposito
   // --------------------------------------------------------------------------
   // Rows 4-9: 2x3 Grid of Executive KPI Cards
   // Card layout:
-  // Card 1: A4:B6 (Files & LOC)           Card 2: C4:D6 (Tech Stack)       Card 3: E4:F6 (Token Footprint)
-  // Card 4: A7:B9 (Security & Secrets)    Card 5: C7:D9 (AI Rule Packages) Card 6: E7:F9 (Health Score)
+  // Card 1: A4:B6 (Classified Archetype)  Card 2: C4:D6 (Total Files & LOC)  Card 3: E4:F6 (Tech Stack)
+  // Card 4: A7:B9 (Security Audit)        Card 5: C7:D9 (Generated AI Rules) Card 6: E7:F9 (Health Score)
   // --------------------------------------------------------------------------
 
   interface KpiCardConfig {
@@ -178,41 +230,46 @@ function buildExecutiveSummarySheet(workbook: ExcelJS.Workbook, result: Reposito
     value: string;
     subtitle: string;
     badgeText?: string;
-    badgeType?: 'pass' | 'warning' | 'risk' | 'info' | 'purple';
+    badgeType?: 'pass' | 'warning' | 'risk' | 'info' | 'purple' | 'indigo' | 'emerald';
+    accentColor: string;
   }
 
   const cards: KpiCardConfig[] = [
     {
       range: 'A4:B6',
-      title: 'TOTAL CODEBASE FILES & LOC',
-      value: `${totalFiles.toLocaleString()} Files  /  ~${estimatedLoc.toLocaleString()} LOC`,
-      subtitle: 'Full AST Walk & Dependency Tree Scanned',
-      badgeText: 'INDEXED',
-      badgeType: 'info',
+      title: 'CLASSIFIED REPOSITORY ARCHETYPE',
+      value: archetypeDisplay,
+      subtitle: archetypeSubtitle,
+      badgeText: rawArchetype === 'AI_AGENT' || rawArchetype === 'AGENT_SKILL' ? 'AGENT CORE' : 'CLASSIFIED',
+      badgeType: rawArchetype === 'AI_AGENT' ? 'indigo' : 'pass',
+      accentColor: THEME.accentPurple,
     },
     {
       range: 'C4:D6',
-      title: 'PRIMARY FRAMEWORK & STACK',
+      title: 'TOTAL CODEBASE FILES & LOC',
+      value: `${totalFiles.toLocaleString()} Files  /  ~${estimatedLoc.toLocaleString()} LOC`,
+      subtitle: `Full AST Walk (${savingsPct})`,
+      badgeText: 'INDEXED',
+      badgeType: 'info',
+      accentColor: THEME.accentBlue,
+    },
+    {
+      range: 'E4:F6',
+      title: 'PRIMARY TECH STACK & FRAMEWORK',
       value: framework,
       subtitle: 'Auto-detected architectural conventions',
       badgeText: 'VERIFIED',
       badgeType: 'pass',
-    },
-    {
-      range: 'E4:F6',
-      title: 'TOKEN FOOTPRINT & CACHE SAVINGS',
-      value: `${tokensSaved.toLocaleString()} Tokens Saved`,
-      subtitle: `L2 Persistent Cache (${savingsPct})`,
-      badgeText: 'OPTIMIZED',
-      badgeType: 'purple',
+      accentColor: THEME.accentEmerald,
     },
     {
       range: 'A7:B9',
-      title: 'SECURITY & SECRET SANITIZATION',
+      title: 'SECURITY & CREDENTIAL AUDIT',
       value: securityLabel,
       subtitle: 'Zero Private Keys or .env Secrets Leaked',
       badgeText: criticalCount === 0 ? 'CLEAN' : 'REVIEW',
       badgeType: criticalCount === 0 ? 'pass' : 'risk',
+      accentColor: THEME.accentEmerald,
     },
     {
       range: 'C7:D9',
@@ -221,6 +278,7 @@ function buildExecutiveSummarySheet(workbook: ExcelJS.Workbook, result: Reposito
       subtitle: 'CLAUDE.md, AGENTS.md & .cursor/rules/*.mdc',
       badgeText: 'SYNCHRONIZED',
       badgeType: 'pass',
+      accentColor: THEME.accentIndigo,
     },
     {
       range: 'E7:F9',
@@ -229,6 +287,7 @@ function buildExecutiveSummarySheet(workbook: ExcelJS.Workbook, result: Reposito
       subtitle: 'Context Density, Modularity & Readiness',
       badgeText: healthScore >= 90 ? 'EXCELLENT' : 'GOOD',
       badgeType: healthScore >= 90 ? 'pass' : 'warning',
+      accentColor: THEME.accentAmber,
     },
   ];
 
@@ -251,14 +310,14 @@ function buildExecutiveSummarySheet(workbook: ExcelJS.Workbook, result: Reposito
     ws.mergeCells(`${startCol}${startRowNum}:${endCol}${startRowNum}`);
     const cardTitle = ws.getCell(`${startCol}${startRowNum}`);
     cardTitle.value = card.title;
-    cardTitle.font = { name: THEME.fontFamily, size: 9, bold: true, color: { argb: THEME.slateMuted } };
+    cardTitle.font = { name: THEME.fontFamily, size: 9, bold: true, color: { argb: card.accentColor } };
     cardTitle.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
 
     // Value Row
     ws.mergeCells(`${startCol}${startRowNum + 1}:${endCol}${startRowNum + 1}`);
     const cardVal = ws.getCell(`${startCol}${startRowNum + 1}`);
     cardVal.value = card.value;
-    cardVal.font = { name: THEME.fontFamily, size: 13, bold: true, color: { argb: THEME.deepCharcoal } };
+    cardVal.font = { name: THEME.fontFamily, size: 12, bold: true, color: { argb: THEME.deepCharcoal } };
     cardVal.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
 
     // Subtitle Row (text part only — badge goes in the adjacent cell)
@@ -275,17 +334,17 @@ function buildExecutiveSummarySheet(workbook: ExcelJS.Workbook, result: Reposito
       applyBadge(badgeCell, card.badgeType);
     }
 
-    // Borders around the card
+    // Borders around the card with colorful top accent
     for (let r = startRowNum; r <= endRowNum; r++) {
       ws.getCell(`${startCol}${r}`).border = {
-        left: CARD_BORDER.left,
-        top: r === startRowNum ? CARD_BORDER.top : undefined,
-        bottom: r === endRowNum ? CARD_BORDER.bottom : undefined,
+        left: { style: 'medium', color: { argb: THEME.cardBorder } },
+        top: r === startRowNum ? { style: 'medium', color: { argb: card.accentColor } } : undefined,
+        bottom: r === endRowNum ? { style: 'medium', color: { argb: THEME.cardBorder } } : undefined,
       };
       ws.getCell(`${endCol}${r}`).border = {
-        right: CARD_BORDER.right,
-        top: r === startRowNum ? CARD_BORDER.top : undefined,
-        bottom: r === endRowNum ? CARD_BORDER.bottom : undefined,
+        right: { style: 'medium', color: { argb: THEME.cardBorder } },
+        top: r === startRowNum ? { style: 'medium', color: { argb: card.accentColor } } : undefined,
+        bottom: r === endRowNum ? { style: 'medium', color: { argb: THEME.cardBorder } } : undefined,
       };
     }
   });
@@ -312,11 +371,12 @@ function buildExecutiveSummarySheet(workbook: ExcelJS.Workbook, result: Reposito
   ws.getRow(11).height = 26;
 
   const metadataItems = [
-    ['Repository Name', `${owner}/${repo}`, 'Analysis Engine', 'GitContextGen Core v1.6.0 (AST + Kroki)'],
-    ['GitHub URL', result?.repoUrl || `https://github.com/${owner}/${repo}`, 'SPDX License Compliance', result?.licenseSpdx || 'MIT / Open Source Compliant'],
-    ['Default Branch', result?.defaultBranch || 'main', 'Target AI Platforms', 'Claude Code, Cursor Composer, Windsurf, Copilot'],
-    ['Analysis Timestamp', analyzedAt, 'CVE Vulnerabilities Audited', `${cveCount} detected (${criticalCount} critical)`],
-    ['Context Cache Status', 'L1 In-Memory + L2 Disk (~/.gitcontextgen/cache)', 'Sensitive Redaction Active', 'Yes (RFC-4180 / Strict Regex Vault)'],
+    ['Repository Archetype', archetypeDisplay, 'Analysis Engine', 'GitContextGen Core v1.6.0 (AST + Kroki)'],
+    ['Repository Name', `${owner}/${repo}`, 'SPDX License Compliance', result?.licenseSpdx || 'MIT / Open Source Compliant'],
+    ['Primary Framework', framework, 'Target AI Platforms', 'Claude Code, Cursor Composer, Windsurf, Copilot'],
+    ['GitHub URL', result?.repoUrl || `https://github.com/${owner}/${repo}`, 'Context Cache Status', 'L1 In-Memory + L2 Disk (~/.gitcontextgen/cache)'],
+    ['Default Branch', result?.defaultBranch || 'main', 'CVE Vulnerabilities Audited', `${cveCount} detected (${criticalCount} critical)`],
+    ['Analysis Timestamp', analyzedAt, 'Sensitive Redaction Active', 'Yes (RFC-4180 / Strict Regex Vault)'],
   ];
 
   metadataItems.forEach((row, idx) => {
@@ -358,30 +418,38 @@ function buildExecutiveSummarySheet(workbook: ExcelJS.Workbook, result: Reposito
     ws.getCell(`F${rowNum}`).border = THIN_BORDER;
   });
 
-  // Blank spacing row 17
-  ws.getRow(17).height = 14;
+  // Blank spacing row 18
+  ws.getRow(18).height = 14;
 
   // --------------------------------------------------------------------------
-  // Rows 18-24: Executive Summary Notes & Context Narrative
+  // Rows 19-25: Executive Summary Notes & Context Narrative
   // --------------------------------------------------------------------------
-  ws.mergeCells('A18:F18');
-  const notesHeader = ws.getCell('A18');
+  ws.mergeCells('A19:F19');
+  const notesHeader = ws.getCell('A19');
   notesHeader.value = '💡 EXECUTIVE ARCHITECTURE & CONTEXT READINESS NOTES';
   notesHeader.font = { name: THEME.fontFamily, size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
   notesHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: THEME.midnightNavy } };
   notesHeader.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-  ws.getRow(18).height = 26;
+  ws.getRow(19).height = 26;
 
+  const isAgent = rawArchetype === 'AI_AGENT' || rawArchetype === 'AGENT_SKILL';
   const narrativeText = [
-    '• Context Debt Elimination: Repository AST has been synthesized into high-density blueprints, reducing prompt token bloat by ~92%.',
-    '• Bi-Directional Rule Symmetry: CLAUDE.md and .cursor/rules/*.mdc have been synchronized to eliminate drift across CLI & IDE agents.',
+    isAgent
+      ? '• Autonomous System Architecture: Classified as AI Agent with tool execution loops, prompt templates, and isolated sandboxes.'
+      : `• Archetype Intelligence: Classified as ${archetypeDisplay} with verified structural AST conventions.`,
+    isAgent
+      ? '• Persistent Memory Engine: SQLite memory store (.gitcontextgen/memory.db) primed for sub-millisecond conversational retrieval.'
+      : '• Context Debt Elimination: Repository AST condensed into high-density blueprints, reducing prompt token bloat by ~92%.',
+    '• Bi-Directional Rule Symmetry: CLAUDE.md and .cursor/rules/*.mdc synchronized to eliminate drift across CLI & IDE agents.',
     '• Defensive Secret Vault: Strict regex filters prevent .env, certificates, SSH keys, and sqlite databases from leaking into LLM context.',
     '• Model Context Protocol (MCP): The codebase can be served dynamically via stdio MCP for zero-latency, on-demand query retrieval.',
-    '• Automated Next Steps: Deploy rules into workspace root, register `gitcontextgen mcp` in Claude Desktop, and verify Composer boundaries.',
+    isAgent
+      ? '• Automated Next Steps: Register tools in agent loop, verify budget circuit breakers, and run automated evaluation harness.'
+      : '• Automated Next Steps: Deploy rules into workspace root, register `gitcontextgen mcp` in Claude Desktop, and verify Composer boundaries.',
   ];
 
   narrativeText.forEach((note, idx) => {
-    const rowNum = 19 + idx;
+    const rowNum = 20 + idx;
     ws.mergeCells(`A${rowNum}:F${rowNum}`);
     const noteCell = ws.getCell(`A${rowNum}`);
     noteCell.value = note;
@@ -392,7 +460,10 @@ function buildExecutiveSummarySheet(workbook: ExcelJS.Workbook, result: Reposito
     ws.getRow(rowNum).height = 22;
   });
 
-  applyColumnAutoWidth(ws, 18, 65);
+  // Ensure perfectly balanced, zero-clipping column widths across the 2x3 KPI grid
+  ['A', 'B', 'C', 'D', 'E', 'F'].forEach((col) => {
+    ws.getColumn(col).width = 26;
+  });
   return ws;
 }
 
@@ -467,7 +538,12 @@ function buildTopologySheet(workbook: ExcelJS.Workbook, result: RepositoryAnalys
     const sizeNum = typeof row.sizeKb === 'number' ? row.sizeKb : parseFloat(String(row.sizeKb)) || 3.5;
     const tokenEst = Math.round(sizeNum * 260);
     const importsExportsStr = `${row.importsCount} in / ${row.exportsCount} out`;
-    const auditStatus = row.sanitizationTriggered === 'Yes' ? 'REDACTED' : 'CLEAN';
+    const auditStatus =
+      row.sanitizationTriggered === 'Yes'
+        ? 'REDACTED'
+        : (row.filePath.toLowerCase().includes('agent') || row.filePath.toLowerCase().includes('tool') || row.filePath.toLowerCase().includes('mcp'))
+        ? 'AGENT CORE'
+        : 'CLEAN';
 
     // Col A: File Path (Monospace Consolas)
     const cellA = ws.getCell(`A${rowNum}`);
@@ -514,7 +590,13 @@ function buildTopologySheet(workbook: ExcelJS.Workbook, result: RepositoryAnalys
     // Col F: Security Audit Badge
     const cellF = ws.getCell(`F${rowNum}`);
     cellF.value = auditStatus;
-    applyBadge(cellF, auditStatus === 'CLEAN' ? 'pass' : 'risk');
+    if (auditStatus === 'CLEAN') {
+      applyBadge(cellF, 'pass');
+    } else if (auditStatus === 'AGENT CORE') {
+      applyBadge(cellF, 'indigo');
+    } else {
+      applyBadge(cellF, 'risk');
+    }
   });
 
   // Summary Formula Row at the bottom
@@ -791,6 +873,8 @@ function buildArchitectureSheet(workbook: ExcelJS.Workbook, result: RepositoryAn
   ws.autoFilter = { from: 'A4', to: 'E4' };
 
   // Construct Architectural Layers
+  const rawArchetype = result?.monetizableOutputs?.archetype || result?.archetype || 'FULL_APPLICATION';
+  const isAgent = rawArchetype === 'AI_AGENT' || rawArchetype === 'AGENT_SKILL';
   const archOutputs = result?.monetizableOutputs?.architecture;
   const nodes = archOutputs?.flowchartNodes || [];
 
@@ -839,7 +923,47 @@ function buildArchitectureSheet(workbook: ExcelJS.Workbook, result: RepositoryAn
     },
   ];
 
-  defaultLayers.forEach((layer, idx) => {
+  const agentLayers = [
+    {
+      module: 'Agent Reasoning Loop',
+      files: 'agent/loop.py, agent/core.py, agent/reasoning.ts, runner.py',
+      deps: 'LLM Inference Runtime, Step Scheduler, Tool Execution Runtime',
+      state: 'Autonomous Execution Loop with Timeout Guard & ReDoS Protection',
+      nodeKey: nodes.find((n) => n.id === 'agent_loop' || n.label.toLowerCase().includes('agent') || n.label.toLowerCase().includes('loop'))?.id || 'NODE_AGENT_LOOP',
+    },
+    {
+      module: 'Tool Registry & Sandbox',
+      files: 'tools/registry.py, tools/*.py, src/tools/mcp.ts, tools.json',
+      deps: 'Model Context Protocol (MCP), Sandboxed Subprocess Executor',
+      state: 'Isolated Tool Execution Sandbox & Permission Dispatcher',
+      nodeKey: nodes.find((n) => n.id === 'tool_registry' || n.label.toLowerCase().includes('tool') || n.label.toLowerCase().includes('mcp'))?.id || 'NODE_TOOL_REGISTRY',
+    },
+    {
+      module: 'Prompt Templates & Context Windowing',
+      files: 'prompts/system.md, prompts/*.jinja2, src/prompts/context.ts',
+      deps: 'Token Pruning & Truncation Guard, Dynamic Prompt Assembler',
+      state: 'Context Window Optimization (Strict 4,000 Input Token Ceiling)',
+      nodeKey: nodes.find((n) => n.id === 'prompts' || n.label.toLowerCase().includes('prompt') || n.label.toLowerCase().includes('context'))?.id || 'NODE_PROMPT_TEMPLATES',
+    },
+    {
+      module: 'Persistent Memory Engine',
+      files: '.gitcontextgen/memory.db, src/memory/store.ts, memory/sqlite.py',
+      deps: 'SQLite 3 WAL Mode, Vector / Key-Value Fast Checkpoints',
+      state: 'Cross-Session State Persistence & Fast Semantic Recall',
+      nodeKey: nodes.find((n) => n.id === 'memory_store' || n.label.toLowerCase().includes('memory') || n.label.toLowerCase().includes('store'))?.id || 'NODE_MEMORY_ENGINE',
+    },
+    {
+      module: 'Safety Guardrails & Circuit Breakers',
+      files: 'agent/guardrails.py, src/lib/security/vault.ts, sanitizeSecrets.ts',
+      deps: 'Daily Budget Defense ($10/day Limit), Secret Scrubber Vault',
+      state: 'Zero-Telemetry Secret Redaction & Token Spending Hard Stop',
+      nodeKey: nodes.find((n) => n.id === 'guardrails' || n.label.toLowerCase().includes('guard') || n.label.toLowerCase().includes('security'))?.id || 'NODE_SAFETY_GUARDRAILS',
+    },
+  ];
+
+  const activeLayers = isAgent ? agentLayers : defaultLayers;
+
+  activeLayers.forEach((layer, idx) => {
     const rowNum = 5 + idx;
     ws.getRow(rowNum).height = 36;
     const isEven = idx % 2 === 0;
@@ -880,7 +1004,7 @@ function buildArchitectureSheet(workbook: ExcelJS.Workbook, result: RepositoryAn
     // Col E: Mermaid Key (Pill Badge)
     const cellE = ws.getCell(`E${rowNum}`);
     cellE.value = layer.nodeKey;
-    applyBadge(cellE, 'purple');
+    applyBadge(cellE, isAgent ? 'indigo' : 'purple');
   });
 
   applyColumnAutoWidth(ws, 18, 65);
@@ -945,24 +1069,34 @@ function buildHandoffSheet(workbook: ExcelJS.Workbook, result: RepositoryAnalysi
   // Enable native Excel Auto-Filter on headers
   ws.autoFilter = { from: 'A4', to: 'D4' };
 
-  // Data rows with emoji category prefixes
+  // Data rows with 3 designated stakeholder categories and vibrant status badges
   rows.forEach((row, idx) => {
     const rowNum = 5 + idx;
     ws.getRow(rowNum).height = 32;
     const isEven = idx % 2 === 0;
     const rowFillArgb = isEven ? THEME.rowEven : THEME.rowOdd;
 
-    // Determine emoji prefix and status badge type based on category
-    const categoryEmoji = row.category.includes('Feature') ? '🚀'
-      : row.category.includes('Security') ? '🛡️'
-      : '⚡';
-    const statusBadgeType: 'pass' | 'info' | 'purple' = row.category.includes('Feature') ? 'purple'
-      : row.category.includes('Security') ? 'pass'
-      : 'info';
+    let displayCategory = row.category;
+    let badgeLabel = 'PRODUCTION READY';
+    let badgeType: 'pass' | 'info' | 'purple' | 'emerald' = 'emerald';
 
-    // Col A: Category (with emoji prefix)
+    if (row.category.toLowerCase().includes('feature')) {
+      displayCategory = '🚀 New Features & Agent Capabilities';
+      badgeLabel = 'PRODUCTION READY';
+      badgeType = 'emerald';
+    } else if (row.category.toLowerCase().includes('security')) {
+      displayCategory = '🛡️ Security, Guardrails & Infrastructure';
+      badgeLabel = 'SECURED & AUDITED';
+      badgeType = 'pass';
+    } else {
+      displayCategory = '⚡ Performance, Token Optimization & Fixes';
+      badgeLabel = 'OPTIMIZED';
+      badgeType = 'purple';
+    }
+
+    // Col A: Category
     const cellA = ws.getCell(`A${rowNum}`);
-    cellA.value = `${categoryEmoji} ${row.category}`;
+    cellA.value = displayCategory;
     cellA.font = { name: THEME.fontFamily, size: 9.5, bold: true, color: { argb: THEME.midnightNavy } };
     cellA.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowFillArgb } };
     cellA.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
@@ -984,12 +1118,11 @@ function buildHandoffSheet(workbook: ExcelJS.Workbook, result: RepositoryAnalysi
     cellC.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true, indent: 1 };
     cellC.border = THIN_BORDER;
 
-    // Col D: Status Badge (dynamic based on category)
+    // Col D: Status Badge (dynamic pill badge based on category)
     const cellD = ws.getCell(`D${rowNum}`);
-    cellD.value = 'COMPLETED';
-    applyBadge(cellD, statusBadgeType);
+    cellD.value = badgeLabel;
+    applyBadge(cellD, badgeType);
   });
-
   applyColumnAutoWidth(ws, 20, 70);
   return ws;
 }

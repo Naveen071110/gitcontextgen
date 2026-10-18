@@ -190,6 +190,7 @@ ${finalClaudeMd.replace(/^#\s+CLAUDE\.md[^\n]*\n/, '')}`;
       vulnerabilityCount: vulnSummary.totalVulnerabilities,
       criticalVulnerabilityCount: vulnSummary.criticalCount,
       monetizableOutputs,
+      archetype: monetizableOutputs.archetype,
       analysisEngine: deepSeekResult.engine,
       deepseekEnhanced: isDeepSeek,
     };

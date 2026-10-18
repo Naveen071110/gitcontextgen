@@ -6,7 +6,9 @@ import { RepositoryAnalysisResult } from '@/lib/types';
 
 export interface RepoDashboardProps {
   result: RepositoryAnalysisResult;
+  previousResult?: RepositoryAnalysisResult | null;
   onReSync?: () => void;
+  isReAnalyzing?: boolean;
   isGuest?: boolean;
   isSaved?: boolean;
   onSave?: () => Promise<void> | void;
@@ -16,7 +18,9 @@ export interface RepoDashboardProps {
 
 export default function RepoDashboard({
   result,
+  previousResult,
   onReSync,
+  isReAnalyzing,
   isGuest = false,
   isSaved = true,
   onSave,
@@ -26,7 +30,9 @@ export default function RepoDashboard({
   return (
     <RepoWorkspaceView
       result={result}
+      previousResult={previousResult}
       onReSync={onReSync}
+      isReAnalyzing={isReAnalyzing}
       isGuest={isGuest}
       isSaved={isSaved}
       onSave={onSave}

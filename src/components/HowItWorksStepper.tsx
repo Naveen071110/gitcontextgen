@@ -13,7 +13,7 @@ export default function HowItWorksStepper() {
       description:
         'Scans repository AST syntax trees, package manifests, and route entry points. Automatically detects tech stacks and shields private secrets with deterministic regex guardrails.',
       icon: Network,
-      tag: 'AST Parser',
+      tag: 'Context Engine Active',
       metric: '142 files mapped in < 180ms',
       badgeColor: 'text-cyan-400 border-cyan-500/30 bg-cyan-950/40',
     },

@@ -58,6 +58,7 @@ export default function HeroSection() {
   const [loadingStep, setLoadingStep] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RepositoryAnalysisResult | null>(null);
+  const [previousResult, setPreviousResult] = useState<RepositoryAnalysisResult | null>(null);
   const [readinessScore, setReadinessScore] = useState<ReadinessScoreResult | null>(null);
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('agents');
   const [formattedContent, setFormattedContent] = useState<string>('');
@@ -66,6 +67,8 @@ export default function HeroSection() {
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [isCachedResult, setIsCachedResult] = useState<boolean>(false);
+  const [cacheAgeText, setCacheAgeText] = useState<string>('');
 
   useEffect(() => {
     const supabase = createClient();
@@ -116,6 +119,9 @@ export default function HeroSection() {
     setStatus('running');
     setLoadingStep('1/3 Parsing Repository URL...');
     setError(null);
+    if (result && (!urlToFetch || result.repoUrl.toLowerCase().includes(urlToFetch.toLowerCase()) || urlToFetch.toLowerCase().includes(result.repoUrl.toLowerCase()))) {
+      setPreviousResult(result);
+    }
     setResult(null);
     setReadinessScore(null);
     setSaveStatus(null);
@@ -130,6 +136,18 @@ export default function HeroSection() {
         if (parsedCache && parsedCache.data) {
           setLoadingStep('1/3 Loading from Instant Cache...');
           setResult(parsedCache.data);
+          setIsCachedResult(true);
+          const ageMs = Date.now() - (parsedCache.timestamp || Date.now());
+          const ageMins = Math.floor(ageMs / 60000);
+          const ageHours = Math.floor(ageMins / 60);
+          if (ageMins < 1) {
+            setCacheAgeText('just now');
+          } else if (ageMins < 60) {
+            setCacheAgeText(`${ageMins}m ago`);
+          } else {
+            setCacheAgeText(`${ageHours}h ago`);
+          }
+
           const score = calculateReadinessScore(
             parsedCache.data.fileTreeSummary,
             undefined,
@@ -156,6 +174,8 @@ export default function HeroSection() {
     }
 
     try {
+      setIsCachedResult(false);
+      setCacheAgeText('');
       setLoadingStep('2/3 Fetching GitHub Tree & Manifests...');
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -384,18 +404,18 @@ export default function HeroSection() {
           {/* Quick Demo Badges */}
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs text-zinc-400 font-mono w-full">
             <span className="text-zinc-500 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" /> Try interactive demo repos:
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" /> Fast demo repositories:
             </span>
             {[
-              { label: '⚡ Try Live Demo: Cosmic-channeling', url: 'https://github.com/Naveen071110/Cosmic-channeling', badge: 'Popular' },
-              { label: 'vercel/next.js', url: 'https://github.com/vercel/next.js' },
-              { label: 'supabase/supabase', url: 'https://github.com/supabase/supabase' },
+              { label: '⚡ Cosmic-channeling', url: 'https://github.com/Naveen071110/Cosmic-channeling', badge: 'Next.js SaaS' },
+              { label: '🤖 hermes-agent', url: 'https://github.com/NousResearch/hermes-agent', badge: 'AI Agent' },
+              { label: '📦 react', url: 'https://github.com/facebook/react', badge: 'Library SDK' },
             ].map((demo) => (
               <button
                 key={demo.label}
                 type="button"
                 onClick={() => handleQuickDemo(demo.url)}
-                className="px-3 py-1.5 min-h-[36px] rounded-xl bg-zinc-900/50 hover:bg-zinc-800/80 border border-zinc-800 text-zinc-300 font-medium hover:border-zinc-700 hover:text-white transition-all duration-200 flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer touch-manipulation"
+                className="px-3 py-1.5 min-h-[36px] rounded-xl bg-zinc-900/50 hover:bg-zinc-800/80 border border-zinc-800 text-zinc-300 font-medium hover:border-zinc-700 hover:text-white transition-all duration-200 flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer touch-manipulation focus-visible:ring-2 focus-visible:ring-cyan-400"
               >
                 {demo.label}
                 {demo.badge && (
@@ -419,7 +439,7 @@ export default function HeroSection() {
             </div>
             <div className="px-3 py-1.5 rounded-xl bg-zinc-900/60 border border-zinc-800/80 text-zinc-300 text-xs font-mono flex items-center gap-2 shadow-sm">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>100% Secret Redaction</span>
+              <span>7-Class Secret Scrubbing</span>
             </div>
             <div className="px-3 py-1.5 rounded-xl bg-zinc-900/60 border border-zinc-800/80 text-zinc-300 text-xs font-mono flex items-center gap-2 shadow-sm">
               <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
@@ -428,36 +448,104 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {error && (
-          <div className="mt-4 max-w-2xl w-full mx-auto p-4 sm:p-5 rounded-2xl bg-red-950/90 border border-red-800/80 text-red-200 text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-left backdrop-blur-xl shadow-2xl animate-in fade-in duration-200">
-            <div className="flex items-center gap-3">
-              <ShieldAlert className="w-5 h-5 text-red-400 shrink-0" />
-              <div>
-                <p className="font-semibold text-white">{error}</p>
-                <p className="text-[11px] text-red-300/80 mt-0.5 font-mono">
-                  Network timeout window reached. Upstream GitHub tree streams can be retried immediately.
-                </p>
+        {error && (() => {
+          const errLower = error.toLowerCase();
+          const isPrivateOrNotFound =
+            errLower.includes('private') ||
+            errLower.includes('not found') ||
+            errLower.includes('404') ||
+            errLower.includes('401') ||
+            errLower.includes('unauthorized');
+          const isRateLimited =
+            errLower.includes('rate limit') ||
+            errLower.includes('403') ||
+            errLower.includes('429');
+          const isTimeout =
+            errLower.includes('timeout') ||
+            errLower.includes('timed out') ||
+            errLower.includes('too long') ||
+            errLower.includes('abort');
+          const isInvalidUrl =
+            errLower.includes('invalid') ||
+            errLower.includes('format') ||
+            errLower.includes('typo') ||
+            errLower.includes('valid public');
+
+          return (
+            <div className="mt-4 max-w-2xl w-full mx-auto p-4 sm:p-5 rounded-2xl bg-zinc-950/95 border border-red-500/40 text-white text-xs sm:text-sm flex flex-col gap-3 text-left backdrop-blur-xl shadow-2xl animate-in fade-in duration-200">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center shrink-0 text-red-400 mt-0.5">
+                  <ShieldAlert className="w-5 h-5" />
+                </div>
+                <div className="space-y-1 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold text-white text-sm">
+                      {isPrivateOrNotFound
+                        ? 'Private Repository or Not Found'
+                        : isRateLimited
+                        ? 'GitHub API Rate Limit Reached'
+                        : isTimeout
+                        ? 'Analysis Gateway Timeout (>45s)'
+                        : isInvalidUrl
+                        ? 'Invalid Repository URL'
+                        : 'Repository Analysis Error'}
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-red-950 border border-red-800 text-red-400 font-semibold">
+                      {isPrivateOrNotFound
+                        ? 'Auth Required'
+                        : isRateLimited
+                        ? '403 Rate Limited'
+                        : isTimeout
+                        ? 'Gateway Timeout'
+                        : 'Validation Error'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-300 leading-relaxed">
+                    {isPrivateOrNotFound
+                      ? 'This repository may be private, require authenticated read permissions, or does not exist. Sign in with GitHub to access your private repositories.'
+                      : isRateLimited
+                      ? 'The public unauthenticated GitHub API limit (60 req/hr) was reached. Sign in with GitHub to unlock 5,000 req/hr, or retry after a moment.'
+                      : isTimeout
+                      ? 'GitHub tree streams exceeded the 45-second execution budget. Very large repositories may need to be retried.'
+                      : isInvalidUrl
+                      ? 'Please enter a valid GitHub repository in the format "owner/repo" or "https://github.com/owner/repo".'
+                      : error}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 justify-end pt-2 border-t border-zinc-800/80 flex-wrap">
+                {isPrivateOrNotFound && (
+                  <Link
+                    href={`/auth/login?save_url=${encodeURIComponent(repoUrl)}&next=/`}
+                    className="px-3.5 py-1.5 rounded-xl bg-[#238636] hover:bg-[#2ea043] text-white font-mono text-xs font-bold transition flex items-center gap-1.5 shadow-md cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-400"
+                  >
+                    <GithubIcon className="w-3.5 h-3.5" />
+                    <span>Sign in with GitHub</span>
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleAnalyze(undefined, repoUrl)}
+                  className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-mono text-xs font-bold transition flex items-center gap-1.5 shadow-md cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-red-400"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Retry Analysis</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setStatus('idle');
+                  }}
+                  className="px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-xs transition cursor-pointer focus-visible:ring-2 focus-visible:ring-zinc-400"
+                >
+                  Dismiss
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
-              <button
-                type="button"
-                onClick={() => handleAnalyze(undefined, repoUrl)}
-                className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-mono text-xs font-bold transition flex items-center gap-1.5 shadow-md cursor-pointer active:scale-95"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Retry Analysis</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => { setError(null); setStatus('idle'); }}
-                className="px-2.5 py-1.5 rounded-xl bg-red-950 hover:bg-red-900 border border-red-800 text-red-300 font-mono text-xs transition cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Cancel control while loading */}
         {isLoading && (
@@ -544,9 +632,34 @@ export default function HeroSection() {
       <div ref={auditResultsRef} className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-6 py-12">
         {isLoading && <LoadingSkeleton />}
 
+        {result && isCachedResult && (
+          <div className="w-full flex items-center justify-between mb-4 px-1 flex-wrap gap-2 text-xs">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900/90 border border-zinc-800 text-zinc-300 font-mono shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-[#3fb950] shrink-0" />
+              <span>Loaded from instant cache (analyzed {cacheAgeText || 'recently'})</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const storageKey = `gitcontextgen_cache_${result.repoUrl.trim().toLowerCase()}`;
+                try {
+                  localStorage.removeItem(storageKey);
+                } catch (e) {}
+                setIsCachedResult(false);
+                handleAnalyze(undefined, result.repoUrl);
+              }}
+              className="text-xs text-cyan-400 hover:text-cyan-300 hover:underline font-mono cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900/50 border border-zinc-800/80 transition focus-visible:ring-2 focus-visible:ring-cyan-400"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Force re-sync from GitHub</span>
+            </button>
+          </div>
+        )}
+
         {result && (
           <RepoWorkspaceView
             result={result}
+            previousResult={previousResult}
             isGuest={!user}
             isSaved={isSaved}
             onSave={async () => {
@@ -577,8 +690,10 @@ export default function HeroSection() {
               try {
                 localStorage.removeItem(storageKey);
               } catch (e) {}
+              setPreviousResult(result);
               handleAnalyze(undefined, result.repoUrl);
             }}
+            isReAnalyzing={isLoading}
           />
         )}
       </div>

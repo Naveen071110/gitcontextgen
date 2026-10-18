@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Terminal, Cpu, CheckCircle2, ShieldCheck, Zap, Layers, Sparkles } from 'lucide-react';
+import { Terminal, Cpu, ShieldCheck, Zap, X } from 'lucide-react';
 
 interface TerminalLoaderProps {
   owner: string;
   repo: string;
   framework?: string;
+  archetype?: string;
   onComplete?: () => void;
+  onCancel?: () => void;
 }
 
 interface LogEntry {
@@ -18,9 +20,17 @@ interface LogEntry {
   type: 'cmd' | 'info' | 'success' | 'warn';
 }
 
-export default function TerminalLoader({ owner, repo, framework = 'Next.js', onComplete }: TerminalLoaderProps) {
+export default function TerminalLoader({
+  owner,
+  repo,
+  framework = 'Next.js',
+  archetype,
+  onComplete,
+  onCancel,
+}: TerminalLoaderProps) {
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [progress, setProgress] = useState(12);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [currentStepText, setCurrentStepText] = useState('Connecting to GitHub API gateway...');
   const terminalEndRef = useRef<HTMLDivElement>(null);
 
   const initialCommand: LogEntry = {
@@ -32,90 +42,117 @@ export default function TerminalLoader({ owner, repo, framework = 'Next.js', onC
   };
 
   const detectedFrameworkLabel = framework || 'Next.js';
-  const isWordPress = detectedFrameworkLabel.toLowerCase().includes('wordpress');
-  const isNext = detectedFrameworkLabel.toLowerCase().includes('next');
+  const repoLower = repo.toLowerCase();
+  const isAgent =
+    archetype === 'AI_AGENT' ||
+    archetype === 'AGENT_SKILL' ||
+    repoLower.includes('agent') ||
+    repoLower.includes('hermes') ||
+    repoLower.includes('autogpt') ||
+    repoLower.includes('langchain') ||
+    repoLower.includes('crewai');
+  const isLibrary =
+    archetype === 'LIBRARY_SDK' ||
+    repoLower.includes('sdk') ||
+    repoLower.includes('client') ||
+    repoLower.endsWith('-lib');
+  const isWordPress =
+    archetype === 'CMS_PLUGIN' ||
+    detectedFrameworkLabel.toLowerCase().includes('wordpress');
+  const isNext =
+    archetype === 'SAAS_WEB_APP' ||
+    detectedFrameworkLabel.toLowerCase().includes('next');
 
-  const simulatedSequence: Array<{
+  // Honest telemetry steps representing the actual stages of the analysis pipeline
+  const pipelineSequence: Array<{
     tag: string;
     tagColor: string;
     text: string;
+    stepTitle: string;
     delayMs: number;
-    pct: number;
     type: 'info' | 'success' | 'warn';
   }> = [
     {
       tag: 'GATEWAY',
       tagColor: 'text-[#79c0ff] bg-[#1f6feb]/15 border-[#388bfd]/30',
-      text: `Connected to GitHub API gateway. Ingesting recursive file tree for ${owner}/${repo}...`,
-      delayMs: 250,
-      pct: 22,
+      text: `Connected to GitHub API gateway. Ingesting recursive repository tree for ${owner}/${repo}...`,
+      stepTitle: 'Ingesting repository tree...',
+      delayMs: 300,
       type: 'info',
     },
     {
-      tag: 'AST SCANNER',
+      tag: 'ARCHITECTURE',
       tagColor: 'text-[#d2a8ff] bg-[#8957e5]/15 border-[#a371f7]/30',
-      text: isWordPress
-        ? `[AST Scanner] Found WordPress architecture. Mapping plugin hooks, $wpdb queries, and WPCS standards...`
+      text: isAgent
+        ? `[Agent Scanner] Detected AI Agent system. Indexing agent reasoning loops, tool-calling schemas, and memory stores...`
+        : isLibrary
+        ? `[Library Scanner] Detected Library/SDK package. Mapping public API contracts, types, and test suites...`
+        : isWordPress
+        ? `[CMS Scanner] Found WordPress architecture. Mapping plugin hooks, $wpdb queries, and WPCS standards...`
         : isNext
-        ? `[AST Scanner] Found Next.js 16 structure. Mapping App Router hierarchy and Server Actions...`
-        : `[AST Scanner] Indexed repository boundaries. Mapping architecture hierarchy and package manifests...`,
-      delayMs: 650,
-      pct: 42,
+        ? `[App Scanner] Found Next.js / SaaS structure. Mapping App Router hierarchy, API routes, and components...`
+        : `[Architecture Scanner] Indexed repository boundaries. Mapping architecture hierarchy and package manifests...`,
+      stepTitle: 'Classifying repository archetype & AST...',
+      delayMs: 800,
       type: 'info',
     },
     {
       tag: 'SANITIZATION',
       tagColor: 'text-[#f0883e] bg-[#bd561d]/15 border-[#d29922]/30',
-      text: `[Sanitization] Redacting potential API secrets, private certs, and credentials (500KB ReDoS Guard active)...`,
-      delayMs: 1100,
-      pct: 58,
+      text: `[Sanitization Vault] Scanning 7 secret classes with 500KB ReDoS guard (redacting Stripe, AWS, PATs, env vars)...`,
+      stepTitle: 'Scrubbing secrets & credentials...',
+      delayMs: 1300,
       type: 'info',
     },
     {
       tag: 'SECURITY',
       tagColor: 'text-[#56d364] bg-[#238636]/15 border-[#2ea043]/30',
       text: `[Security Audit] Querying OSV.dev vulnerability index & mapping SPDX license compliance...`,
-      delayMs: 1550,
-      pct: 72,
+      stepTitle: 'Querying OSV.dev CVE database...',
+      delayMs: 1800,
       type: 'info',
     },
     {
       tag: 'VISUALIZER',
       tagColor: 'text-[#7ee787] bg-[#238636]/15 border-[#3fb950]/30',
-      text: `[Visualizer] Generating Mermaid.js database models and route flowcharts with Kroki vector bridge...`,
-      delayMs: 1950,
-      pct: 84,
+      text: `[Visualizer] Generating Mermaid.js architecture models and route flowcharts via Kroki vector bridge...`,
+      stepTitle: 'Compiling Kroki architecture models...',
+      delayMs: 2300,
       type: 'info',
     },
     {
       tag: 'RULE GENERATOR',
       tagColor: 'text-[#a5d6ff] bg-[#388bfd]/15 border-[#58a6ff]/30',
-      text: isWordPress
+      text: isAgent
+        ? `[Rule Generator] Scaffolding strict .cursor/rules/agent-rules.mdc with Anti-Hallucination Protocol...`
+        : isLibrary
+        ? `[Rule Generator] Scaffolding strict .cursor/rules/library-rules.mdc with type-check invariants...`
+        : isWordPress
         ? `[Rule Generator] Scaffolding strict .cursor/rules/wordpress.mdc with alwaysApply: true...`
         : isNext
         ? `[Rule Generator] Scaffolding strict .cursor/rules/nextjs.mdc with alwaysApply: true...`
         : `[Rule Generator] Scaffolding strict .cursor/rules/project-rules.mdc with alwaysApply: true...`,
-      delayMs: 2350,
-      pct: 94,
+      stepTitle: 'Scaffolding agent instructions & rules...',
+      delayMs: 2800,
       type: 'info',
     },
     {
-      tag: 'L2 CACHE',
+      tag: 'SYNTHESIS',
       tagColor: 'text-[#388bfd] bg-[#1f6feb]/15 border-[#388bfd]/30',
-      text: `[L2 Cache] 12-hour warm cache synced. Assembling verified CLAUDE.md & AGENTS.md execution dossiers...`,
-      delayMs: 2750,
-      pct: 98,
+      text: `[Synthesis Gateway] Compiling CLAUDE.md, AGENTS.md, and MCP memory presets. Finalizing response...`,
+      stepTitle: 'Finalizing context synthesis...',
+      delayMs: 3300,
       type: 'info',
-    },
-    {
-      tag: 'COMPLETE',
-      tagColor: 'text-[#3fb950] bg-[#238636]/20 border-[#3fb950]/40',
-      text: `Context synthesis complete! Multi-agent dossiers compiled with zero hallucinations guaranteed.`,
-      delayMs: 3100,
-      pct: 100,
-      type: 'success',
     },
   ];
+
+  // Track live elapsed time accurately
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     setLogs([initialCommand]);
@@ -123,7 +160,7 @@ export default function TerminalLoader({ owner, repo, framework = 'Next.js', onC
     const timeouts: NodeJS.Timeout[] = [];
     const startTime = Date.now();
 
-    simulatedSequence.forEach((step) => {
+    pipelineSequence.forEach((step, idx) => {
       const t = setTimeout(() => {
         const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
         setLogs((prev) => [
@@ -136,9 +173,9 @@ export default function TerminalLoader({ owner, repo, framework = 'Next.js', onC
             text: step.text,
           },
         ]);
-        setProgress(step.pct);
+        setCurrentStepText(step.stepTitle);
 
-        if (step.pct === 100 && onComplete) {
+        if (idx === pipelineSequence.length - 1 && onComplete) {
           onComplete();
         }
       }, step.delayMs);
@@ -155,16 +192,31 @@ export default function TerminalLoader({ owner, repo, framework = 'Next.js', onC
   }, [logs]);
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 py-12 flex flex-col items-center justify-center font-mono">
-      {/* Perceived Value Notification */}
-      <div className="w-full flex items-center justify-between mb-4 text-xs text-[#8b949e] flex-wrap gap-2">
+    <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col items-center justify-center font-mono">
+      {/* Telemetry Header Line */}
+      <div className="w-full flex items-center justify-between mb-3 text-xs text-[#8b949e] flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#58a6ff] animate-ping" />
-          <span className="text-[#c9d1d9] font-medium">Running AST analysis &amp; multi-agent rule synchronization</span>
+          <span className="text-[#c9d1d9] font-medium">Live Repository Analysis In Flight</span>
+          <span className="text-[#8b949e] hidden sm:inline">•</span>
+          <span className="text-[#58a6ff] hidden sm:inline font-mono">github.com/{owner}/{repo}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <Cpu className="w-3.5 h-3.5 text-[#58a6ff]" />
-          <span>L2 Cache Engine: <strong className="text-[#3fb950]">Active (12h TTL • 94% Rate-Limit Shield)</strong></span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 text-[11px] bg-[#161b22] px-2.5 py-1 rounded-md border border-[#30363d]">
+            <Cpu className="w-3.5 h-3.5 text-[#58a6ff]" />
+            <span>Gateway Limit: <strong className="text-[#c9d1d9]">45s</strong></span>
+          </div>
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-2.5 py-1 rounded-md bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-[11px] text-[#f85149] hover:text-[#ff7b72] transition flex items-center gap-1 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#58a6ff]"
+              title="Cancel current analysis"
+            >
+              <X className="w-3 h-3" />
+              <span>Cancel</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -178,21 +230,22 @@ export default function TerminalLoader({ owner, repo, framework = 'Next.js', onC
             <div className="w-3 h-3 rounded-full bg-[#27c93f] border border-[#1aab29]" />
             <span className="ml-3 text-xs text-[#8b949e] font-mono flex items-center gap-1.5 truncate">
               <Terminal className="w-3.5 h-3.5 text-[#8b949e]" />
-              gitcontextgen-cli — ast-scan [{owner}/{repo}]
+              gitcontextgen-cli — analyze [{owner}/{repo}]
             </span>
           </div>
           <div className="flex items-center gap-2 text-[11px] text-[#8b949e]">
             <span className="px-2 py-0.5 rounded bg-[#21262d] border border-[#30363d] text-[#58a6ff] hidden sm:inline">
               stdio v2024-11-05
             </span>
-            <span className="px-2 py-0.5 rounded bg-[#238636]/15 border border-[#3fb950]/30 text-[#3fb950]">
-              AST Online
+            <span className="px-2 py-0.5 rounded bg-[#238636]/15 border border-[#3fb950]/30 text-[#3fb950] flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950] animate-pulse" />
+              Streaming Active
             </span>
           </div>
         </div>
 
         {/* Terminal Body */}
-        <div className="p-5 text-xs sm:text-sm text-[#c9d1d9] space-y-2.5 min-h-[320px] max-h-[440px] overflow-y-auto leading-relaxed">
+        <div className="p-5 text-xs sm:text-sm text-[#c9d1d9] space-y-2.5 min-h-[300px] max-h-[420px] overflow-y-auto leading-relaxed">
           {logs.map((log, index) => {
             if (log.type === 'cmd') {
               return (
@@ -227,18 +280,36 @@ export default function TerminalLoader({ owner, repo, framework = 'Next.js', onC
           <div ref={terminalEndRef} />
         </div>
 
-        {/* Progress Bar Footer */}
-        <div className="px-5 py-3 bg-[#161b22] border-t border-[#30363d] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-[#8b949e] w-full sm:w-auto">
-            <Zap className="w-3.5 h-3.5 text-[#58a6ff]" />
-            <span>Analyzing repository AST topology:</span>
-            <strong className="text-[#f0f6fc]">{progress}%</strong>
+        {/* Truthful Telemetry Footer Bar (NO fake percentages) */}
+        <div className="px-5 py-3.5 bg-[#161b22] border-t border-[#30363d] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5 text-[#8b949e] w-full sm:w-auto">
+            <Zap className="w-3.5 h-3.5 text-[#58a6ff] shrink-0" />
+            <span className="text-[#8b949e]">Status:</span>
+            <strong className="text-[#f0f6fc] truncate max-w-xs sm:max-w-md">{currentStepText}</strong>
           </div>
-          <div className="w-full sm:w-48 h-2 rounded-full bg-[#21262d] overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-[#1f6feb] via-[#58a6ff] to-[#3fb950] transition-all duration-300 rounded-full"
-              style={{ width: `${progress}%` }}
-            />
+
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+            {/* Live Elapsed Timer */}
+            <div className="flex items-center gap-1.5 text-[11px] text-[#8b949e] font-mono">
+              <span>Elapsed:</span>
+              <strong className="text-[#58a6ff]">{elapsedSeconds}s</strong>
+              <span className="text-[#8b949e]">/ 45s</span>
+            </div>
+
+            {/* Indeterminate Activity Streaming Bar */}
+            <div className="w-24 sm:w-32 h-2 rounded-full bg-[#21262d] overflow-hidden relative">
+              <div className="h-full bg-gradient-to-r from-[#1f6feb] via-[#58a6ff] to-[#3fb950] animate-pulse rounded-full w-full" />
+            </div>
+
+            {onCancel && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="px-2.5 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-[11px] text-[#c9d1d9] hover:text-[#f85149] transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#58a6ff]"
+              >
+                Cancel
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -246,7 +317,7 @@ export default function TerminalLoader({ owner, repo, framework = 'Next.js', onC
       {/* Reassurance Guardrail Note */}
       <div className="mt-4 flex items-center gap-2 text-xs text-[#8b949e] text-center">
         <ShieldCheck className="w-4 h-4 text-[#3fb950] shrink-0" />
-        <span>Read-only AST scan. Private tokens, database credentials, and env files are automatically redacted.</span>
+        <span>Read-only security scan. Private tokens, database credentials, and env files are automatically redacted.</span>
       </div>
     </div>
   );

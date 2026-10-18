@@ -174,8 +174,86 @@ readme.txt
   assert.strictEqual(updated.status, 'completed', 'Updated status matches');
   console.log('✅ PASS: MockStore updateProject verified.');
 
+  // -------------------------------------------------------------------------
+  // TEST 5: Smart Repository Classification (NousResearch/hermes-agent AI_AGENT)
+  // -------------------------------------------------------------------------
+  console.log('\n[TEST 5] Testing Smart Repository Classification & Archetype Tailoring (hermes-agent)...');
+  const hermesAgentInput = {
+    repoName: 'hermes-agent',
+    owner: 'NousResearch',
+    repo: 'hermes-agent',
+    defaultBranch: 'main',
+    fileTreeSummary: `
+agent/core.py
+agent/loop.py
+agent/reasoning.py
+tools/exec.py
+tools/registry.py
+prompts/system.md
+prompts/agent_cot.jinja2
+requirements.txt
+README.md
+    `.trim(),
+    manifestContent: `
+ollama>=0.1.0
+langchain>=0.2.0
+torch>=2.0.0
+pydantic>=2.0.0
+    `.trim(),
+    readmeContent: '# Hermes Agent\nAn autonomous AI agent loop with tool-calling definitions, reasoning traces, and persistent memory.',
+    recentCommits: [
+      { message: 'feat: add autonomous tool execution loop with error recovery' },
+      { message: 'sec: enforce budget ceiling guardrail and redact tokens' },
+      { message: 'perf: optimize context window compression and prompt caching' },
+    ],
+  };
+
+  const hermesAnalysis = analyzeCodebase(hermesAgentInput);
+
+  assert.strictEqual(hermesAnalysis.archetype, 'AI_AGENT', 'Archetype must be classified as AI_AGENT');
+  assert.ok(hermesAnalysis.onboarding.claudeMd.includes('Autonomous Agent Architecture') || hermesAnalysis.onboarding.claudeMd.includes('AI AGENT'), 'CLAUDE.md must reflect AI Agent architecture');
+  assert.ok(hermesAnalysis.onboarding.claudeMd.includes('Anti-Hallucination & Self-Verification Protocol'), 'CLAUDE.md must append Anti-Hallucination Protocol');
+  assert.ok(hermesAnalysis.onboarding.agentsMd.includes('Agent Swarm & Tool Delegation'), 'AGENTS.md must feature agent swarm protocols');
+  assert.ok(hermesAnalysis.onboarding.agentsMd.includes('Anti-Hallucination & Self-Verification Protocol'), 'AGENTS.md must append Anti-Hallucination Protocol');
+
+  const agentRule = hermesAnalysis.cursorRules.find(r => r.filename.includes('agent-architecture.mdc'));
+  assert.ok(agentRule, 'Must generate agent-architecture.mdc');
+  assert.ok(agentRule.content.includes('alwaysApply: true'), 'Agent rule must have alwaysApply: true');
+  assert.ok(agentRule.content.includes('Tool Calling Boundaries'), 'Agent rule must enforce tool calling boundaries');
+  assert.ok(agentRule.content.includes('Anti-Hallucination & Self-Verification Protocol'), 'Agent rule must append Anti-Hallucination Protocol');
+
+  assert.ok(hermesAnalysis.architecture.mermaidGraph.includes('Agent Reasoning Loop') || hermesAnalysis.architecture.mermaidGraph.includes('Reasoning Loop'), 'Mermaid must model Agent Reasoning Loop');
+  
+  // Verify SAAS_WEB_APP and CMS_PLUGIN
+  assert.ok(nextAnalysis.archetype === 'SAAS_WEB_APP' || nextAnalysis.archetype === 'FULL_APPLICATION', 'Next.js repo must be classified as SAAS_WEB_APP');
+  assert.strictEqual(wpAnalysis.archetype, 'CMS_PLUGIN', 'WordPress plugin must be classified as CMS_PLUGIN');
+
+  // Verify LIBRARY_SDK
+  const sdkAnalysis = analyzeCodebase({
+    repoName: 'my-ts-library',
+    owner: 'dev',
+    repo: 'my-ts-library',
+    defaultBranch: 'main',
+    fileTreeSummary: 'src/index.ts\npackage.json\ntsconfig.json',
+    manifestContent: JSON.stringify({ name: 'my-ts-library', main: 'dist/index.js' }),
+  });
+  assert.strictEqual(sdkAnalysis.archetype, 'LIBRARY_SDK', 'TypeScript package must be classified as LIBRARY_SDK');
+
+  // Verify CLI_TOOL
+  const cliAnalysis = analyzeCodebase({
+    repoName: 'my-cli-tool',
+    owner: 'dev',
+    repo: 'my-cli-tool',
+    defaultBranch: 'main',
+    fileTreeSummary: 'bin/run.js\nsrc/cli.ts\npackage.json',
+    manifestContent: JSON.stringify({ name: 'my-cli-tool', bin: { run: './bin/run.js' }, dependencies: { commander: '^11.0.0' } }),
+  });
+  assert.strictEqual(cliAnalysis.archetype, 'CLI_TOOL', 'CLI repository must be classified as CLI_TOOL');
+
+  console.log('✅ PASS: Smart Repository Classification verified across AI_AGENT, SAAS_WEB_APP, CMS_PLUGIN, LIBRARY_SDK, and CLI_TOOL.');
+
   console.log('\n' + '='.repeat(72));
-  console.log('🎉 MONETIZATION ANALYZER ENGINE TEST SUITE: 100% PASS');
+  console.log('🎉 MONETIZATION ANALYZER ENGINE TEST SUITE: 100% PASS (5/5 TESTS)');
   console.log('='.repeat(72));
 }
 

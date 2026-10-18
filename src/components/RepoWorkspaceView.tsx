@@ -8,7 +8,6 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import CodeViewer from '@/components/CodeViewer';
 import McpExplorerSandbox, { McpUpgradePlaceholder } from '@/components/McpExplorerSandbox';
 import { GithubIcon } from '@/components/icons/Github';
-import { downloadExcelWorkbook } from '@/lib/export/excelExporter';
 import { downloadFileInventoryCsv, downloadClientHandoffCsv } from '@/lib/export/csvExporter';
 import {
   FolderGit2,
@@ -709,6 +708,7 @@ export default function RepoWorkspaceView({
 
   const handleExportExcel = async () => {
     try {
+      const { downloadExcelWorkbook } = await import('@/lib/export/excelExporter');
       const filename = await downloadExcelWorkbook(activeAnalysisResult);
       setIsExportOpen(false);
       triggerToast(`✅ Exported ${filename} successfully!`);

@@ -89,23 +89,23 @@ export default function FaqSection() {
       <div className="w-full flex flex-col items-center justify-center">
         
         {/* Header */}
-        <div className="w-full max-w-3xl mx-auto flex flex-col items-center text-center mb-20">
-          <div className="w-full flex justify-center mb-6">
+        <div className="w-full max-w-3xl mx-auto flex flex-col items-center text-center mb-8 sm:mb-12 md:mb-16">
+          <div className="w-full flex justify-center mb-4 sm:mb-6">
             <div className="w-fit inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white/[0.04] text-xs font-mono text-white/80">
               <HelpCircle className="w-3.5 h-3.5 text-cyan-400" /> Frequently Asked Questions
             </div>
           </div>
-          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-6 text-white leading-tight text-center">
+          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4 sm:mb-6 text-white leading-tight text-center">
             Everything You Need to{' '}
             <span className="font-serif italic font-normal text-white/80">Know.</span>
           </h2>
-          <p className="text-white/60 text-base sm:text-lg leading-relaxed text-center">
+          <p className="text-white/60 text-base sm:text-lg leading-relaxed text-center max-w-2xl mx-auto">
             Clear, detailed answers about AI context files, AGENTS.md, context drift, and code security.
           </p>
         </div>
 
         {/* Accordion List - Borderless Floating Cards */}
-        <div className="w-full max-w-4xl mx-auto space-y-4 text-left flex flex-col items-center">
+        <div className="w-full max-w-4xl mx-auto space-y-3 sm:space-y-4 text-left flex flex-col items-center">
           {faqs.map((faq, index) => {
             const isOpen = openIndex === index;
             return (
@@ -115,9 +115,9 @@ export default function FaqSection() {
               >
                 <button
                   onClick={() => toggleFaq(index)}
-                  className="w-full p-6 sm:p-7 text-left flex items-center justify-between gap-4 focus:outline-none group cursor-pointer"
+                  className="w-full min-h-11 min-h-[44px] px-4 py-3.5 sm:px-7 sm:py-6 text-left flex items-center justify-between gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 group cursor-pointer touch-manipulation"
                 >
-                  <div className="flex items-center gap-4 font-semibold text-base sm:text-lg text-white group-hover:text-cyan-300 transition-colors">
+                  <div className="flex items-center gap-3 sm:gap-4 font-semibold text-base sm:text-lg text-white group-hover:text-cyan-300 transition-colors">
                     {faq.icon}
                     <span>{faq.question}</span>
                   </div>
@@ -129,8 +129,8 @@ export default function FaqSection() {
                 </button>
 
                 {isOpen && (
-                  <div className="px-6 sm:px-7 pb-7 pt-0 text-xs sm:text-sm text-white/70 font-mono leading-relaxed">
-                    <p className="pt-4 border-t border-white/5">{faq.answer}</p>
+                  <div className="px-4 sm:px-7 pb-5 sm:pb-7 pt-0 text-xs sm:text-sm text-white/70 font-mono leading-relaxed">
+                    <p className="pt-3 sm:pt-4 border-t border-white/5">{faq.answer}</p>
                   </div>
                 )}
               </div>

@@ -44,7 +44,7 @@ export default function HowItWorksStepper() {
   return (
     <section className="flex flex-col items-center justify-center w-full max-w-6xl mx-auto px-4 sm:px-6 py-28 md:py-36 text-zinc-100 font-sans select-none">
       {/* Symmetrical Centered Section Header */}
-      <div className="w-full max-w-3xl mx-auto flex flex-col items-center justify-center text-center mb-16">
+      <div className="w-full max-w-3xl mx-auto flex flex-col items-center justify-center text-center mb-7 sm:mb-10 md:mb-16">
         <div className="w-full flex justify-center mb-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-mono text-amber-400 shadow-sm">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Three-Step Context Pipeline
@@ -60,7 +60,7 @@ export default function HowItWorksStepper() {
       </div>
 
       {/* 3-Step Interactive Grid with whileInView */}
-      <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6 relative text-left">
+      <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 relative text-left">
         {steps.map((item, idx) => {
           const Icon = item.icon;
           return (
@@ -70,7 +70,7 @@ export default function HowItWorksStepper() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.5, ease: 'easeOut', delay: idx * 0.12 }}
-              className="p-6 sm:p-7 rounded-2xl bg-zinc-900/30 border border-zinc-800/80 hover:border-zinc-700/90 flex flex-col justify-between space-y-6 transition-all duration-300 group hover:shadow-[0_0_35px_rgba(255,255,255,0.02)] relative overflow-hidden"
+              className="p-5 sm:p-7 rounded-2xl bg-zinc-900/30 border border-zinc-800/80 hover:border-zinc-700/90 flex flex-col justify-between space-y-4 sm:space-y-6 transition-all duration-300 group hover:shadow-[0_0_35px_rgba(255,255,255,0.02)] relative overflow-hidden"
             >
               <div>
                 {/* Step Pill & Tag */}

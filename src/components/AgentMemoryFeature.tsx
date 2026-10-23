@@ -170,31 +170,34 @@ export default function AgentMemoryFeature() {
             </div>
 
             {/* Interactive Tab Selectors */}
-            <div className="flex items-center gap-1.5 p-1 bg-zinc-900/90 rounded-xl border border-zinc-800 self-start sm:self-auto overflow-x-auto max-w-full">
-              {[
-                { id: 'recall', label: '1. gitcontextgen_recall', icon: Zap },
-                { id: 'remember', label: '2. gitcontextgen_remember', icon: Brain },
-                { id: 'schema', label: '3. memory.db Schema', icon: Database },
-                { id: 'mutex', label: '4. Multi-Agent Mutex', icon: Lock },
-              ].map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveTab(tab.id as any)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-                      isActive
-                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                        : 'text-zinc-400 hover:text-zinc-200'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
+            <div className="relative max-w-full">
+              <div className="flex items-center gap-1.5 p-1 bg-zinc-900/90 rounded-xl border border-zinc-800 self-start sm:self-auto overflow-x-auto overscroll-x-contain no-scrollbar pr-3 scroll-smooth [scroll-snap-type:x_proximity] max-w-full">
+                {[
+                  { id: 'recall', label: '1. gitcontextgen_recall', icon: Zap },
+                  { id: 'remember', label: '2. gitcontextgen_remember', icon: Brain },
+                  { id: 'schema', label: '3. memory.db Schema', icon: Database },
+                  { id: 'mutex', label: '4. Multi-Agent Mutex', icon: Lock },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id as any)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 snap-start min-h-[36px] sm:min-h-0 ${
+                        isActive
+                          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                          : 'text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5 shrink-0" />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-zinc-950/90 to-transparent sm:hidden" />
             </div>
           </div>
 
@@ -211,12 +214,12 @@ export default function AgentMemoryFeature() {
                   className="space-y-4"
                 >
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-xl bg-black border border-zinc-900 font-mono text-xs text-zinc-300 space-y-2">
+                    <div className="p-3.5 sm:p-4 rounded-xl bg-black border border-zinc-900 font-mono text-xs text-zinc-300 space-y-2">
                       <div className="text-zinc-500 text-[11px] pb-1 border-b border-zinc-900 flex justify-between">
                         <span>// AGENT DISPATCH (stdio JSON-RPC 2.0)</span>
                         <span className="text-cyan-400 font-bold">Claude Code / Cursor</span>
                       </div>
-                      <pre className="text-cyan-300 overflow-x-auto text-[11px] leading-relaxed">
+                      <pre className="text-cyan-300 overflow-x-auto text-[11px] leading-[1.6] px-1 sm:px-0">
 {`{
   "jsonrpc": "2.0",
   "method": "tools/call",
@@ -233,12 +236,12 @@ export default function AgentMemoryFeature() {
                       </pre>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-black border border-cyan-900/40 font-mono text-xs text-zinc-300 space-y-2">
+                    <div className="p-3.5 sm:p-4 rounded-xl bg-black border border-cyan-900/40 font-mono text-xs text-zinc-300 space-y-2">
                       <div className="text-zinc-500 text-[11px] pb-1 border-b border-zinc-900 flex justify-between">
                         <span>// SUB-MILLISECOND SQLITE RETURN</span>
                         <span className="text-emerald-400 font-bold">&lt; 0.9ms Latency</span>
                       </div>
-                      <pre className="text-emerald-300 overflow-x-auto text-[11px] leading-relaxed">
+                      <pre className="text-emerald-300 overflow-x-auto text-[11px] leading-[1.6] px-1 sm:px-0">
 {`{
   "content": [{
     "type": "text",
@@ -269,12 +272,12 @@ export default function AgentMemoryFeature() {
                   className="space-y-4"
                 >
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-xl bg-black border border-zinc-900 font-mono text-xs text-zinc-300 space-y-2">
+                    <div className="p-3.5 sm:p-4 rounded-xl bg-black border border-zinc-900 font-mono text-xs text-zinc-300 space-y-2">
                       <div className="text-zinc-500 text-[11px] pb-1 border-b border-zinc-900 flex justify-between">
                         <span>// RECORDING DECISION (Agent Tool Call)</span>
                         <span className="text-cyan-400 font-bold">gitcontextgen_remember</span>
                       </div>
-                      <pre className="text-cyan-300 overflow-x-auto text-[11px] leading-relaxed">
+                      <pre className="text-cyan-300 overflow-x-auto text-[11px] leading-[1.6] px-1 sm:px-0">
 {`{
   "name": "gitcontextgen_remember",
   "arguments": {
@@ -286,12 +289,12 @@ export default function AgentMemoryFeature() {
                       </pre>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-black border border-zinc-900 font-mono text-xs text-zinc-300 space-y-2">
+                    <div className="p-3.5 sm:p-4 rounded-xl bg-black border border-zinc-900 font-mono text-xs text-zinc-300 space-y-2">
                       <div className="text-zinc-500 text-[11px] pb-1 border-b border-zinc-900 flex justify-between">
                         <span>// AUTOMATIC SQLITE COMMIT</span>
                         <span className="text-emerald-400 font-bold">WAL Mode Enabled</span>
                       </div>
-                      <pre className="text-emerald-300 overflow-x-auto text-[11px] leading-relaxed">
+                      <pre className="text-emerald-300 overflow-x-auto text-[11px] leading-[1.6] px-1 sm:px-0">
 {`{
   "status": "stored",
   "memory_id": "mem_01hq82k9",
@@ -321,12 +324,12 @@ export default function AgentMemoryFeature() {
                   transition={{ duration: 0.2 }}
                   className="space-y-4"
                 >
-                  <div className="p-4 rounded-xl bg-black border border-zinc-900 font-mono text-xs text-zinc-300 space-y-2">
+                  <div className="p-3.5 sm:p-4 rounded-xl bg-black border border-zinc-900 font-mono text-xs text-zinc-300 space-y-2">
                     <div className="text-zinc-500 text-[11px] pb-1 border-b border-zinc-900 flex justify-between">
                       <span>// LOCAL SQLITE DDL (.gitcontextgen/memory.db)</span>
                       <span className="text-cyan-400">Zero Cloud Egress</span>
                     </div>
-                    <pre className="text-zinc-300 overflow-x-auto text-[11px] leading-relaxed">
+                    <pre className="text-zinc-300 overflow-x-auto text-[11px] leading-[1.6] px-1 sm:px-0">
 {`CREATE TABLE IF NOT EXISTS agent_memories (
   id TEXT PRIMARY KEY,
   repo_id TEXT NOT NULL,
@@ -369,12 +372,12 @@ CREATE INDEX IF NOT EXISTS idx_memories_type ON agent_memories(memory_type);`}
                   className="space-y-4"
                 >
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-xl bg-black border border-zinc-900 font-mono text-xs text-zinc-300 space-y-2">
+                    <div className="p-3.5 sm:p-4 rounded-xl bg-black border border-zinc-900 font-mono text-xs text-zinc-300 space-y-2">
                       <div className="text-zinc-500 text-[11px] pb-1 border-b border-zinc-900 flex justify-between">
                         <span>// ATOMIC PID FILE LOCK MECHANISM</span>
                         <span className="text-amber-400">Locking Referee</span>
                       </div>
-                      <pre className="text-amber-300 overflow-x-auto text-[11px] leading-relaxed">
+                      <pre className="text-amber-300 overflow-x-auto text-[11px] leading-[1.6] px-1 sm:px-0">
 {`// .gitcontextgen/locks/auth.ts.lock
 {
   "locked_by": "claude_code_daemon",
@@ -385,12 +388,12 @@ CREATE INDEX IF NOT EXISTS idx_memories_type ON agent_memories(memory_type);`}
                       </pre>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-black border border-zinc-900 font-mono text-xs text-zinc-300 space-y-2">
+                    <div className="p-3.5 sm:p-4 rounded-xl bg-black border border-zinc-900 font-mono text-xs text-zinc-300 space-y-2">
                       <div className="text-zinc-500 text-[11px] pb-1 border-b border-zinc-900 flex justify-between">
                         <span>// COLLISION GUARD FOR CURSOR / WINDSURF</span>
                         <span className="text-cyan-400">Zero Overwrites</span>
                       </div>
-                      <pre className="text-cyan-300 overflow-x-auto text-[11px] leading-relaxed">
+                      <pre className="text-cyan-300 overflow-x-auto text-[11px] leading-[1.6] px-1 sm:px-0">
 {`// Parallel Cursor Agent Request
 &gt; Acquire lock: src/app/auth.ts
 &gt; Status: BUSY (Held by PID 4821)

@@ -40,7 +40,7 @@ export default function LiveDashboardPreview() {
   return (
     <section className="flex flex-col items-center justify-center w-full max-w-6xl mx-auto px-4 sm:px-6 py-28 md:py-36 text-zinc-100 font-sans select-none">
       {/* Symmetrical Centered Section Header */}
-      <div className="w-full max-w-3xl mx-auto flex flex-col items-center justify-center text-center mb-16">
+      <div className="w-full max-w-3xl mx-auto flex flex-col items-center justify-center text-center mb-7 sm:mb-10 md:mb-16">
         <div className="w-full flex justify-center mb-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-mono text-amber-400 shadow-sm">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Interactive Feature Dashboard
@@ -50,7 +50,7 @@ export default function LiveDashboardPreview() {
           GitHub-Familiar.{' '}
           <span className="font-serif italic font-normal text-amber-300">Engineered for Teams.</span>
         </h2>
-        <p className="text-zinc-400 text-sm sm:text-base leading-relaxed text-center max-w-xl mx-auto w-full">
+        <p className="text-zinc-400 text-sm sm:text-base leading-relaxed text-center max-w-[34ch] sm:max-w-xl mx-auto w-full">
           Inspect your indexed codebase map, monitor token billing savings via local L2 cache, and preview automated client delivery summaries.
         </p>
       </div>
@@ -80,38 +80,42 @@ export default function LiveDashboardPreview() {
         </div>
 
         {/* GitHub Navigation Tabs with Framer Motion layoutId underline */}
-        <div className="px-4 sm:px-6 bg-[#0d1117] border-b border-[#30363d] overflow-x-auto no-scrollbar">
-          <nav role="tablist" className="flex items-center gap-1 sm:gap-3 -mb-px">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  role="tab"
-                  aria-selected={isActive}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={'relative px-3.5 py-3 text-xs sm:text-sm font-medium flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer touch-manipulation min-h-[44px] ' + (
-                    isActive
-                      ? 'text-[#f0f6fc] font-semibold'
-                      : 'text-[#8b949e] hover:text-[#c9d1d9]'
-                  )}
-                >
-                  <Icon className={'w-4 h-4 ' + (isActive ? 'text-[#f0f6fc]' : 'text-[#8b949e]')} />
-                  <span>{tab.label}</span>
+        <div className="relative px-4 sm:px-6 bg-[#0d1117] border-b border-[#30363d]">
+          <div className="overflow-x-auto overscroll-x-contain no-scrollbar pr-3">
+            <nav role="tablist" className="flex items-center gap-1 sm:gap-3 -mb-px min-w-max">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={'relative px-3.5 py-3 text-xs sm:text-sm font-medium flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer touch-manipulation min-h-[44px] ' + (
+                      isActive
+                        ? 'text-[#f0f6fc] font-semibold'
+                        : 'text-[#8b949e] hover:text-[#c9d1d9]'
+                    )}
+                  >
+                    <Icon className={'w-4 h-4 ' + (isActive ? 'text-[#f0f6fc]' : 'text-[#8b949e]')} />
+                    <span>{tab.label}</span>
 
-                  {/* Fluid Framer Motion Tab Indicator */}
-                  {isActive && (
-                    <motion.div
-                      layoutId="github-tab-underline"
-                      className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#f78166]"
-                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </nav>
+                    {/* Fluid Framer Motion Tab Indicator */}
+                    {isActive && (
+                      <motion.div
+                        layoutId="github-tab-underline"
+                        className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#f78166]"
+                        transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+          {/* Subtle right fade cue on mobile */}
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#0d1117] to-transparent sm:hidden" />
         </div>
 
         {/* Tab Content Canvas with Explicit Height to Prevent CLS */}

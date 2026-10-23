@@ -64,15 +64,15 @@ export default function BrowserRedirectLoop() {
       ref={containerRef}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="w-full max-w-5xl mx-auto rounded-2xl border border-zinc-800/80 bg-[#030303] shadow-[0_20px_70px_rgba(0,0,0,0.85)] overflow-hidden text-left font-sans select-none relative group"
+      className="w-full max-w-5xl mx-auto rounded-2xl border border-zinc-800/80 bg-[#030303] shadow-[0_20px_70px_rgba(0,0,0,0.85)] overflow-hidden text-left font-sans select-none relative group min-w-0 max-w-full"
     >
       {/* Ambient Backlight Glow */}
       <div className="absolute -inset-px rounded-2xl bg-gradient-to-b from-amber-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
       {/* Browser Chrome Bar */}
-      <div className="px-4 py-3 bg-zinc-950/90 border-b border-zinc-850 flex items-center justify-between gap-3 text-xs">
+      <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-zinc-950/90 border-b border-zinc-850 flex items-center justify-between gap-2 sm:gap-3 text-xs min-w-0">
         {/* Window Controls */}
-        <div className="flex items-center gap-2">
+        <div className="hidden xs:flex sm:flex items-center gap-1.5 sm:gap-2 shrink-0">
           <div className="w-3 h-3 rounded-full bg-zinc-800 border border-zinc-700/60" />
           <div className="w-3 h-3 rounded-full bg-zinc-800 border border-zinc-700/60" />
           <div className="w-3 h-3 rounded-full bg-zinc-800 border border-zinc-700/60" />
@@ -80,21 +80,21 @@ export default function BrowserRedirectLoop() {
 
         {/* Animated Address Bar */}
         <div
-          className={`flex-1 max-w-2xl mx-auto px-4 py-1.5 rounded-full bg-zinc-900/80 border text-xs font-mono flex items-center justify-between gap-2 transition-all duration-300 ${
+          className={`flex-1 min-w-0 max-w-2xl mx-auto px-2.5 sm:px-4 py-1.5 rounded-full bg-zinc-900/80 border text-xs font-mono flex items-center justify-between gap-1.5 sm:gap-2 transition-all duration-300 ${
             phase === 3
               ? 'border-amber-400/80 ring-2 ring-amber-400/20 shadow-[0_0_25px_rgba(245,158,11,0.3)]'
               : 'border-zinc-800'
           }`}
         >
-          <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-1 sm:gap-2 min-w-0 overflow-hidden">
             <Lock className="w-3 h-3 text-emerald-400 shrink-0" />
-            <span className="text-zinc-500 shrink-0 select-none">https://</span>
+            <span className="text-zinc-500 shrink-0 select-none hidden sm:inline">https://</span>
             <span className="text-zinc-400 shrink-0">git</span>
 
             {/* Address Mutation: "hub" vs "contextgen" */}
             {phase <= 1 ? (
               <span
-                className={`transition-colors duration-200 ${
+                className={`transition-colors duration-200 shrink-0 ${
                   phase === 1 ? 'bg-blue-500/40 text-blue-200 px-1 rounded' : 'text-zinc-200'
                 }`}
               >
@@ -104,19 +104,19 @@ export default function BrowserRedirectLoop() {
               <motion.span
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="text-amber-400 font-bold bg-amber-400/10 px-1 rounded border border-amber-400/30"
+                className="text-amber-400 font-bold bg-amber-400/10 px-1 rounded border border-amber-400/30 shrink-0"
               >
                 contextgen
               </motion.span>
             )}
 
             <span className="text-zinc-500 shrink-0">.com/</span>
-            <span className="text-zinc-200 truncate">facebook/react</span>
+            <span className="text-zinc-200 truncate min-w-0">facebook/react</span>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {phase === 3 && (
-              <span className="text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 animate-pulse border border-amber-500/30">
+              <span className="text-[10px] uppercase font-mono tracking-widest px-1.5 sm:px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 animate-pulse border border-amber-500/30">
                 ↵ Enter
               </span>
             )}
@@ -133,7 +133,7 @@ export default function BrowserRedirectLoop() {
         </div>
 
         {/* Play/Pause Tooltip Indicator */}
-        <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-500">
+        <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-500 shrink-0">
           <span className="hidden sm:inline">hub ➔ contextgen</span>
           <button
             type="button"
@@ -146,7 +146,7 @@ export default function BrowserRedirectLoop() {
       </div>
 
       {/* Browser Body with Morphing Content */}
-      <div className="relative min-h-[440px] bg-[#080808] p-4 sm:p-6 text-zinc-300 overflow-hidden">
+      <div className="relative min-h-[380px] sm:min-h-[440px] max-h-[480px] sm:max-h-none bg-[#080808] p-3 sm:p-6 text-zinc-300 overflow-hidden">
         <AnimatePresence mode="wait">
           {!isMorphed ? (
             /* ========================================================
@@ -331,12 +331,12 @@ export default function BrowserRedirectLoop() {
       </div>
 
       {/* Footer Step Tracker Indicator */}
-      <div className="px-5 py-2.5 bg-zinc-950 border-t border-zinc-850 flex items-center justify-between text-[11px] font-mono text-zinc-500">
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-          <span>Interactive Preview • 12s Continuous Simulation Loop</span>
+      <div className="px-3 sm:px-5 py-2.5 bg-zinc-950 border-t border-zinc-850 flex items-center justify-between gap-2 text-[11px] font-mono text-zinc-500 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 truncate">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+          <span className="truncate">Interactive Preview<span className="hidden sm:inline"> • 12s Continuous Simulation Loop</span></span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           {[0, 1, 2, 3, 4].map((stepIdx) => (
             <button
               key={stepIdx}

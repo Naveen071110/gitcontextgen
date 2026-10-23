@@ -163,10 +163,10 @@ export default function PricingSection() {
 
         {/* Step 4: Three High-Converting B2B Pricing Cards */}
         <div className="w-full max-w-6xl mx-auto mb-16">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch justify-center w-full text-left">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 items-stretch justify-center w-full text-left">
             
             {/* Card 1: Starter Pass (For Solo Hobbyists) */}
-            <div className="p-8 rounded-3xl bg-zinc-950/60 flex flex-col justify-between space-y-8 border border-zinc-900 hover:border-zinc-800 transition-all duration-300">
+            <div className="p-5 sm:p-8 rounded-3xl bg-zinc-950/60 flex flex-col justify-between space-y-6 sm:space-y-8 border border-zinc-900 hover:border-zinc-800 transition-all duration-300">
               <div>
                 <div className="flex items-center justify-between gap-2 mb-4">
                   <h3 className="text-xl sm:text-2xl font-bold text-white font-mono">Starter Pass</h3>
@@ -189,9 +189,9 @@ export default function PricingSection() {
                   For solo developers and side-project builders wanting clean, structured context files on demand.
                 </p>
                 
-                <div className="h-px bg-zinc-800/80 my-6" />
+                <div className="h-px bg-zinc-800/80 my-4 sm:my-6" />
                 
-                <ul className="space-y-3.5 text-xs sm:text-sm text-zinc-300 font-mono leading-relaxed">
+                <ul className="space-y-2.5 sm:space-y-3.5 text-xs sm:text-sm text-zinc-300 font-mono leading-relaxed">
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> 50 Repository Scans / month
                   </li>
@@ -232,7 +232,7 @@ export default function PricingSection() {
             </div>
 
             {/* Card 2: Pro Builder (For Elite Freelancers & Power Users) — Refined Razor-Thin Highlight */}
-            <div className="p-8 rounded-3xl bg-gradient-to-b from-zinc-900/40 to-black flex flex-col justify-between space-y-8 border border-zinc-700/80 shadow-[0_0_20px_rgba(24,24,27,0.5)] relative transition-all duration-300">
+            <div className="p-5 sm:p-8 rounded-3xl bg-gradient-to-b from-zinc-900/40 to-black flex flex-col justify-between space-y-6 sm:space-y-8 border border-zinc-700/80 shadow-[0_0_20px_rgba(24,24,27,0.5)] relative transition-all duration-300">
               <div>
                 <div className="flex items-center justify-between gap-2 mb-4">
                   <h3 className="text-xl sm:text-2xl font-bold text-white font-mono">Pro Builder</h3>
@@ -255,9 +255,9 @@ export default function PricingSection() {
                   For professional developers using Cursor Composer, Claude Code CLI, and Windsurf on production apps.
                 </p>
                 
-                <div className="h-px bg-zinc-800/80 my-6" />
+                <div className="h-px bg-zinc-800/80 my-4 sm:my-6" />
                 
-                <ul className="space-y-3.5 text-xs sm:text-sm text-zinc-200 font-mono leading-relaxed">
+                <ul className="space-y-2.5 sm:space-y-3.5 text-xs sm:text-sm text-zinc-200 font-mono leading-relaxed">
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Everything in Starter Pass
                   </li>
@@ -320,7 +320,7 @@ export default function PricingSection() {
             </div>
 
             {/* Card 3: Agency Team (For Dev Agencies & WordPress Shops) */}
-            <div className="p-8 rounded-3xl bg-zinc-950/60 flex flex-col justify-between space-y-8 border border-zinc-900 hover:border-zinc-800 transition-all duration-300">
+            <div className="p-5 sm:p-8 rounded-3xl bg-zinc-950/60 flex flex-col justify-between space-y-6 sm:space-y-8 border border-zinc-900 hover:border-zinc-800 transition-all duration-300">
               <div>
                 <div className="flex items-center justify-between gap-2 mb-4">
                   <h3 className="text-xl sm:text-2xl font-bold text-white font-mono">Agency Team</h3>
@@ -343,9 +343,9 @@ export default function PricingSection() {
                   For software agencies managing dozens of client projects, microservices, and WordPress architectures.
                 </p>
                 
-                <div className="h-px bg-zinc-800/80 my-6" />
+                <div className="h-px bg-zinc-800/80 my-4 sm:my-6" />
                 
-                <ul className="space-y-3.5 text-xs sm:text-sm text-zinc-300 font-mono leading-relaxed">
+                <ul className="space-y-2.5 sm:space-y-3.5 text-xs sm:text-sm text-zinc-300 font-mono leading-relaxed">
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Everything in Pro Builder
                   </li>

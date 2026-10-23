@@ -362,9 +362,9 @@ export default function HeroSection() {
         </p>
 
         {/* PLG Sandbox Input CTA with standardized mt-10 gap */}
-        <div className="w-full max-w-2xl mx-auto mt-10 mb-2 flex flex-col items-center justify-center">
+        <div className="w-full max-w-xl mx-auto px-4 mt-10 mb-2 flex flex-col items-center justify-center">
           <form onSubmit={handleAnalyze} className="relative w-full max-w-full">
-            <div className="bg-zinc-950/90 backdrop-blur-xl rounded-2xl p-2 sm:p-2.5 border border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-2 shadow-2xl w-full">
+            <div className="bg-zinc-950/90 backdrop-blur-xl rounded-2xl p-2 sm:p-2.5 border border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xl w-full">
               <div className="flex items-center gap-2.5 sm:gap-3 pl-2 sm:pl-3 w-full sm:w-auto flex-1 min-w-0">
                 <GithubIcon className="w-5 h-5 text-white/60 shrink-0" />
                 <input
@@ -562,7 +562,7 @@ export default function HeroSection() {
 
         {/* Animated "hub ➔ contextgen" Viral Redirection Browser Container - Positioned above-the-fold */}
         {!result && (
-          <div className="w-full my-8 z-10 px-2 sm:px-4">
+          <div className="w-full my-8 z-10 px-2 sm:px-4 min-w-0 max-w-full overflow-hidden">
             <BrowserRedirectLoop />
           </div>
         )}
@@ -699,18 +699,18 @@ export default function HeroSection() {
       </div>
 
       {/* Workspace Preview Frame - Stable and centered */}
-      <div className="w-full flex justify-center z-10 px-4 sm:px-6 my-8">
-        <div className="relative max-w-4xl w-full">
-          <div className="rounded-2xl overflow-hidden bg-zinc-950/90 border border-zinc-800 shadow-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3 mx-auto w-full">
-            <div className="flex items-center gap-2.5 min-w-0">
+      <div className="w-full flex justify-center z-10 px-4 sm:px-6 my-8 min-w-0">
+        <div className="relative max-w-4xl w-full min-w-0">
+          <div className="rounded-2xl overflow-hidden bg-zinc-950/90 border border-zinc-800 shadow-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mx-auto w-full min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1 w-full sm:w-auto overflow-hidden">
               <div className="w-3 h-3 rounded-full bg-red-500/80 shrink-0"></div>
               <div className="w-3 h-3 rounded-full bg-amber-500/80 shrink-0"></div>
               <div className="w-3 h-3 rounded-full bg-emerald-500/80 shrink-0"></div>
-              <span className="text-xs text-zinc-300 ml-2 font-mono truncate">
+              <span className="text-xs text-zinc-300 ml-2 font-mono truncate min-w-0 flex-1">
                 GitContextGen — High-Fidelity Context Engine for Multi-Repo Agencies
               </span>
             </div>
-            <span className="text-xs font-mono text-cyan-400 bg-cyan-950/40 border border-cyan-500/30 px-3 py-1 rounded-full whitespace-nowrap shrink-0">
+            <span className="text-xs font-mono text-cyan-400 bg-cyan-950/40 border border-cyan-500/30 px-3 py-1 rounded-full whitespace-nowrap shrink-0 self-start sm:self-auto">
               Billable Efficiency Engine Active
             </span>
           </div>

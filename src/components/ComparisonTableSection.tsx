@@ -107,7 +107,7 @@ export default function ComparisonTableSection() {
       <div ref={ref} className="w-full flex flex-col items-center justify-center">
 
         {/* Section Header */}
-        <div className="w-full max-w-3xl mx-auto flex flex-col items-center text-center mb-16">
+        <div className="w-full max-w-3xl mx-auto flex flex-col items-center text-center mb-8 sm:mb-12 md:mb-16">
           <div className="w-fit inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white/[0.04] text-xs font-mono text-white/80 mb-6">
             <GitCompareArrows className="w-3.5 h-3.5 text-cyan-400" /> How It Compares
           </div>
@@ -126,75 +126,90 @@ export default function ComparisonTableSection() {
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, ease: 'easeOut' }}
-          className="w-full max-w-5xl overflow-x-auto"
+          className="relative w-full max-w-5xl"
         >
-          <div className="min-w-[680px] rounded-2xl bg-white/[0.02] border border-white/[0.06] shadow-2xl overflow-hidden">
+          <div
+            tabIndex={0}
+            role="region"
+            aria-label="Feature Comparison Matrix"
+            className="w-full overflow-x-auto overscroll-x-contain focus:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/50 [scroll-padding-inline:12px] [scroll-snap-type:x_proximity] no-scrollbar rounded-2xl"
+          >
+            <div className="min-w-[680px] rounded-2xl bg-white/[0.02] border border-white/[0.06] shadow-2xl overflow-hidden">
 
-            {/* Table Header */}
-            <div className="grid grid-cols-[1fr_120px_120px_120px_120px] border-b border-white/[0.06] bg-white/[0.02]">
-              <div className="px-6 py-5 text-sm font-semibold text-white/60">Capability</div>
-              <div className="px-4 py-5 text-center">
-                <div className="text-sm font-bold text-cyan-400">GitContextGen</div>
-                <div className="text-[10px] font-mono text-white/30 mt-0.5">Automated</div>
+              {/* Table Header */}
+              <div className="grid grid-cols-[minmax(200px,1fr)_120px_120px_120px_120px] md:grid-cols-[minmax(260px,1fr)_repeat(4,minmax(120px,1fr))] border-b border-white/[0.06] bg-white/[0.02]">
+                <div className="sticky left-0 z-10 bg-[#0d0d0d] px-6 py-5 text-sm font-semibold text-white/60 border-r border-white/[0.04]">
+                  Capability
+                </div>
+                <div className="px-4 py-5 text-center">
+                  <div className="text-sm font-bold text-cyan-400">GitContextGen</div>
+                  <div className="text-[10px] font-mono text-white/30 mt-0.5">Automated</div>
+                </div>
+                <div className="px-4 py-5 text-center">
+                  <div className="text-sm font-semibold text-white/50">Write Manually</div>
+                  <div className="text-[10px] font-mono text-white/20 mt-0.5">DIY</div>
+                </div>
+                <div className="px-4 py-5 text-center">
+                  <div className="text-sm font-semibold text-white/50">ChatGPT Prompt</div>
+                  <div className="text-[10px] font-mono text-white/20 mt-0.5">Copy-Paste</div>
+                </div>
+                <div className="px-4 py-5 text-center">
+                  <div className="text-sm font-semibold text-white/50">Generic Tools</div>
+                  <div className="text-[10px] font-mono text-white/20 mt-0.5">Other</div>
+                </div>
               </div>
-              <div className="px-4 py-5 text-center">
-                <div className="text-sm font-semibold text-white/50">Write Manually</div>
-                <div className="text-[10px] font-mono text-white/20 mt-0.5">DIY</div>
-              </div>
-              <div className="px-4 py-5 text-center">
-                <div className="text-sm font-semibold text-white/50">ChatGPT Prompt</div>
-                <div className="text-[10px] font-mono text-white/20 mt-0.5">Copy-Paste</div>
-              </div>
-              <div className="px-4 py-5 text-center">
-                <div className="text-sm font-semibold text-white/50">Generic Tools</div>
-                <div className="text-[10px] font-mono text-white/20 mt-0.5">Other</div>
-              </div>
-            </div>
 
-            {/* Table Rows */}
-            {rows.map((row, idx) => (
-              <motion.div
-                key={row.feature}
-                initial={{ opacity: 0 }}
-                animate={isInView ? { opacity: 1 } : {}}
-                transition={{ duration: 0.3, delay: 0.1 + idx * 0.05 }}
-                className={`grid grid-cols-[1fr_120px_120px_120px_120px] items-center ${
-                  idx < rows.length - 1 ? 'border-b border-white/[0.04]' : ''
-                } hover:bg-white/[0.02] transition-colors duration-150`}
-              >
-                <div className="px-6 py-4 text-sm text-white/70">{row.feature}</div>
-                <div className="px-4 py-4 flex justify-center">
-                  <CellIcon status={row.gitcontextgen} />
-                </div>
-                <div className="px-4 py-4 flex justify-center">
-                  <CellIcon status={row.manual} />
-                </div>
-                <div className="px-4 py-4 flex justify-center">
-                  <CellIcon status={row.chatgpt} />
-                </div>
-                <div className="px-4 py-4 flex justify-center">
-                  <CellIcon status={row.generic} />
-                </div>
-              </motion.div>
-            ))}
+              {/* Table Rows */}
+              {rows.map((row, idx) => (
+                <motion.div
+                  key={row.feature}
+                  initial={{ opacity: 0 }}
+                  animate={isInView ? { opacity: 1 } : {}}
+                  transition={{ duration: 0.3, delay: 0.1 + idx * 0.05 }}
+                  className={`grid grid-cols-[minmax(200px,1fr)_120px_120px_120px_120px] md:grid-cols-[minmax(260px,1fr)_repeat(4,minmax(120px,1fr))] items-center ${
+                    idx < rows.length - 1 ? 'border-b border-white/[0.04]' : ''
+                  } hover:bg-white/[0.02] transition-colors duration-150`}
+                >
+                  <div className="sticky left-0 z-10 bg-[#0a0a0a] px-6 py-4 text-sm text-white/70 border-r border-white/[0.04]">
+                    {row.feature}
+                  </div>
+                  <div className="px-4 py-4 flex justify-center">
+                    <CellIcon status={row.gitcontextgen} />
+                  </div>
+                  <div className="px-4 py-4 flex justify-center">
+                    <CellIcon status={row.manual} />
+                  </div>
+                  <div className="px-4 py-4 flex justify-center">
+                    <CellIcon status={row.chatgpt} />
+                  </div>
+                  <div className="px-4 py-4 flex justify-center">
+                    <CellIcon status={row.generic} />
+                  </div>
+                </motion.div>
+              ))}
 
-            {/* Best For Row */}
-            <div className="grid grid-cols-[1fr_120px_120px_120px_120px] items-center border-t border-white/[0.08] bg-white/[0.01]">
-              <div className="px-6 py-5 text-xs font-mono text-white/40 uppercase tracking-wider">Best For</div>
-              <div className="px-3 py-5 text-center text-xs font-semibold text-cyan-400 leading-snug">
-                Teams & solo devs who want it done right
-              </div>
-              <div className="px-3 py-5 text-center text-xs text-white/30 leading-snug">
-                Experts who have time to spare
-              </div>
-              <div className="px-3 py-5 text-center text-xs text-white/30 leading-snug">
-                Quick experiments, not production
-              </div>
-              <div className="px-3 py-5 text-center text-xs text-white/30 leading-snug">
-                Basic repos with simple stacks
+              {/* Best For Row */}
+              <div className="grid grid-cols-[minmax(200px,1fr)_120px_120px_120px_120px] md:grid-cols-[minmax(260px,1fr)_repeat(4,minmax(120px,1fr))] items-center border-t border-white/[0.08] bg-white/[0.01]">
+                <div className="sticky left-0 z-10 bg-[#0a0a0a] px-6 py-5 text-xs font-mono text-white/40 uppercase tracking-wider border-r border-white/[0.04]">
+                  Best For
+                </div>
+                <div className="px-3 py-5 text-center text-xs font-semibold text-cyan-400 leading-snug">
+                  Teams & solo devs who want it done right
+                </div>
+                <div className="px-3 py-5 text-center text-xs text-white/30 leading-snug">
+                  Experts who have time to spare
+                </div>
+                <div className="px-3 py-5 text-center text-xs text-white/30 leading-snug">
+                  Quick experiments, not production
+                </div>
+                <div className="px-3 py-5 text-center text-xs text-white/30 leading-snug">
+                  Basic repos with simple stacks
+                </div>
               </div>
             </div>
           </div>
+          {/* Subtle right-edge scroll hint for mobile */}
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black to-transparent sm:hidden z-20 rounded-r-2xl" />
         </motion.div>
 
         {/* Bottom CTA */}

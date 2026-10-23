@@ -137,7 +137,7 @@ export default function DemoVideoSection() {
             Live Product Demo
           </span>
         </div>
-        <h2 className="text-3xl sm:text-4xl font-bold text-zinc-100 mb-3">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-zinc-100 mb-4 leading-tight">
           See It In Action
         </h2>
         <p className="text-zinc-400 text-base sm:text-lg max-w-2xl mx-auto">

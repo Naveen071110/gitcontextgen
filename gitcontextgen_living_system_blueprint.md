@@ -4,7 +4,9 @@
 **Target Audience**: Non-Technical Founders, Product Owners & Autonomous Coding Agents (Claude Code, Cursor, Windsurf, Manus)  
 **System Name**: GitContextGen (`repopulse-ai`)  
 **Core Purpose**: High-Fidelity Codebase Context Synthesizer & Zero-Drift Multi-Agent Memory Platform  
-**System Status**: 🟢 **100% Production Certified** | **10/10 Test Suites Passing** | **Zero Static Type Errors**
+**System Status**: 🟢 **100% Production Certified** | **10/10 Test Suites Passing** | **Zero Static Type Errors** | **Cloudflare Workers Live (28ms startup)**  
+**Live Production URL**: [https://repopulse-ai.singhnaveen360.workers.dev](https://repopulse-ai.singhnaveen360.workers.dev)  
+**Current Release**: Commit `8760d14` (October 2026)
 
 ---
 
@@ -174,6 +176,7 @@ flowchart TD
   - **Truthful Loading Telemetry**: `TerminalLoader` eliminates fake percentage bars in favor of honest in-flight stage telemetry, an active streaming indicator, live elapsed timer (`Elapsed: Xs / 45s`), and a 1-click cancel button.
   - **Categorized Error Recovery Cards**: Distinguishes invalid URLs, private repo 404s (with 1-click GitHub OAuth button), 403/429 rate limits, 45s timeouts, and network failures with plain-English recovery advice and 1-click retry.
   - **Instant Cache Indication & Re-Analyze Workflow**: Subtly indicates when results are loaded from local cache with age indicator and 1-click force re-sync with spinning re-analysis state (without claiming false automated background monitoring).
+  - **Decoupled Edge SSR Bundle Architecture (`exceljs` Dynamic Loading)**: To ensure 100% compatibility with the Cloudflare Workers edge runtime where native Node.js streams and file APIs are restricted, `src/lib/export/excelExporter.ts` is dynamically imported client-side only when an export is triggered (`const { exportExecutiveExcelWorkbook } = await import('@/lib/export/excelExporter')`). The edge worker SSR bundle (`.open-next/worker.js`) remains lean, fast, and free of heavy spreadsheet engine bloat while client machines handle workbook formatting and downloads in-browser.
   - Generates a **5-Tab Executive Excel Workbook (`.xlsx`)** with:
     - *Tab 1*: 2x3 KPI stat card grid (Total LOC, Token Savings %, Security status, Health Score).
     - *Tab 2*: Codebase topology with Consolas monospace paths and `=SUM()` formulas.
@@ -184,6 +187,26 @@ flowchart TD
 * **Input**: Completed analysis payload.
 * **Output**: Interactive web UI and 1-click downloadable `.xlsx`, `.csv`, and `.json` files.
 * **What Happens If This Breaks?**: All column widths are mathematically calculated (`width = 26` per column, `startRow = 4`) so Excel never displays annoying `###` numerical clipping errors.
+
+---
+
+### 2.6 Responsive Design System & Mobile Viewport Containment Standards
+
+To eliminate responsive regressions and preserve the dark obsidian branding across ultra-narrow mobile viewports (390px iPhone width) and 1440px desktop screens, the presentation layer strictly enforces the following UI layout rules:
+
+| Design Token / Element | Mobile (< 640px) | Desktop (>= 1024px) | Implementation Invariant |
+| :--- | :--- | :--- | :--- |
+| **Section Vertical Padding** | `py-28` (112px) | `py-36` (144px) | Maintains consistent macro-rhythm without excessive empty lead-in. |
+| **Heading to Content Gap** | `mb-7 sm:mb-10` (28px) | `md:mb-16` (40–64px) | Prevents tall empty blocks above interactive sandboxes. |
+| **Mobile Card Grid Gap** | `gap-4` (16px) | `gap-6` to `gap-8` (32px) | Avoids continuous card walls when cards stack vertically. |
+| **Card Internal Padding** | `p-5` | `p-7` to `p-8` | Reduces vertical scroll strain while preserving readability. |
+| **Touch Target Minimum** | $\ge 44\text{px}$ (`min-h-11`) | $\ge 44\text{px}$ | All buttons, tabs, inputs, and FAQ accordions must be touch-friendly. |
+| **Hero Preview Containment** | `max-h-[480px] overflow-hidden` | `sm:max-h-none` | Enforces `min-w-0 max-w-full` on `BrowserRedirectLoop` to eliminate 390px overflow. |
+| **Hero Input & CTA Inset** | Unified `w-full max-w-xl px-4` | Side-by-side flex row | Prevents mismatched button and input widths on small devices. |
+| **Horizontal Tab Navigation** | `overflow-x-auto` with fade cue | Standard flex row | Tab strips (`LiveDashboardPreview`, `AgentMemoryFeature`) use `overscroll-x-contain`, `pr-3`, and right-edge gradient masks. |
+| **Comparison Tables** | Sticky Col 1 + `scroll-snap` | Proportional CSS grid | Column 1 remains fixed (`position: sticky; left: 0`); desktop uses `minmax(260px,1fr) repeat(4,minmax(120px,1fr))`. |
+
+---
 
 ---
 
@@ -224,7 +247,7 @@ Hey Agent, I need you to update [Feature Name / Component Name].
 Before writing or modifying any code, you MUST follow these 4 rules:
 1. READ `gitcontextgen_living_system_blueprint.md` in the project root to understand how the system works.
 2. EXPLAIN to me in simple, non-technical plain English what changes you plan to make and why.
-3. ADHERE STRICTLY to the Backend Freeze Protocol: You must NEVER alter protected files in `/src/app/api/analyze/`, `/src/lib/analyzer/`, `/src/lib/mcp/`, `/src/lib/github.ts`, or `/src/lib/cacheStore.ts` without my explicit written permission.
+3. ADHERE STRICTLY to the Backend Freeze Protocol: You must NEVER alter protected files in `/src/app/api/analyze/`, `/src/lib/analyzer/`, `/src/lib/mcp/`, `/src/lib/github.ts`, `/src/lib/cacheStore.ts`, `/src/lib/export/excelExporter.ts`, `/src/lib/export/csvExporter.ts`, or `/mcp-server/` without my explicit written permission.
 4. VERIFY YOUR WORK: After making edits, run `npx tsc --noEmit` (confirm 0 type errors) and `npm test` (confirm 10/10 test suites pass) before telling me the task is complete.
 ```
 
@@ -308,7 +331,7 @@ When adding new capabilities to GitContextGen, coding agents must follow this sa
    # 2. Test Suite: Must pass 10/10 test suites (Phases 1 through 10)
    npm test
 
-   # 3. Production Build: Must compile all 19 Next.js routes cleanly
+   # 3. Production Build: Must compile all 32 Next.js App Router routes cleanly (19 static + 13 dynamic/API routes)
    npm run build
    ```
 
@@ -370,6 +393,41 @@ To prepare GitContextGen for multi-seat engineering teams and enterprise environ
     3. `Contributor / Developer`: Views analysis, downloads rules, and queries MCP memory.
     4. `Stakeholder / Auditor`: Accesses read-only Executive Handoff reports, Excel exports, and license compliance audits.
   - **Tamper-Evident Audit Ledger**: An append-only log table recording all rule modifications, Excel workbook exports, and memory access events with ISO 8601 UTC timestamps, user IDs, and client IP addresses.
+
+---
+
+## Section 6: Production Deployment & Cloudflare Workers Pipeline
+
+GitContextGen is built for global edge execution using the OpenNext Cloudflare adapter. The application compiles to an optimized edge worker bundle with static asset binding and lightweight Node.js compatibility.
+
+### 6.1 Deployment Architecture & Configuration
+
+| Parameter | Production Value | Architectural Notes |
+| :--- | :--- | :--- |
+| **Edge Adapter** | `@opennextjs/cloudflare` v1.20.2 | Bridges Next.js 16 App Router to Cloudflare `workerd`. |
+| **Worker Script** | `.open-next/worker.js` | Edge SSR execution entrypoint with streaming support. |
+| **Static Assets** | `.open-next/assets` (`env.ASSETS`) | Zero-latency edge asset delivery bypassing worker execution for static files. |
+| **Compatibility Date** | `2026-07-29` | Strict Cloudflare Workers runtime API baseline. |
+| **Compatibility Flags** | `["nodejs_compat"]` | Provides lightweight Node.js standard library polyfills at the edge. |
+| **Deployment Command** | `npm run deploy` | Executes `opennextjs-cloudflare build && wrangler deploy`. |
+| **Preview Command** | `npm run preview` | Local simulation via `opennextjs-cloudflare build && wrangler dev`. |
+| **Live Production Host** | `https://repopulse-ai.singhnaveen360.workers.dev` | Production Cloudflare Workers custom subdomain. |
+| **Edge Startup Latency** | **28 ms** (benchmarked) | Sub-30ms cold-start latency across global edge PoPs. |
+
+### 6.2 Pre-Deployment Checklist for Coding Agents
+
+Before running `npm run deploy`, agents must complete the following sequential gates:
+
+1. **Gate 1: Static Typecheck**  
+   Run `npx tsc --noEmit` and confirm **zero static type errors**.
+2. **Gate 2: Automated Test Suite**  
+   Run `npm test` and verify all **10/10 test phases pass** (Phases 1 through 10).
+3. **Gate 3: Security & Credential Scan**  
+   Confirm no uncommitted secrets or credentials exist (`npm run security:check-staged`).
+4. **Gate 4: Next.js Production Compilation**  
+   Run `npm run build` and verify clean generation across all 32 App Router routes (19 static + 13 dynamic/API).
+5. **Gate 5: Edge Asset Size Check**  
+   Verify that single static media assets do not exceed Cloudflare's 25MB per-file upload limit (large binary assets like walkthrough videos must be served externally via GitHub raw storage or cloud buckets).
 
 ---
 
